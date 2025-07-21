@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useMobile } from '../../hooks/useMobile';
 import './Sidebar.css';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const { isMobileMenuOpen, closeMobileMenu } = useMobile();
 
   const menuItems = [
     { 
@@ -38,8 +40,24 @@ const Sidebar: React.FC = () => {
     },
   ];
 
+  const handleLinkClick = () => {
+    closeMobileMenu();
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      closeMobileMenu();
+    }
+  };
+
   return (
-    <aside className="sidebar">
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-backdrop" onClick={handleBackdropClick} />
+      )}
+      
+      <aside className={`sidebar ${isMobileMenuOpen ? 'sidebar--mobile-open' : ''}`}>
       <div className="sidebar-header">
         <h3 className="sidebar-title">Navigation</h3>
       </div>
@@ -53,6 +71,7 @@ const Sidebar: React.FC = () => {
                   to={item.path}
                   aria-label={item.ariaLabel}
                   className={`nav-link ${isActive ? 'nav-link--active' : 'nav-link--inactive'}`}
+                  onClick={handleLinkClick}
                 >
                   <span className="nav-icon" aria-hidden="true">{item.icon}</span>
                   {item.name}
@@ -67,6 +86,7 @@ const Sidebar: React.FC = () => {
         <p className="version-text">CraftMart v1.0</p>
       </div>
     </aside>
+    </>
   );
 };
 

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
+import { MobileProvider } from './hooks/useMobile';
 import Header from './components/common/Header';
 import Sidebar from './components/common/Sidebar';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -14,7 +15,8 @@ import './styles/App.css';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <MobileProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/*" element={
@@ -37,7 +39,8 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
-      </Router>
+        </Router>
+      </MobileProvider>
     </AuthProvider>
   );
 }

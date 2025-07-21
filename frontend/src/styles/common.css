@@ -271,3 +271,166 @@
   color: #6b7280;
   margin-bottom: 24px;
 }
+
+/* Mobile-First Responsive Utilities */
+
+/* Container Responsive */
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+    padding: 16px;
+  }
+  
+  .gradient-title {
+    font-size: 2rem;
+  }
+  
+  .card {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  /* Mobile Grid Adjustments */
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid {
+    gap: 16px;
+  }
+  
+  .grid-auto-fit {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Mobile Button Sizes (44px minimum touch target) */
+  .btn {
+    padding: 14px 20px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+  
+  /* Mobile Form Elements */
+  .input, .select {
+    padding: 16px;
+    font-size: 16px;
+    min-height: 44px;
+  }
+  
+  /* Mobile Text Sizes */
+  .text-3xl { font-size: 24px; }
+  .text-2xl { font-size: 20px; }
+  .text-xl { font-size: 18px; }
+  
+  /* Mobile Spacing Adjustments */
+  .empty-state {
+    padding: 32px 16px;
+  }
+  
+  .empty-state-icon {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+  
+  .gradient-title {
+    font-size: 1.75rem;
+  }
+  
+  .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .grid {
+    gap: 12px;
+  }
+  
+  .btn {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+  
+  .input, .select {
+    padding: 14px;
+    font-size: 16px;
+  }
+  
+  .text-2xl { font-size: 18px; }
+  .text-xl { font-size: 16px; }
+  
+  .empty-state {
+    padding: 24px 12px;
+  }
+}
+
+/* Mobile-Specific Utilities */
+.mobile-hidden {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.mobile-only {
+  display: none !important;
+  @media (max-width: 768px) {
+    display: block !important;
+  }
+}
+
+.mobile-flex {
+  @media (max-width: 768px) {
+    display: flex !important;
+  }
+}
+
+/* Mobile Scroll Utilities */
+.mobile-scroll-x {
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.mobile-no-scroll {
+  @media (max-width: 768px) {
+    overflow: hidden;
+  }
+}
+
+/* Mobile Touch Targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile Card Stacking */
+@media (max-width: 768px) {
+  .mobile-stack > * {
+    margin-bottom: 16px;
+  }
+  
+  .mobile-stack > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Mobile Table Responsive */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+  
+  .table-responsive table {
+    min-width: 600px;
+  }
+}

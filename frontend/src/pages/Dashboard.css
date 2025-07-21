@@ -406,3 +406,214 @@
   font-size: 12px;
   color: #6b7280;
 }
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .gradient-title {
+    font-size: 2rem;
+  }
+
+  .header-subtitle {
+    font-size: 18px;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .status-indicator {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .quick-add-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    padding: 20px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+  }
+
+  .bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .activity-card, .quick-actions-card {
+    padding: 20px;
+  }
+
+  .activity-title, .quick-actions-title {
+    font-size: 18px;
+  }
+
+  .activity-item {
+    padding: 12px;
+  }
+
+  .activity-item-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 12px;
+  }
+
+  .quick-action-btn {
+    padding: 14px 16px;
+    min-height: 44px;
+  }
+
+  .quick-action-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 12px;
+  }
+
+  .dashboard-header {
+    margin-bottom: 24px;
+    gap: 16px;
+  }
+
+  .gradient-title {
+    font-size: 1.75rem;
+  }
+
+  .header-subtitle {
+    font-size: 16px;
+  }
+
+  .header-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .status-indicator {
+    padding: 6px 10px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .quick-add-btn {
+    width: 100%;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .stats-grid {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-card-content {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    margin: 0 auto;
+  }
+
+  .bottom-grid {
+    gap: 16px;
+  }
+
+  .activity-card, .quick-actions-card {
+    padding: 16px;
+  }
+
+  .activity-header, .quick-actions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .activity-title, .quick-actions-title {
+    font-size: 16px;
+  }
+
+  .activity-item {
+    padding: 10px;
+  }
+
+  .activity-item-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+  }
+
+  .activity-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .quick-action-btn {
+    padding: 12px;
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .quick-action-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .quick-action-title {
+    font-size: 14px;
+  }
+
+  .quick-action-subtitle {
+    font-size: 11px;
+  }
+}

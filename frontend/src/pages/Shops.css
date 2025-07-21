@@ -326,3 +326,294 @@
   font-size: 14px;
   color: #6b7280;
 }
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .shops-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .shops-subtitle {
+    font-size: 18px;
+  }
+
+  .shops-controls {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .shops-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .shop-card {
+    padding: 20px;
+  }
+
+  .shop-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .shop-status {
+    align-self: flex-start;
+  }
+
+  .shop-name {
+    font-size: 16px;
+  }
+
+  .shop-job {
+    font-size: 13px;
+  }
+
+  .shop-customer {
+    font-size: 13px;
+  }
+
+  .shop-dates {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .date-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .date-item:last-child {
+    border-bottom: none;
+  }
+
+  .date-label {
+    font-size: 11px;
+  }
+
+  .date-value {
+    font-size: 13px;
+  }
+
+  .shop-stats {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .stat-item {
+    padding: 12px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    gap: 12px;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .stat-value {
+    font-size: 16px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .shop-notes {
+    margin-bottom: 16px;
+  }
+
+  .notes-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .notes-content {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .progress-indicator {
+    margin-bottom: 12px;
+  }
+
+  .progress-labels {
+    font-size: 11px;
+  }
+
+  .shop-actions {
+    gap: 6px;
+    flex-direction: column;
+  }
+
+  .shop-action-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    min-height: 44px;
+    text-align: center;
+  }
+
+  .empty-shops {
+    padding: 64px 20px;
+  }
+
+  /* Cut Sheet Modal Mobile */
+  .cutsheet-modal {
+    max-width: calc(100vw - 32px);
+  }
+
+  .cutsheet-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .cutsheet-item {
+    padding: 12px;
+  }
+
+  .cutsheet-name {
+    font-size: 15px;
+    margin-bottom: 6px;
+  }
+
+  .cutsheet-details {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shops-header {
+    margin-bottom: 24px;
+    gap: 16px;
+  }
+
+  .shops-subtitle {
+    font-size: 16px;
+  }
+
+  .shops-controls {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .shops-grid {
+    gap: 12px;
+  }
+
+  .shop-card {
+    padding: 16px;
+  }
+
+  .shop-header {
+    gap: 8px;
+  }
+
+  .shop-name {
+    font-size: 15px;
+  }
+
+  .shop-job {
+    font-size: 12px;
+  }
+
+  .shop-customer {
+    font-size: 12px;
+  }
+
+  .shop-dates {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .date-item {
+    padding: 6px 0;
+  }
+
+  .date-label {
+    font-size: 10px;
+  }
+
+  .date-value {
+    font-size: 12px;
+  }
+
+  .shop-stats {
+    gap: 8px;
+  }
+
+  .stat-item {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .stat-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .notes-content {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .shop-actions {
+    gap: 8px;
+  }
+
+  .shop-action-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .empty-shops {
+    padding: 48px 16px;
+  }
+
+  /* Cut Sheet Modal Mobile */
+  .cutsheet-modal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .cutsheet-grid {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .cutsheet-item {
+    padding: 10px;
+  }
+
+  .cutsheet-name {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .cutsheet-details {
+    font-size: 12px;
+  }
+}

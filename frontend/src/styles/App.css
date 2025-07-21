@@ -13,3 +13,22 @@
   flex: 1;
   padding: 24px;
 }
+
+/* Mobile Layout Styles */
+@media (max-width: 768px) {
+  .main-layout {
+    flex-direction: column;
+  }
+  
+  .main-content {
+    padding: 16px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 12px;
+  }
+}

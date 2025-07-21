@@ -1,0 +1,16 @@
+# Cloudflare Tunnel Configuration for CraftMart App
+# This file configures how traffic is routed through the Cloudflare Tunnel
+
+ingress:
+  # Route www.cmioe.com to nginx reverse proxy (handles both frontend and API)
+  - hostname: www.cmioe.com
+    service: http://nginx:80
+  
+  # Catch-all rule (required as the last rule)
+  - service: http_status:404
+
+# Optional: Enable metrics for monitoring
+metrics: 0.0.0.0:2000
+
+# Optional: Log level (debug, info, warn, error, fatal)
+loglevel: info

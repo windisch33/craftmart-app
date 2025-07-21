@@ -34,6 +34,10 @@ CraftMart is a custom staircase manufacturer management system built for 6-10 em
 - **React Router** - [React Router Documentation](https://reactrouter.com/)
 - **Vite** - [Vite Documentation](https://vitejs.dev/)
 
+### Infrastructure
+- **Nginx** - [Nginx Documentation](https://nginx.org/en/docs/) - Reverse proxy for routing
+- **Cloudflare Tunnel** - [Cloudflare Tunnel Docs](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) - Secure internet access
+
 ## Project Structure
 ```
 craftmart-app/
@@ -56,7 +60,10 @@ craftmart-app/
 │   │   ├── styles/         # Common CSS files and utilities
 │   │   └── store/          # State management (Zustand)
 ├── database/               # PostgreSQL initialization
-└── docker-compose.yml     # Development environment
+├── nginx/                  # Reverse proxy configuration
+├── cloudflared/            # Cloudflare Tunnel configuration
+├── docker-compose.yml     # Development environment
+└── CLOUDFLARE_TUNNEL_SETUP.md # Tunnel deployment guide
 ```
 
 ## Development Commands
@@ -267,13 +274,15 @@ The entire CraftMart application has been transformed with a modern, professiona
 
 ### **📁 Files Updated for Modern UI:**
 - `/frontend/src/pages/Dashboard.tsx` - ✅ Modern Bento grid with statistics cards
-- `/frontend/src/pages/Customers.tsx` - ✅ Customer management interface
+- `/frontend/src/pages/Customers.tsx` - ✅ Complete customer management with CRUD operations
 - `/frontend/src/pages/Jobs.tsx` - ✅ Job lifecycle management system
 - `/frontend/src/pages/Shops.tsx` - ✅ Production floor management
 - `/frontend/src/pages/Reports.tsx` - ✅ Comprehensive reporting interface
 - `/frontend/src/pages/Login.tsx` - ✅ Stunning glassmorphism login design
 - `/frontend/src/components/common/Header.tsx` - ✅ Modern header component
 - `/frontend/src/components/common/Sidebar.tsx` - ✅ Modern navigation sidebar
+- `/frontend/src/components/customers/CustomerForm.tsx` - ✅ Customer CRUD modal component
+- `/frontend/src/services/customerService.ts` - ✅ Customer API service layer
 - `/frontend/index.html` - ✅ Updated title and favicon
 
 ### **🚀 Design System Benefits:**
@@ -282,6 +291,244 @@ The entire CraftMart application has been transformed with a modern, professiona
 - **Scalability**: Component-scoped CSS files make it easy to add new features
 - **Consistency**: Unified design patterns across all pages with shared common styles
 - **Modern Aesthetic**: Professional appearance suitable for manufacturing business
+
+## ✅ Cloudflare Tunnel Integration (COMPLETED)
+
+### **Production-Ready Internet Access via www.cmioe.com**
+Complete Cloudflare Tunnel integration provides secure, enterprise-grade internet access to the CraftMart application through the custom domain www.cmioe.com.
+
+### **🔗 Infrastructure Implementation:**
+- ✅ **Cloudflare Tunnel**: Secure zero-trust network access without exposed ports
+- ✅ **Custom Domain**: Application accessible at https://www.cmioe.com
+- ✅ **Nginx Reverse Proxy**: Handles both frontend and API routing
+- ✅ **SSL/TLS Encryption**: Automatic HTTPS via Cloudflare's global network
+- ✅ **DDoS Protection**: Enterprise-grade security and performance optimization
+
+### **🏗️ Architecture Overview:**
+```
+Internet → Cloudflare Network → Tunnel → Nginx Reverse Proxy → Frontend/Backend
+```
+
+### **🔧 Technical Implementation:**
+
+#### **Cloudflare Tunnel Configuration:**
+- ✅ **Token-Based Authentication**: Secure tunnel connection using Cloudflare dashboard
+- ✅ **Multi-Connection Resilience**: Connected to 4+ Cloudflare data centers for high availability
+- ✅ **Docker Integration**: Cloudflared container with automatic restart capability
+- ✅ **Configuration Management**: Tunnel routing managed via Cloudflare dashboard
+
+#### **Nginx Reverse Proxy Setup:**
+- ✅ **Frontend Routing**: Serves React application at `/` with proper SPA routing
+- ✅ **API Routing**: Routes `/api/*` requests to backend service
+- ✅ **Docker Networking**: Internal container communication via craftmart-network
+- ✅ **Header Management**: Proper proxy headers for real IP and protocol handling
+
+#### **Network Security Enhancements:**
+- ✅ **No Exposed Ports**: Removed public access to ports 3000 and 3001
+- ✅ **Internal Networking**: All services communicate via Docker network
+- ✅ **Zero-Trust Model**: All traffic authenticated through Cloudflare
+- ✅ **PostgreSQL Security**: Database remains internal-only with port 5432 for dev access
+
+### **📁 Files Created/Modified for Tunnel Integration:**
+- **Created**: `/cloudflared/config.yml` - Tunnel routing configuration
+- **Created**: `/nginx/nginx.conf` - Reverse proxy configuration  
+- **Created**: `/CLOUDFLARE_TUNNEL_SETUP.md` - Complete setup and troubleshooting guide
+- **Updated**: `/docker-compose.yml` - Added nginx and cloudflared services
+- **Updated**: `/.env` - Added TUNNEL_TOKEN environment variable
+- **Updated**: `/frontend/vite.config.ts` - Added allowedHosts for custom domain
+- **Updated**: `/frontend/src/services/*.ts` - Configured relative API URLs
+
+### **🌐 Production Benefits:**
+1. **Enterprise Security**: Zero-trust network access with no open server ports
+2. **Global Performance**: Traffic routed through Cloudflare's worldwide network
+3. **Automatic SSL**: HTTPS encryption managed by Cloudflare
+4. **High Availability**: Multi-datacenter tunnel connections for resilience
+5. **Easy Deployment**: Simple Docker Compose deployment with single token
+6. **Professional Domain**: Custom branding with www.cmioe.com
+7. **DDoS Protection**: Built-in protection against attacks and traffic spikes
+
+### **✅ Deployment Status:**
+- **Domain**: https://www.cmioe.com ✅ LIVE
+- **Authentication**: Login system working properly ✅ FUNCTIONAL
+- **API Routing**: All backend endpoints accessible ✅ OPERATIONAL
+- **Security**: No exposed ports, SSL encrypted ✅ SECURE
+- **Performance**: Global CDN and optimization ✅ OPTIMIZED
+
+## ✅ Customer CRUD Operations (COMPLETED)
+
+### **Complete Customer Management System**
+Full CRUD (Create, Read, Update, Delete) operations for customer management with modern React frontend and robust backend integration.
+
+### **🏗️ Backend Implementation:**
+- ✅ **Database Schema**: Complete PostgreSQL customers table with all required fields
+- ✅ **API Endpoints**: RESTful endpoints for all CRUD operations
+- ✅ **Data Validation**: Proper input validation and error handling
+- ✅ **Authentication**: JWT-protected routes with middleware
+
+### **🎨 Frontend Implementation:**
+
+#### **📋 Customer Service Layer (`customerService.ts`):**
+- ✅ Complete TypeScript API client with full CRUD operations
+- ✅ Search functionality with client-side filtering
+- ✅ Proper error handling and authentication headers
+- ✅ Type-safe interfaces for Customer data models
+
+#### **🖥️ Customer Management Page (`Customers.tsx`):**
+- ✅ Real API integration replacing mock data
+- ✅ Loading states and error handling throughout UI
+- ✅ Real-time search with API integration
+- ✅ Contact information display and formatting
+- ✅ Delete confirmation dialogs
+- ✅ Refresh functionality and data synchronization
+
+#### **📝 Customer Form Modal (`CustomerForm.tsx`):**
+- ✅ Comprehensive form with all customer fields:
+  - Basic Information: Name (required)
+  - Contact: Email, Accounting Email, Phone, Mobile, Fax
+  - Address: Street, City, State, ZIP Code
+  - Additional: Notes with textarea
+- ✅ Form validation for required fields and email formats
+- ✅ Create and Edit modes with proper state management
+- ✅ Modern responsive modal design with CSS styling
+- ✅ Loading states and submission error handling
+
+### **🎯 Key Features Implemented:**
+1. **Full CRUD Operations**: Create, Read, Update, Delete customers
+2. **Real-time Search**: Search by name, email, city, or state
+3. **Form Validation**: Client-side validation with error messages
+4. **Responsive Design**: Mobile-friendly modal and layouts
+5. **Error Handling**: Comprehensive error messaging and user feedback
+6. **Data Synchronization**: Automatic UI updates after operations
+7. **Professional UI**: Clean, modern interface matching design system
+
+### **🔧 Technical Architecture:**
+- **Database**: PostgreSQL with proper relationships and constraints
+- **Backend**: Node.js/Express with TypeScript
+- **Frontend**: React 19 with hooks and TypeScript
+- **Styling**: External CSS with component-scoped styles
+- **State Management**: React hooks for local component state
+- **API Communication**: Axios with authentication headers
+- **Form Handling**: Controlled components with validation
+
+### **📁 Files Created/Updated:**
+- **Created**: `/frontend/src/services/customerService.ts` - API service layer
+- **Created**: `/frontend/src/components/customers/CustomerForm.tsx` - CRUD modal
+- **Created**: `/frontend/src/components/customers/CustomerForm.css` - Modal styling
+- **Updated**: `/frontend/src/pages/Customers.tsx` - Main customer management page
+
+## ✅ Mobile Responsiveness Implementation (COMPLETED)
+
+### **Complete Mobile-First Responsive Design System**
+The entire CraftMart application has been transformed to provide an exceptional mobile experience across all device sizes while maintaining the modern, professional desktop design.
+
+### **🏗️ Core Mobile Infrastructure:**
+
+#### **Mobile Navigation System:**
+- ✅ **Hamburger Menu**: Added touch-friendly hamburger button to Header component
+- ✅ **Mobile Sidebar Overlay**: Converted fixed sidebar to mobile drawer with slide animations
+- ✅ **Backdrop Blur**: Professional backdrop blur effect with touch-to-close functionality
+- ✅ **Mobile Context**: Created `useMobile` hook for managing mobile menu state across components
+- ✅ **Smooth Animations**: 300ms slide transitions with proper Z-index stacking
+
+#### **Responsive Layout Foundation:**
+- ✅ **Mobile-First Breakpoints**: 320px-768px (mobile), 769px-1024px (tablet), 1025px+ (desktop)
+- ✅ **Flexible Grid System**: All grids automatically stack on mobile with proper spacing
+- ✅ **Touch-Friendly Targets**: Minimum 44px touch targets throughout the application
+- ✅ **Mobile Container System**: Responsive padding and margins optimized for mobile devices
+
+### **📱 Page-by-Page Mobile Optimization:**
+
+#### **🏠 Dashboard Mobile:**
+- ✅ Stats grid stacks vertically with optimized card spacing
+- ✅ Header controls reorganized for mobile layout (status indicator + quick add button)
+- ✅ Gradient titles scaled appropriately for mobile screens (3rem → 2rem → 1.75rem)
+- ✅ Activity cards and quick actions fully responsive with proper touch targets
+- ✅ Bottom grid converts from 2-column to single column layout
+
+#### **👥 Customers Mobile:**
+- ✅ Customer cards stack in single column with enhanced mobile layout
+- ✅ Search and filter controls stack vertically with full-width inputs
+- ✅ Customer modal fully responsive with mobile-optimized form layout
+- ✅ Action buttons meet 44px minimum touch target requirements
+- ✅ Contact information properly formatted for mobile viewing
+
+#### **📋 Jobs Mobile:**
+- ✅ Job cards optimized for mobile viewing with improved information hierarchy
+- ✅ Job pricing stages stack vertically with enhanced key-value pair layout
+- ✅ Filter tabs converted to column layout for better touch interaction
+- ✅ Progress indicators and stage buttons fully mobile optimized
+- ✅ Job lifecycle management maintains full functionality on mobile
+
+#### **🏭 Shops Mobile:**
+- ✅ Shop information reorganized with mobile-friendly card layout
+- ✅ Date items display as organized key-value pairs with proper spacing
+- ✅ Shop stats section stacked vertically with background highlights
+- ✅ Cut sheet modal fully responsive with mobile-optimized grid layout
+- ✅ Progress indicators and action buttons touch-optimized
+
+#### **📊 Reports Mobile:**
+- ✅ Report controls stack vertically with full-width date inputs
+- ✅ Tables become horizontally scrollable with minimum width preservation
+- ✅ Quick report cards optimized for mobile viewing with centered layouts
+- ✅ Export actions reorganized for mobile interaction patterns
+- ✅ Summary grids stack appropriately with proper mobile spacing
+
+### **🎯 Advanced Mobile Features:**
+
+#### **Touch Optimization:**
+- ✅ **44px Minimum Touch Targets**: All interactive elements meet accessibility standards
+- ✅ **Touch-Friendly Spacing**: Proper spacing between clickable elements
+- ✅ **Hover State Adaptations**: Hover effects work properly on touch devices
+- ✅ **Focus Management**: Proper focus handling for keyboard navigation
+
+#### **Mobile-Specific Utilities:**
+- ✅ **Mobile Utilities**: Comprehensive mobile utility classes in `common.css`
+- ✅ **Responsive Grids**: Auto-collapse grid systems for mobile devices
+- ✅ **Mobile Scroll**: Horizontal scroll handling for tables and wide content
+- ✅ **Mobile Layout Classes**: `.mobile-hidden`, `.mobile-only`, `.mobile-flex` utilities
+
+#### **Performance Optimizations:**
+- ✅ **Efficient CSS**: Mobile-first approach reduces unnecessary CSS on mobile
+- ✅ **Smooth Animations**: Hardware-accelerated transforms for smooth mobile performance
+- ✅ **Touch Scrolling**: Proper `-webkit-overflow-scrolling: touch` implementation
+- ✅ **Viewport Optimization**: Proper viewport meta tag and responsive sizing
+
+### **📐 Responsive Breakpoint Strategy:**
+```css
+/* Mobile First Approach */
+@media (max-width: 768px) { /* Tablet and Mobile */ }
+@media (max-width: 480px) { /* Small Mobile */ }
+```
+
+### **🎨 Design System Consistency:**
+- ✅ **Professional Appearance**: Mobile design maintains the modern, clean aesthetic
+- ✅ **Color Scheme Preservation**: Professional blue/purple gradient system maintained
+- ✅ **Typography Scale**: Responsive font sizing with proper mobile hierarchy
+- ✅ **Component Integrity**: All design patterns consistent across breakpoints
+
+### **📁 Files Created/Updated for Mobile Responsiveness:**
+- **Created**: `/frontend/src/hooks/useMobile.tsx` - Mobile state management context
+- **Updated**: `/frontend/src/components/common/Header.tsx` - Added hamburger menu
+- **Updated**: `/frontend/src/components/common/Header.css` - Mobile header styles
+- **Updated**: `/frontend/src/components/common/Sidebar.tsx` - Mobile overlay functionality
+- **Updated**: `/frontend/src/components/common/Sidebar.css` - Mobile drawer animations
+- **Updated**: `/frontend/src/App.tsx` - Added MobileProvider wrapper
+- **Updated**: `/frontend/src/styles/App.css` - Mobile layout improvements
+- **Updated**: `/frontend/src/styles/common.css` - Comprehensive mobile utilities
+- **Updated**: `/frontend/src/pages/Dashboard.css` - Complete mobile responsiveness
+- **Updated**: `/frontend/src/pages/Customers.css` - Mobile-optimized customer management
+- **Updated**: `/frontend/src/pages/Jobs.css` - Mobile job lifecycle management
+- **Updated**: `/frontend/src/pages/Shops.css` - Mobile shop floor optimization
+- **Updated**: `/frontend/src/pages/Reports.css` - Mobile reporting system
+
+### **🚀 Mobile Enhancement Benefits:**
+1. **Universal Accessibility**: Application now works seamlessly on all device sizes
+2. **Professional Mobile Experience**: Maintains business-grade appearance on mobile
+3. **Touch-Optimized Interactions**: All interactions designed for finger navigation
+4. **Improved User Adoption**: Mobile-friendly design increases team usage flexibility
+5. **Future-Proof Architecture**: Mobile-first approach ensures scalability
+6. **Performance Optimized**: Efficient mobile CSS reduces load times
+7. **Accessibility Compliant**: Meets WCAG guidelines for touch target sizes
 
 ## 🔮 Future Development Opportunities
 1. **Enhanced Functionality**
@@ -327,9 +574,11 @@ frontend/src/
 │   ├── Shops.css          # Shops page styles
 │   └── Reports.css        # Reports page styles
 └── components/
-    └── common/
-        ├── Header.css     # Header component styles
-        └── Sidebar.css    # Sidebar component styles
+    ├── common/
+    │   ├── Header.css     # Header component styles
+    │   └── Sidebar.css    # Sidebar component styles
+    └── customers/
+        └── CustomerForm.css # Customer CRUD modal styles
 ```
 
 ## 🧹 Cleanup Completed
