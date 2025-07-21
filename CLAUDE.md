@@ -352,4 +352,36 @@ frontend/src/
 - **Responsiveness**: Ensure all new features work across device sizes
 - **CSS Organization**: Create dedicated CSS files for new components following the established structure
 
+## 🐙 GitHub Repository
+
+**Repository Information:**
+- **Owner:** windisch33
+- **Email:** windisch33@gmail.com
+- **SSH Key:** Ed25519 key configured for secure Git operations
+- **Repository URL:** `git@github.com:windisch33/craftmart-app.git`
+- **Branch:** `main` (default)
+
+### Git Setup Status:
+- ✅ Git repository initialized
+- ✅ SSH key generated and configured
+- ✅ GitHub SSH authentication ready
+- ✅ Initial commit completed (72 files, 16,258 insertions)
+- ✅ `.gitignore` configured for Node.js/React/Docker project
+
+### Git Workflow Commands:
+```bash
+# Clone repository
+git clone git@github.com:windisch33/craftmart-app.git
+
+# Development workflow
+git checkout -b feature/new-feature
+git add .
+git commit -m "Description of changes"
+git push origin feature/new-feature
+
+# Connect local repository (if not cloned)
+git remote add origin git@github.com:windisch33/craftmart-app.git
+git push -u origin main
+```
+
 Remember: Always check current documentation and read outline.txt before making significant changes or architectural decisions. Always update CLAUDE.md after changes to reflect current state. 

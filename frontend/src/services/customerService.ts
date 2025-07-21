@@ -1,0 +1,136 @@
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+export interface Customer {
+  id: number;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  phone?: string;
+  mobile?: string;
+  fax?: string;
+  email?: string;
+  accounting_email?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCustomerRequest {
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  phone?: string;
+  mobile?: string;
+  fax?: string;
+  email?: string;
+  accounting_email?: string;
+  notes?: string;
+}
+
+export interface UpdateCustomerRequest extends CreateCustomerRequest {
+  id: number;
+}
+
+class CustomerService {
+  private getAuthHeaders() {
+    const token = localStorage.getItem('authToken');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  async getAllCustomers(): Promise<Customer[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/customers`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch customers');
+    }
+  }
+
+  async getCustomerById(id: number): Promise<Customer> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/customers/${id}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Customer not found');
+      }
+      throw new Error(error.response?.data?.error || 'Failed to fetch customer');
+    }
+  }
+
+  async createCustomer(customerData: CreateCustomerRequest): Promise<Customer> {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/customers`, customerData, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to create customer');
+    }
+  }
+
+  async updateCustomer(id: number, customerData: CreateCustomerRequest): Promise<Customer> {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/customers/${id}`, customerData, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Customer not found');
+      }
+      throw new Error(error.response?.data?.error || 'Failed to update customer');
+    }
+  }
+
+  async deleteCustomer(id: number): Promise<void> {
+    try {
+      await axios.delete(`${API_BASE_URL}/api/customers/${id}`, {
+        headers: this.getAuthHeaders(),
+      });
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        throw new Error('Customer not found');
+      }
+      throw new Error(error.response?.data?.error || 'Failed to delete customer');
+    }
+  }
+
+  async searchCustomers(query: string): Promise<Customer[]> {
+    try {
+      // For now, we'll fetch all customers and filter client-side
+      // This can be optimized later with backend search
+      const allCustomers = await this.getAllCustomers();
+      
+      if (!query.trim()) {
+        return allCustomers;
+      }
+
+      const searchTerm = query.toLowerCase();
+      return allCustomers.filter(customer => 
+        customer.name.toLowerCase().includes(searchTerm) ||
+        customer.email?.toLowerCase().includes(searchTerm) ||
+        customer.city?.toLowerCase().includes(searchTerm) ||
+        customer.state?.toLowerCase().includes(searchTerm)
+      );
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to search customers');
+    }
+  }
+}
+
+const customerService = new CustomerService();
+export default customerService;

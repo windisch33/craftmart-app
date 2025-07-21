@@ -1,52 +1,125 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import customerService from '../services/customerService';
+import type { Customer, CreateCustomerRequest } from '../services/customerService';
+import CustomerForm from '../components/customers/CustomerForm';
 import './Customers.css';
 import '../styles/common.css';
 
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Form state
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
-  // Sample customer data
-  const customers = [
-    {
-      id: 1,
-      name: "Johnson Construction",
-      email: "info@johnsonconstruction.com",
-      phone: "(555) 123-4567",
-      city: "Seattle",
-      state: "WA",
-      activeJobs: 2,
-      totalValue: "$24,500",
-      status: "active"
-    },
-    {
-      id: 2,
-      name: "Heritage Homes LLC",
-      email: "contact@heritagehomes.com",
-      phone: "(555) 987-6543",
-      city: "Portland",
-      state: "OR",
-      activeJobs: 1,
-      totalValue: "$18,200",
-      status: "active"
-    },
-    {
-      id: 3,
-      name: "Modern Living Inc",
-      email: "hello@modernliving.com",
-      phone: "(555) 456-7890",
-      city: "Vancouver",
-      state: "WA",
-      activeJobs: 0,
-      totalValue: "$8,750",
-      status: "inactive"
+  // Load customers on component mount
+  useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  const loadCustomers = async () => {
+    try {
+      setError(null);
+      const customerData = await customerService.getAllCustomers();
+      setCustomers(customerData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load customers');
+      console.error('Error loading customers:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadCustomers();
+    setIsRefreshing(false);
+  };
 
+  const handleSearch = async (query: string) => {
+    setSearchTerm(query);
+    if (!query.trim()) {
+      await loadCustomers();
+      return;
+    }
+
+    try {
+      setError(null);
+      const searchResults = await customerService.searchCustomers(query);
+      setCustomers(searchResults);
+    } catch (err: any) {
+      setError(err.message || 'Search failed');
+    }
+  };
+
+  const handleDeleteCustomer = async (customerId: number) => {
+    if (!confirm('Are you sure you want to delete this customer?')) {
+      return;
+    }
+
+    try {
+      setError(null);
+      await customerService.deleteCustomer(customerId);
+      // Remove the deleted customer from the local state
+      setCustomers(customers.filter(customer => customer.id !== customerId));
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete customer');
+    }
+  };
+
+  const handleAddCustomer = () => {
+    setEditingCustomer(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditingCustomer(null);
+  };
+
+  const handleSaveCustomer = async (customerData: CreateCustomerRequest) => {
+    if (editingCustomer) {
+      // Update existing customer
+      const updatedCustomer = await customerService.updateCustomer(editingCustomer.id, customerData);
+      setCustomers(customers.map(c => 
+        c.id === editingCustomer.id ? updatedCustomer : c
+      ));
+    } else {
+      // Create new customer
+      const newCustomer = await customerService.createCustomer(customerData);
+      setCustomers([newCustomer, ...customers]);
+    }
+  };
+
+  const formatPhoneNumber = (phone?: string) => {
+    if (!phone) return 'N/A';
+    return phone;
+  };
+
+  const getCustomerDisplayLocation = (customer: Customer) => {
+    const parts = [customer.city, customer.state].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'Location not specified';
+  };
+
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading customers...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
@@ -56,10 +129,19 @@ const Customers: React.FC = () => {
           <h1 className="gradient-title">Customers</h1>
           <p className="customers-subtitle">Manage your client relationships</p>
         </div>
-        <button className="btn btn-primary">
-          <span style={{fontSize: '20px'}}>👤</span>
-          Add Customer
-        </button>
+        <div className="flex gap-3">
+          <button 
+            className="btn btn-secondary"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? '🔄' : '↻'} Refresh
+          </button>
+          <button className="btn btn-primary" onClick={handleAddCustomer}>
+            <span>👤</span>
+            Add Customer
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -69,9 +151,9 @@ const Customers: React.FC = () => {
             <div className="search-icon">🔍</div>
             <input
               type="text"
-              placeholder="Search customers by name or email..."
+              placeholder="Search customers by name, email, city, or state..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className="search-input"
             />
           </div>
@@ -82,111 +164,110 @@ const Customers: React.FC = () => {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
+            <span>⚠️</span>
+            {error}
+          </div>
+        </div>
+      )}
+
       {/* Customer Grid */}
       <div className="customers-grid">
-        {filteredCustomers.map((customer) => (
+        {customers.map((customer) => (
           <div key={customer.id} className="customer-card">
             {/* Customer Header */}
             <div className="customer-header">
-              <div className="flex items-center gap-3">
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px'
-                }}>
-                  👤
-                </div>
-                <div className="customer-info">
-                  <h3 className="customer-name">{customer.name}</h3>
-                  <p className="customer-location">{customer.city}, {customer.state}</p>
-                </div>
+              <div className="customer-info">
+                <h3 className="customer-name">{customer.name}</h3>
+                <p className="customer-location">{getCustomerDisplayLocation(customer)}</p>
               </div>
-              <div className={`badge customer-status-badge ${
-                customer.status === 'active' ? 'badge-success' : 'badge-gray'
-              }`}>
-                {customer.status}
+              <div className="customer-status-badge">
+                <span className="badge badge-success">Active</span>
               </div>
             </div>
 
-            {/* Contact Info */}
+            {/* Contact Information */}
             <div className="customer-contact">
-              <div className="contact-item">
-                <span className="contact-icon">📧</span>
-                <span>{customer.email}</span>
+              {customer.email && (
+                <div className="contact-item">
+                  <span className="contact-icon">📧</span>
+                  <span>{customer.email}</span>
+                </div>
+              )}
+              {customer.phone && (
+                <div className="contact-item">
+                  <span className="contact-icon">📞</span>
+                  <span>{formatPhoneNumber(customer.phone)}</span>
+                </div>
+              )}
+              {customer.mobile && (
+                <div className="contact-item">
+                  <span className="contact-icon">📱</span>
+                  <span>{formatPhoneNumber(customer.mobile)}</span>
+                </div>
+              )}
+              {customer.address && (
+                <div className="contact-item">
+                  <span className="contact-icon">📍</span>
+                  <span>{customer.address}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Customer Stats - Placeholder for now */}
+            <div className="customer-stats">
+              <div className="stat-item">
+                <p className="stat-value">-</p>
+                <p className="stat-label">Active Jobs</p>
               </div>
-              <div className="contact-item" style={{marginBottom: '0'}}>
-                <span className="contact-icon">📞</span>
-                <span>{customer.phone}</span>
+              <div className="stat-item">
+                <p className="stat-value">-</p>
+                <p className="stat-label">Total Value</p>
+              </div>
+              <div className="stat-item">
+                <p className="stat-value">{new Date(customer.created_at).getFullYear()}</p>
+                <p className="stat-label">Customer Since</p>
               </div>
             </div>
 
-            {/* Stats */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '16px',
-              padding: '16px',
-              backgroundColor: '#f8fafc',
-              borderRadius: '12px',
-              marginBottom: '16px'
-            }}>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937'}}>{customer.activeJobs}</div>
-                <div style={{fontSize: '12px', color: '#6b7280'}}>Active Jobs</div>
-              </div>
-              <div style={{textAlign: 'center'}}>
-                <div style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937'}}>{customer.totalValue}</div>
-                <div style={{fontSize: '12px', color: '#6b7280'}}>Total Value</div>
-              </div>
+            {/* Customer Actions */}
+            <div className="customer-actions">
+              <button className="action-btn">
+                👁️ View
+              </button>
+              <button 
+                className="action-btn"
+                onClick={() => handleEditCustomer(customer)}
+              >
+                ✏️ Edit
+              </button>
+              <button 
+                className="action-btn"
+                onClick={() => handleDeleteCustomer(customer.id)}
+                style={{color: '#dc2626'}}
+              >
+                🗑️ Delete
+              </button>
             </div>
 
-            {/* Actions */}
-            <div style={{display: 'flex', gap: '8px'}}>
-              <button style={{
-                flex: 1,
-                padding: '10px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}>
-                View Details
-              </button>
-              <button style={{
-                flex: 1,
-                padding: '10px 16px',
-                backgroundColor: 'white',
-                color: '#374151',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }} onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#3b82f6';
-                e.currentTarget.style.backgroundColor = '#f8fafc';
-              }} onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e5e7eb';
-                e.currentTarget.style.backgroundColor = 'white';
-              }}>
-                New Quote
-              </button>
-            </div>
+            {/* Notes Preview */}
+            {customer.notes && (
+              <div style={{marginTop: '16px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px', borderLeft: '3px solid #e5e7eb'}}>
+                <p style={{fontSize: '12px', color: '#6b7280', margin: '0 0 4px 0', fontWeight: '500'}}>Notes:</p>
+                <p style={{fontSize: '14px', color: '#374151', margin: 0, lineHeight: '1.4'}}>
+                  {customer.notes.length > 100 ? `${customer.notes.substring(0, 100)}...` : customer.notes}
+                </p>
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       {/* Empty State */}
-      {filteredCustomers.length === 0 && (
+      {customers.length === 0 && !loading && (
         <div className="empty-customers">
           <div className="empty-icon">
             👤
@@ -199,12 +280,20 @@ const Customers: React.FC = () => {
               ? 'Try adjusting your search criteria' 
               : 'Get started by adding your first customer'}
           </p>
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleAddCustomer}>
             <span>👤</span>
             Add Customer
           </button>
         </div>
       )}
+
+      {/* Customer Form Modal */}
+      <CustomerForm
+        customer={editingCustomer}
+        isOpen={isFormOpen}
+        onClose={handleCloseForm}
+        onSave={handleSaveCustomer}
+      />
     </div>
   );
 };
