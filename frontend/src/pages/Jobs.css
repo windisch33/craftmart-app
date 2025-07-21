@@ -1,0 +1,258 @@
+/* Jobs page specific styles */
+
+.jobs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+
+.jobs-subtitle {
+  color: #6b7280;
+  font-size: 20px;
+}
+
+.jobs-controls {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.job-card {
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f3f4f6;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.job-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 60px -15px rgba(0, 0, 0, 0.3);
+}
+
+.job-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.job-info {
+  flex: 1;
+}
+
+.job-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.job-customer {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+}
+
+.job-date {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.job-status {
+  flex-shrink: 0;
+}
+
+.status-quote {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-order {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-invoice {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.job-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.job-pricing {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pricing-stage {
+  text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f9fafb;
+}
+
+.pricing-stage.active {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.pricing-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.pricing-amount {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.pricing-amount.empty {
+  color: #d1d5db;
+}
+
+.pricing-amount.empty::before {
+  content: "—";
+}
+
+.job-progress {
+  margin-bottom: 20px;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.progress-bar {
+  height: 6px;
+  background-color: #f3f4f6;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-quote {
+  width: 33%;
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.progress-order {
+  width: 66%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.progress-invoice {
+  width: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.job-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.stage-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: white;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stage-btn:hover {
+  background-color: #f9fafb;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.stage-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stage-btn:disabled:hover {
+  background-color: white;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.stage-btn.current {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.empty-jobs {
+  text-align: center;
+  padding: 96px 24px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 2px;
+  background-color: #f3f4f6;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.filter-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280;
+}
+
+.filter-tab.active {
+  background-color: white;
+  color: #3b82f6;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.filter-tab:hover:not(.active) {
+  color: #374151;
+}

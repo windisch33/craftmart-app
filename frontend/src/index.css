@@ -1,0 +1,46 @@
+/* Import common styles */
+@import './styles/common.css';
+
+/* Global CSS Reset and Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
+  min-height: 100vh;
+}
+
+/* Remove default margins and paddings from headings */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+/* Remove default margins from paragraphs */
+p {
+  margin: 0;
+}
+
+/* Remove default list styling */
+ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+/* Focus outline for accessibility */
+*:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
