@@ -21,6 +21,12 @@ const Sidebar: React.FC = () => {
       ariaLabel: 'Navigate to Customers page'
     },
     { 
+      name: 'Products', 
+      path: '/products', 
+      icon: '🔧',
+      ariaLabel: 'Navigate to Products page'
+    },
+    { 
       name: 'Jobs', 
       path: '/jobs', 
       icon: '📋',

@@ -6,6 +6,7 @@ import Sidebar from './components/common/Sidebar';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
+import Products from './pages/Products';
 import Jobs from './pages/Jobs';
 import Shops from './pages/Shops';
 import Reports from './pages/Reports';
@@ -29,6 +30,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/customers" element={<Customers />} />
+                      <Route path="/products" element={<Products />} />
                       <Route path="/jobs" element={<Jobs />} />
                       <Route path="/shops" element={<Shops />} />
                       <Route path="/reports" element={<Reports />} />

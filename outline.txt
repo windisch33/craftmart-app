@@ -26,6 +26,12 @@ Shops
 Reports
 	this will generate various sales and tax reports
 
+Products
+	
+	this will be how we add and edit products
+	there will be many different types of products	
+	example - handrails, balusters, newels...
+
 
 This should be easy to backup and move to a different server if needed. Initial development will be in wsl then will probably be moved to an ubuntu vm.
 
