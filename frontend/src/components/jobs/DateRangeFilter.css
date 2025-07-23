@@ -1,0 +1,378 @@
+/* DateRangeFilter Component Styles */
+
+.date-range-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.date-range-filter.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Section Labels */
+.section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Date Type Selection */
+.date-type-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-type-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: all 0.2s ease;
+}
+
+.radio-item:hover {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.radio-item input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.radio-item input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.radio-label {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.radio-item:hover .radio-label {
+  color: #1f2937;
+}
+
+.radio-item input[type="radio"]:checked + .radio-label {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.radio-item input[type="radio"]:disabled + .radio-label {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Date Range Inputs */
+.date-inputs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.date-input:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.date-input:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+.date-input:disabled::-webkit-calendar-picker-indicator {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* Preset Buttons */
+.preset-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preset-btn {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.preset-btn:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.preset-btn:active {
+  transform: translateY(0);
+}
+
+.preset-btn:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Active Filter Display */
+.active-filter-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  gap: 8px;
+}
+
+.active-range-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.range-icon {
+  font-size: 16px;
+}
+
+.range-text {
+  font-size: 14px;
+  color: #1e40af;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.range-type {
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.clear-range-btn {
+  background: none;
+  border: none;
+  color: #1e40af;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.clear-range-btn:hover {
+  background: #1e40af;
+  color: white;
+}
+
+.clear-range-btn:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Instructions */
+.filter-instructions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.instruction-icon {
+  font-size: 14px;
+}
+
+.instruction-text {
+  flex: 1;
+}
+
+/* Loading State */
+.date-range-filter.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 1;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .date-range-filter {
+    gap: 12px;
+  }
+  
+  .date-type-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .radio-item {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .radio-item:hover {
+    background: #f1f5f9;
+  }
+  
+  .date-inputs-section {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .date-input-group {
+    flex: 1;
+  }
+  
+  .preset-buttons {
+    justify-content: center;
+  }
+  
+  .active-filter-display {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .active-range-info {
+    justify-content: center;
+  }
+  
+  .clear-range-btn {
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-type-options {
+    flex-direction: column;
+  }
+  
+  .radio-item {
+    min-width: unset;
+    justify-content: flex-start;
+  }
+  
+  .date-inputs-section {
+    flex-direction: column;
+  }
+  
+  .preset-buttons {
+    flex-direction: column;
+  }
+  
+  .preset-btn {
+    text-align: center;
+  }
+  
+  .range-text {
+    font-size: 13px;
+    text-align: center;
+  }
+}

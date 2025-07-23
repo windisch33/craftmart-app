@@ -1,0 +1,231 @@
+/* PDF Preview Modal Overlay */
+.pdf-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+/* PDF Preview Modal */
+.pdf-preview-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 1200px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+/* PDF Preview Header */
+.pdf-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.pdf-preview-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.pdf-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Action Buttons */
+.pdf-action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.pdf-action-button .icon {
+  font-size: 18px;
+}
+
+.pdf-action-button.download {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.pdf-action-button.download:hover:not(:disabled) {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.pdf-action-button.print {
+  background-color: #10b981;
+  color: white;
+}
+
+.pdf-action-button.print:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.pdf-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Close Button */
+.pdf-preview-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+}
+
+.pdf-preview-close:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+/* PDF Content Area */
+.pdf-preview-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  position: relative;
+  overflow: hidden;
+}
+
+/* PDF iframe */
+.pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+/* Loading State */
+.pdf-loading {
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+.pdf-loading p {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Error State */
+.pdf-error {
+  text-align: center;
+  padding: 40px;
+}
+
+.pdf-error .error-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.pdf-error p {
+  color: #dc2626;
+  font-size: 16px;
+  margin: 0 0 24px 0;
+}
+
+.retry-button {
+  padding: 10px 24px;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .pdf-preview-modal {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    border-radius: 0;
+  }
+
+  .pdf-preview-overlay {
+    padding: 0;
+  }
+
+  .pdf-preview-header {
+    padding: 16px;
+  }
+
+  .pdf-preview-header h2 {
+    font-size: 18px;
+  }
+
+  .pdf-action-button {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .pdf-action-button .icon {
+    font-size: 16px;
+  }
+}
