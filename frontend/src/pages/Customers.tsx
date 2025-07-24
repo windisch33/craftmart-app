@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import customerService from '../services/customerService';
 import type { Customer, CreateCustomerRequest } from '../services/customerService';
 import CustomerForm from '../components/customers/CustomerForm';
+import { SelectableList } from '../components/common/SelectableList';
 import './Customers.css';
 import '../styles/common.css';
 
@@ -56,18 +57,18 @@ const Customers: React.FC = () => {
     }
   };
 
-  const handleDeleteCustomer = async (customerId: number) => {
-    if (!confirm('Are you sure you want to delete this customer?')) {
-      return;
-    }
-
+  const handleDeleteCustomers = async (customersToDelete: Customer[]) => {
     try {
       setError(null);
-      await customerService.deleteCustomer(customerId);
-      // Remove the deleted customer from the local state
-      setCustomers(customers.filter(customer => customer.id !== customerId));
+      // Delete all selected customers
+      await Promise.all(
+        customersToDelete.map(customer => customerService.deleteCustomer(customer.id))
+      );
+      // Remove deleted customers from local state
+      const deletedIds = customersToDelete.map(c => c.id);
+      setCustomers(customers.filter(customer => !deletedIds.includes(customer.id)));
     } catch (err: any) {
-      setError(err.message || 'Failed to delete customer');
+      setError(err.message || 'Failed to delete customers');
     }
   };
 
@@ -100,15 +101,39 @@ const Customers: React.FC = () => {
     }
   };
 
-  const formatPhoneNumber = (phone?: string) => {
-    if (!phone) return 'N/A';
-    return phone;
+  const handleBulkAction = (action: string, selectedCustomers: Customer[]) => {
+    switch (action) {
+      case 'export':
+        // Export selected customers to CSV
+        const csvContent = [
+          ['Customer Name'],
+          ...selectedCustomers.map(c => [c.name])
+        ].map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'customers.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        break;
+    }
   };
 
-  const getCustomerDisplayLocation = (customer: Customer) => {
-    const parts = [customer.city, customer.state].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : 'Location not specified';
-  };
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Customer Name',
+      width: '100%',
+      render: (customer: Customer) => (
+        <div style={{ fontWeight: 600, fontSize: '16px' }}>
+          {customer.name}
+        </div>
+      )
+    }
+  ];
 
   if (loading) {
     return (
@@ -124,10 +149,10 @@ const Customers: React.FC = () => {
   return (
     <div className="container">
       {/* Header */}
-      <div className="customers-header">
-        <div className="customers-title-section">
+      <div className="page-header">
+        <div className="page-title-section">
           <h1 className="gradient-title">Customers</h1>
-          <p className="customers-subtitle">Manage your client relationships</p>
+          <p className="page-subtitle">Manage your client relationships</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -151,15 +176,11 @@ const Customers: React.FC = () => {
             <div className="search-icon">🔍</div>
             <input
               type="text"
-              placeholder="Search customers by name, email, city, or state..."
+              placeholder="Search customers by name..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
               className="search-input"
             />
-          </div>
-          <div className="flex gap-3">
-            <button className="btn btn-secondary">Filter</button>
-            <button className="btn btn-secondary">Export</button>
           </div>
         </div>
       </div>
@@ -174,118 +195,23 @@ const Customers: React.FC = () => {
         </div>
       )}
 
-      {/* Customer Grid */}
-      <div className="customers-grid">
-        {customers.map((customer) => (
-          <div key={customer.id} className="customer-card">
-            {/* Customer Header */}
-            <div className="customer-header">
-              <div className="customer-info">
-                <h3 className="customer-name">{customer.name}</h3>
-                <p className="customer-location">{getCustomerDisplayLocation(customer)}</p>
-              </div>
-              <div className="customer-status-badge">
-                <span className="badge badge-success">Active</span>
-              </div>
-            </div>
-
-            {/* Contact Information */}
-            <div className="customer-contact">
-              {customer.email && (
-                <div className="contact-item">
-                  <span className="contact-icon">📧</span>
-                  <span>{customer.email}</span>
-                </div>
-              )}
-              {customer.phone && (
-                <div className="contact-item">
-                  <span className="contact-icon">📞</span>
-                  <span>{formatPhoneNumber(customer.phone)}</span>
-                </div>
-              )}
-              {customer.mobile && (
-                <div className="contact-item">
-                  <span className="contact-icon">📱</span>
-                  <span>{formatPhoneNumber(customer.mobile)}</span>
-                </div>
-              )}
-              {customer.address && (
-                <div className="contact-item">
-                  <span className="contact-icon">📍</span>
-                  <span>{customer.address}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Customer Stats - Placeholder for now */}
-            <div className="customer-stats">
-              <div className="stat-item">
-                <p className="stat-value">-</p>
-                <p className="stat-label">Active Jobs</p>
-              </div>
-              <div className="stat-item">
-                <p className="stat-value">-</p>
-                <p className="stat-label">Total Value</p>
-              </div>
-              <div className="stat-item">
-                <p className="stat-value">{new Date(customer.created_at).getFullYear()}</p>
-                <p className="stat-label">Customer Since</p>
-              </div>
-            </div>
-
-            {/* Customer Actions */}
-            <div className="customer-actions">
-              <button className="action-btn">
-                👁️ View
-              </button>
-              <button 
-                className="action-btn"
-                onClick={() => handleEditCustomer(customer)}
-              >
-                ✏️ Edit
-              </button>
-              <button 
-                className="action-btn"
-                onClick={() => handleDeleteCustomer(customer.id)}
-                style={{color: '#dc2626'}}
-              >
-                🗑️ Delete
-              </button>
-            </div>
-
-            {/* Notes Preview */}
-            {customer.notes && (
-              <div style={{marginTop: '16px', padding: '12px', backgroundColor: '#f9fafb', borderRadius: '8px', borderLeft: '3px solid #e5e7eb'}}>
-                <p style={{fontSize: '12px', color: '#6b7280', margin: '0 0 4px 0', fontWeight: '500'}}>Notes:</p>
-                <p style={{fontSize: '14px', color: '#374151', margin: 0, lineHeight: '1.4'}}>
-                  {customer.notes.length > 100 ? `${customer.notes.substring(0, 100)}...` : customer.notes}
-                </p>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {customers.length === 0 && !loading && (
-        <div className="empty-customers">
-          <div className="empty-icon">
-            👤
-          </div>
-          <h3 className="empty-title">
-            {searchTerm ? 'No customers found' : 'No customers yet'}
-          </h3>
-          <p className="empty-desc">
-            {searchTerm 
-              ? 'Try adjusting your search criteria' 
-              : 'Get started by adding your first customer'}
-          </p>
-          <button className="btn btn-primary" onClick={handleAddCustomer}>
-            <span>👤</span>
-            Add Customer
-          </button>
-        </div>
-      )}
+      {/* Customer List */}
+      <SelectableList
+        items={customers}
+        columns={columns}
+        getItemId={(customer) => customer.id}
+        onEdit={handleEditCustomer}
+        onDelete={handleDeleteCustomers}
+        onBulkAction={handleBulkAction}
+        bulkActions={[
+          { label: 'Export', action: 'export', icon: '📥' }
+        ]}
+        emptyMessage={
+          searchTerm 
+            ? 'No customers found. Try adjusting your search criteria.' 
+            : 'No customers yet. Get started by adding your first customer.'
+        }
+      />
 
       {/* Customer Form Modal */}
       <CustomerForm

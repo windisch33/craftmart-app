@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../styles/common.css';
 import './Shops.css';
 
 const Shops: React.FC = () => {
@@ -50,11 +51,6 @@ const Shops: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const containerStyle = {
-    maxWidth: '1280px',
-    margin: '0 auto',
-    padding: '32px'
-  };
 
   const cardStyle = {
     backgroundColor: 'white',
@@ -65,27 +61,7 @@ const Shops: React.FC = () => {
     transition: 'all 0.3s ease'
   };
 
-  const gradientTitleStyle = {
-    fontSize: '3rem',
-    fontWeight: 'bold',
-    background: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    marginBottom: '8px'
-  };
 
-  const buttonStyle = {
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    border: 'none',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.39)',
-    transition: 'all 0.2s ease'
-  };
 
   const inputStyle = {
     width: '100%',
@@ -111,22 +87,16 @@ const Shops: React.FC = () => {
   };
 
   return (
-    <div style={containerStyle}>
+    <div className="container">
       {/* Header */}
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px'}}>
-        <div>
-          <h1 style={gradientTitleStyle}>Shops</h1>
-          <p style={{color: '#6b7280', fontSize: '20px', margin: 0}}>Manage production floor and cut sheets</p>
+      <div className="page-header">
+        <div className="page-title-section">
+          <h1 className="gradient-title">Shops</h1>
+          <p className="page-subtitle">Manage production floor and cut sheets</p>
         </div>
-        <button 
-          style={buttonStyle}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
-        >
-          <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <span style={{fontSize: '20px'}}>🏭</span>
-            Create Shop
-          </span>
+        <button className="btn btn-primary">
+          <span style={{fontSize: '20px'}}>🏭</span>
+          Create Shop
         </button>
       </div>
 
@@ -388,11 +358,9 @@ const Shops: React.FC = () => {
               ? 'Try adjusting your search criteria or filters' 
               : 'Get started by creating your first shop from an order'}
           </p>
-          <button style={buttonStyle}>
-            <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span style={{fontSize: '20px'}}>🏭</span>
-              Create Shop
-            </span>
+          <button className="btn btn-primary">
+            <span style={{fontSize: '20px'}}>🏭</span>
+            Create Shop
           </button>
         </div>
       )}

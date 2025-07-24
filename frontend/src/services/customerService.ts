@@ -121,10 +121,7 @@ class CustomerService {
 
       const searchTerm = query.toLowerCase();
       return allCustomers.filter(customer => 
-        customer.name.toLowerCase().includes(searchTerm) ||
-        customer.email?.toLowerCase().includes(searchTerm) ||
-        customer.city?.toLowerCase().includes(searchTerm) ||
-        customer.state?.toLowerCase().includes(searchTerm)
+        customer.name.toLowerCase().includes(searchTerm)
       );
     } catch (error: any) {
       throw new Error(error.message || 'Failed to search customers');

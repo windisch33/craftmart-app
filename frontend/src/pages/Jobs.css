@@ -1,481 +1,216 @@
-/* Jobs page specific styles */
+/* Jobs page specific styles - uses common.css for shared styles */
 
-.jobs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 48px;
-}
-
-.jobs-subtitle {
-  color: #6b7280;
-  font-size: 20px;
-}
-
-.jobs-controls {
-  display: flex;
-  gap: 16px;
+/* Loading and Error States */
+.loading-state,
+.error-state {
+  background: white;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f3f4f6;
   margin-bottom: 24px;
 }
 
-.jobs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
 }
 
-.job-card {
-  background-color: white;
+.error-state {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.error-icon {
+  width: 64px;
+  height: 64px;
+  background: #fee2e2;
   border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04);
-  border: 1px solid #f3f4f6;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.job-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 60px -15px rgba(0, 0, 0, 0.3);
-}
-
-.job-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
 }
 
-.job-info {
-  flex: 1;
-}
-
-.job-title {
+.error-state h3 {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: bold;
+  color: #dc2626;
+  margin-bottom: 8px;
+}
+
+.error-state p {
+  color: #991b1b;
+  margin-bottom: 24px;
+}
+
+/* Job Actions in List */
+.job-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.row-action-button.view {
+  border-color: #10b981;
+}
+
+.row-action-button.view:hover {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.row-action-button.pdf {
+  border-color: #3b82f6;
+}
+
+.row-action-button.pdf:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.row-action-button.next-stage {
+  border-color: #f59e0b;
+}
+
+.row-action-button.next-stage:hover {
+  background: #f59e0b;
+  border-color: #f59e0b;
+}
+
+/* Job-specific modal styles */
+.modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.confirmation-modal {
+  text-align: center;
+}
+
+.confirmation-icon {
+  width: 64px;
+  height: 64px;
+  background: #fef3c7;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 24px;
+}
+
+.confirmation-modal h3 {
+  font-size: 20px;
+  font-weight: bold;
   color: #1f2937;
-  margin: 0 0 4px 0;
+  margin-bottom: 12px;
 }
 
-.job-customer {
-  font-size: 14px;
+.confirmation-modal p {
   color: #6b7280;
-  margin: 0 0 8px 0;
-}
-
-.job-date {
-  font-size: 12px;
-  color: #9ca3af;
-  margin: 0;
-}
-
-.job-status {
-  flex-shrink: 0;
-}
-
-.status-quote {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.status-order {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-
-.status-invoice {
-  background-color: #d1fae5;
-  color: #065f46;
-}
-
-.job-description {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   line-height: 1.5;
 }
 
-.job-pricing {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.pricing-stage {
-  text-align: center;
-  padding: 12px;
-  border-radius: 8px;
-  background-color: #f9fafb;
-}
-
-.pricing-stage.active {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-}
-
-.pricing-label {
-  font-size: 12px;
-  color: #6b7280;
-  margin: 0 0 4px 0;
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-
-.pricing-amount {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.pricing-amount.empty {
-  color: #d1d5db;
-}
-
-.pricing-amount.empty::before {
-  content: "—";
-}
-
-.job-progress {
-  margin-bottom: 20px;
-}
-
-.progress-label {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-
-.progress-bar {
-  height: 6px;
-  background-color: #f3f4f6;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.progress-quote {
-  width: 33%;
-  background: linear-gradient(90deg, #f59e0b, #d97706);
-}
-
-.progress-order {
-  width: 66%;
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
-}
-
-.progress-invoice {
-  width: 100%;
-  background: linear-gradient(90deg, #10b981, #059669);
-}
-
-.job-actions {
+.modal-actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  justify-content: center;
 }
 
-.stage-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background-color: white;
-  color: #374151;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Animations */
+@keyframes spin {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
 }
 
-.stage-btn:hover {
-  background-color: #f9fafb;
-  border-color: #3b82f6;
-  color: #3b82f6;
-}
-
-.stage-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.stage-btn:disabled:hover {
-  background-color: white;
-  border-color: #e5e7eb;
-  color: #374151;
-}
-
-.stage-btn.current {
-  background-color: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
-}
-
-.empty-jobs {
-  text-align: center;
-  padding: 96px 24px;
-}
-
-.filter-tabs {
-  display: flex;
-  gap: 2px;
-  background-color: #f3f4f6;
-  border-radius: 12px;
-  padding: 4px;
-  margin-bottom: 24px;
-}
-
-.filter-tab {
-  flex: 1;
-  padding: 8px 16px;
-  border: none;
-  background: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #6b7280;
-}
-
-.filter-tab.active {
-  background-color: white;
-  color: #3b82f6;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.filter-tab:hover:not(.active) {
-  color: #374151;
-}
-
-/* Mobile Styles */
+/* Job-specific mobile styles */
 @media (max-width: 768px) {
-  .jobs-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 24px;
-    margin-bottom: 32px;
+
+  .loading-state,
+  .error-state {
+    padding: 32px 16px;
   }
 
-  .jobs-subtitle {
-    font-size: 18px;
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
   }
 
-  .jobs-controls {
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    margin-bottom: 20px;
+  .error-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
   }
 
-  .filter-tabs {
-    flex-direction: column;
-    gap: 4px;
-    padding: 6px;
-    margin-bottom: 20px;
-  }
-
-  .filter-tab {
-    padding: 12px 16px;
-    font-size: 15px;
-    min-height: 44px;
-    text-align: center;
-  }
-
-  .jobs-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .job-card {
-    padding: 20px;
-  }
-
-  .job-header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .job-status {
-    align-self: flex-start;
-  }
-
-  .job-title {
+  .error-state h3 {
     font-size: 16px;
   }
 
-  .job-customer {
-    font-size: 13px;
-  }
-
-  .job-date {
-    font-size: 11px;
-  }
-
-  .job-description {
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-
-  .job-pricing {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .pricing-stage {
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
-  }
-
-  .pricing-label {
-    font-size: 11px;
-    margin: 0;
-  }
-
-  .pricing-amount {
-    font-size: 15px;
-  }
-
-  .job-progress {
-    margin-bottom: 16px;
-  }
-
-  .progress-label {
-    font-size: 11px;
-    margin-bottom: 6px;
-  }
-
-  .progress-bar {
-    height: 8px;
-  }
-
   .job-actions {
-    gap: 6px;
-    flex-direction: column;
+    opacity: 1; /* Always show on mobile */
   }
 
-  .stage-btn {
-    padding: 12px 16px;
-    font-size: 14px;
+  .modal {
+    width: calc(100% - 32px);
+    padding: 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .confirmation-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .confirmation-modal h3 {
+    font-size: 18px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-actions button {
+    width: 100%;
+    padding: 14px;
     min-height: 44px;
-    text-align: center;
-  }
-
-  .empty-jobs {
-    padding: 64px 20px;
   }
 }
 
 @media (max-width: 480px) {
-  .jobs-header {
-    margin-bottom: 24px;
-    gap: 16px;
+
+  .loading-state,
+  .error-state {
+    padding: 24px 12px;
   }
 
-  .jobs-subtitle {
+  .modal {
+    width: calc(100% - 24px);
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  .confirmation-modal h3 {
     font-size: 16px;
   }
 
-  .jobs-controls {
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
-  .filter-tabs {
-    gap: 3px;
-    padding: 4px;
-    margin-bottom: 16px;
-  }
-
-  .filter-tab {
-    padding: 10px 12px;
+  .confirmation-modal p {
     font-size: 14px;
-  }
-
-  .jobs-grid {
-    gap: 12px;
-  }
-
-  .job-card {
-    padding: 16px;
-  }
-
-  .job-header {
-    gap: 8px;
-  }
-
-  .job-title {
-    font-size: 15px;
-  }
-
-  .job-customer {
-    font-size: 12px;
-  }
-
-  .job-date {
-    font-size: 10px;
-  }
-
-  .job-description {
-    font-size: 12px;
-    margin-bottom: 12px;
-  }
-
-  .job-pricing {
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .pricing-stage {
-    padding: 10px 12px;
-  }
-
-  .pricing-label {
-    font-size: 10px;
-  }
-
-  .pricing-amount {
-    font-size: 14px;
-  }
-
-  .job-progress {
-    margin-bottom: 12px;
-  }
-
-  .progress-label {
-    font-size: 10px;
-    margin-bottom: 4px;
-  }
-
-  .progress-bar {
-    height: 6px;
-  }
-
-  .job-actions {
-    gap: 8px;
-  }
-
-  .stage-btn {
-    padding: 10px 12px;
-    font-size: 13px;
-    min-height: 44px;
-  }
-
-  .empty-jobs {
-    padding: 48px 16px;
   }
 }

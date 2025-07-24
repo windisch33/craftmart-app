@@ -34,7 +34,7 @@ router.get('/test-bcrypt', async (req, res) => {
     });
   } catch (error) {
     console.error('Bcryptjs test error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 

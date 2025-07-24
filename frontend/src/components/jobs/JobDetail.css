@@ -466,14 +466,6 @@
   background: #f9fafb;
 }
 
-.footer-btn.primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.footer-btn.primary:hover {
-  background: #2563eb;
-}
 
 /* Responsive Design */
 @media (max-width: 768px) {

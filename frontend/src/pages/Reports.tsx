@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
+import '../styles/common.css';
 import './Reports.css';
 
 const Reports: React.FC = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [reportType, setReportType] = useState('sales');
 
-  const containerStyle = {
-    maxWidth: '1280px',
-    margin: '0 auto',
-    padding: '32px'
-  };
 
   const cardStyle = {
     backgroundColor: 'white',
@@ -20,27 +16,7 @@ const Reports: React.FC = () => {
     transition: 'all 0.3s ease'
   };
 
-  const gradientTitleStyle = {
-    fontSize: '3rem',
-    fontWeight: 'bold',
-    background: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    marginBottom: '8px'
-  };
 
-  const buttonStyle = {
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    border: 'none',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.39)',
-    transition: 'all 0.2s ease'
-  };
 
   const inputStyle = {
     width: '100%',
@@ -81,11 +57,13 @@ const Reports: React.FC = () => {
   ];
 
   return (
-    <div style={containerStyle}>
+    <div className="container">
       {/* Header */}
-      <div style={{marginBottom: '32px'}}>
-        <h1 style={gradientTitleStyle}>Reports</h1>
-        <p style={{color: '#6b7280', fontSize: '20px', margin: 0}}>Generate sales and tax reports for accounting</p>
+      <div className="page-header">
+        <div className="page-title-section">
+          <h1 className="gradient-title">Reports</h1>
+          <p className="page-subtitle">Generate sales and tax reports for accounting</p>
+        </div>
       </div>
 
       {/* Report Generation Section */}
@@ -160,15 +138,9 @@ const Reports: React.FC = () => {
         </div>
 
         <div style={{display: 'flex', gap: '12px', marginTop: '24px'}}>
-          <button 
-            style={buttonStyle}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
-          >
-            <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span style={{fontSize: '18px'}}>📊</span>
-              Generate Report
-            </span>
+          <button className="btn btn-primary">
+            <span style={{fontSize: '18px'}}>📊</span>
+            Generate Report
           </button>
           <button style={{
             padding: '12px 24px',

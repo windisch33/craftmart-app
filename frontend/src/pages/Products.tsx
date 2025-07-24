@@ -3,6 +3,8 @@ import productService, { type Product } from '../services/productService';
 import materialService, { type Material } from '../services/materialService';
 import HandrailForm from '../components/products/HandrailForm';
 import MaterialForm from '../components/products/MaterialForm';
+import { SelectableList } from '../components/common/SelectableList';
+import '../styles/common.css';
 import './Products.css';
 
 const Products: React.FC = () => {
@@ -54,14 +56,14 @@ const Products: React.FC = () => {
     setShowHandrailForm(true);
   };
 
-  const handleDeleteHandrail = async (product: Product) => {
-    if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
-      try {
-        await productService.deleteProduct(product.id);
-        await loadData();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete product');
-      }
+  const handleDeleteHandrails = async (products: Product[]) => {
+    try {
+      await Promise.all(
+        products.map(product => productService.deleteProduct(product.id))
+      );
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete products');
     }
   };
 
@@ -75,14 +77,14 @@ const Products: React.FC = () => {
     setShowMaterialForm(true);
   };
 
-  const handleDeleteMaterial = async (material: Material) => {
-    if (window.confirm(`Are you sure you want to delete "${material.name}"?`)) {
-      try {
-        await materialService.deleteMaterial(material.id);
-        await loadData();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete material');
-      }
+  const handleDeleteMaterials = async (materials: Material[]) => {
+    try {
+      await Promise.all(
+        materials.map(material => materialService.deleteMaterial(material.id))
+      );
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete materials');
     }
   };
 
@@ -94,18 +96,40 @@ const Products: React.FC = () => {
     await loadData();
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+
+  const handrailColumns = [
+    {
+      key: 'name',
+      label: 'Product Name',
+      width: '100%',
+      render: (product: Product) => (
+        <div style={{ fontWeight: 600, fontSize: '16px' }}>
+          {product.name}
+        </div>
+      )
+    }
+  ];
+
+  const materialColumns = [
+    {
+      key: 'name',
+      label: 'Material Name',
+      width: '100%',
+      render: (material: Material) => (
+        <div style={{ fontWeight: 600, fontSize: '16px' }}>
+          {material.name}
+        </div>
+      )
+    }
+  ];
 
   return (
-    <div className="products-page">
+    <div className="container">
       <div className="page-header">
-        <h1 className="page-title">🔧 Products</h1>
-        <p className="page-subtitle">Manage handrail products and materials</p>
+        <div className="page-title-section">
+          <h1 className="gradient-title">🔧 Products</h1>
+          <p className="page-subtitle">Manage products and materials</p>
+        </div>
       </div>
 
       {error && (
@@ -146,58 +170,16 @@ const Products: React.FC = () => {
             </div>
 
             {loading ? (
-              <div className="loading-spinner">Loading hanrail products...</div>
+              <div className="loading-spinner">Loading handrail products...</div>
             ) : (
-              <div className="products-grid">
-                {handrailProducts.length === 0 ? (
-                  <div className="empty-state">
-                    <p>No handrail products found.</p>
-                    <button 
-                      className="btn btn-primary"
-                      onClick={handleCreateHandrail}
-                    >
-                      Create your first handrail product
-                    </button>
-                  </div>
-                ) : (
-                  handrailProducts.map((product) => (
-                    <div key={product.id} className="product-card">
-                      <div className="product-header">
-                        <h3 className="product-name">{product.name}</h3>
-                        <span className="product-type">Handrail</span>
-                      </div>
-                      <div className="product-details">
-                        <div className="product-detail">
-                          <span className="detail-label">Cost per 6":</span>
-                          <span className="detail-value">
-                            {formatCurrency(product.cost_per_6_inches || 0)}
-                          </span>
-                        </div>
-                        <div className="product-detail">
-                          <span className="detail-label">Labor/Install:</span>
-                          <span className="detail-value">
-                            {formatCurrency(product.labor_install_cost || 0)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="product-actions">
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => handleEditHandrail(product)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDeleteHandrail(product)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <SelectableList
+                items={handrailProducts}
+                columns={handrailColumns}
+                getItemId={(product) => product.id}
+                onEdit={handleEditHandrail}
+                onDelete={handleDeleteHandrails}
+                emptyMessage="No handrail products found. Create your first handrail product to get started."
+              />
             )}
           </div>
         )}
@@ -217,47 +199,14 @@ const Products: React.FC = () => {
             {loading ? (
               <div className="loading-spinner">Loading materials...</div>
             ) : (
-              <div className="materials-grid">
-                {materials.length === 0 ? (
-                  <div className="empty-state">
-                    <p>No materials found.</p>
-                    <button 
-                      className="btn btn-primary"
-                      onClick={handleCreateMaterial}
-                    >
-                      Create your first material
-                    </button>
-                  </div>
-                ) : (
-                  materials.map((material) => (
-                    <div key={material.id} className="material-card">
-                      <div className="material-header">
-                        <h3 className="material-name">{material.name}</h3>
-                        <span className="material-multiplier">
-                          {material.multiplier}x
-                        </span>
-                      </div>
-                      {material.description && (
-                        <p className="material-description">{material.description}</p>
-                      )}
-                      <div className="material-actions">
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => handleEditMaterial(material)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDeleteMaterial(material)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <SelectableList
+                items={materials}
+                columns={materialColumns}
+                getItemId={(material) => material.id}
+                onEdit={handleEditMaterial}
+                onDelete={handleDeleteMaterials}
+                emptyMessage="No materials found. Create your first material to get started."
+              />
             )}
           </div>
         )}

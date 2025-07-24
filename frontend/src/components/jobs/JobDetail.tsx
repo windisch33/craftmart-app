@@ -2,6 +2,7 @@ import React, { useState, useEffect, Component, ErrorInfo, ReactNode } from 'rea
 import jobService from '../../services/jobService';
 import type { JobWithDetails } from '../../services/jobService';
 import { formatCurrency } from '../../utils/jobCalculations';
+import '../../styles/common.css';
 import './JobDetail.css';
 
 interface JobDetailErrorBoundaryState {
@@ -335,10 +336,10 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
             </button>
             {isEditing && (
               <>
-                <button className="footer-btn secondary">
+                <button className="btn btn-secondary">
                   Cancel Changes
                 </button>
-                <button className="footer-btn primary">
+                <button className="btn btn-primary">
                   Save Changes
                 </button>
               </>

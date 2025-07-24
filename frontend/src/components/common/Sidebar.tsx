@@ -21,16 +21,16 @@ const Sidebar: React.FC = () => {
       ariaLabel: 'Navigate to Customers page'
     },
     { 
-      name: 'Products', 
-      path: '/products', 
-      icon: '🔧',
-      ariaLabel: 'Navigate to Products page'
-    },
-    { 
       name: 'Jobs', 
       path: '/jobs', 
       icon: '📋',
       ariaLabel: 'Navigate to Jobs page'
+    },
+    { 
+      name: 'Products', 
+      path: '/products', 
+      icon: '🔧',
+      ariaLabel: 'Navigate to Products page'
     },
     { 
       name: 'Shops', 
@@ -43,6 +43,12 @@ const Sidebar: React.FC = () => {
       path: '/reports', 
       icon: '📊',
       ariaLabel: 'Navigate to Reports page'
+    },
+    { 
+      name: 'Salesmen', 
+      path: '/salesmen', 
+      icon: '🤝',
+      ariaLabel: 'Navigate to Salesmen page'
     },
   ];
 

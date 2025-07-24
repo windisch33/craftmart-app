@@ -8,6 +8,8 @@ import JobPDFPreview from '../components/jobs/JobPDFPreview';
 import JobDetail from '../components/jobs/JobDetail';
 import AdvancedSearchBar, { type SearchCriteria } from '../components/jobs/AdvancedSearchBar';
 import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
+import { SelectableList } from '../components/common/SelectableList';
+import '../styles/common.css';
 import './Jobs.css';
 
 const Jobs: React.FC = () => {
@@ -148,34 +150,23 @@ const Jobs: React.FC = () => {
       
       await fetchData(); // Refresh the jobs list
       setShowJobForm(false);
-    } catch (error) {
-      console.error('Error creating job:', error);
-      // Show more detailed error information
-      let errorMessage = 'Failed to create job';
-      if (error instanceof Error) {
-        errorMessage += ': ' + error.message;
-      } else if (typeof error === 'object' && error !== null) {
-        errorMessage += ': ' + JSON.stringify(error);
-      }
-      alert(errorMessage);
+    } catch (err) {
+      console.error('Error creating job:', err);
+      setError('Failed to create job');
     } finally {
       setJobFormLoading(false);
     }
-  };
-
-  const handleViewPDF = (jobId: number, jobTitle: string) => {
-    setPdfPreview({ jobId, jobTitle });
   };
 
   const handleViewDetails = (jobId: number) => {
     setJobDetail({ jobId });
   };
 
+  const handleViewPDF = (jobId: number, jobTitle: string) => {
+    setPdfPreview({ jobId, jobTitle });
+  };
+
   const handleNextStage = (job: Job) => {
-    // Check if job can advance to next stage
-    if (job.status === 'invoice') return; // Already at final stage
-    
-    // Show confirmation modal
     setConfirmNextStage(job);
   };
 
@@ -183,66 +174,68 @@ const Jobs: React.FC = () => {
     if (!confirmNextStage) return;
 
     try {
-      let nextStatus: 'quote' | 'order' | 'invoice';
-      if (confirmNextStage.status === 'quote') nextStatus = 'order';
-      else if (confirmNextStage.status === 'order') nextStatus = 'invoice';
-      else return; // Already at final stage
-
-      await jobService.updateJob(confirmNextStage.id, { status: nextStatus });
+      const nextStatus = confirmNextStage.status === 'quote' ? 'order' : 
+                        confirmNextStage.status === 'order' ? 'invoice' : 'completed';
+      
+      await jobService.updateJob(confirmNextStage.id, {
+        status: nextStatus
+      });
+      
       await fetchData(); // Refresh the jobs list
-      setConfirmNextStage(null); // Close confirmation modal
-    } catch (error) {
-      console.error('Error updating job status:', error);
-      alert('Failed to update job status');
+      setConfirmNextStage(null);
+    } catch (err) {
+      console.error('Error updating job status:', err);
+      setError('Failed to update job status');
     }
   };
 
-  const containerStyle = {
-    maxWidth: '1280px',
-    margin: '0 auto',
-    padding: '32px'
+  const handleBulkAction = (action: string, selectedJobs: Job[]) => {
+    switch (action) {
+      case 'export':
+        // Export selected jobs to CSV
+        const csvContent = [
+          ['Job Number', 'Title', 'Customer', 'Status', 'Created Date', 'Delivery Date'],
+          ...selectedJobs.map(job => [
+            getJobNumber(job),
+            job.title,
+            job.customer_name,
+            job.status,
+            new Date(job.created_at).toLocaleDateString(),
+            job.delivery_date ? new Date(job.delivery_date).toLocaleDateString() : 'Not set'
+          ])
+        ].map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jobs.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        break;
+        
+      case 'bulk_next_stage':
+        // Bulk status progression for jobs that can advance
+        const eligibleJobs = selectedJobs.filter(job => job.status !== 'invoice');
+        if (eligibleJobs.length > 0) {
+          if (window.confirm(`Advance ${eligibleJobs.length} job(s) to the next stage?`)) {
+            Promise.all(
+              eligibleJobs.map(job => {
+                const nextStatus = job.status === 'quote' ? 'order' : 'invoice';
+                return jobService.updateJob(job.id, { status: nextStatus });
+              })
+            ).then(() => {
+              fetchData();
+            }).catch(err => {
+              console.error('Error updating job statuses:', err);
+              setError('Failed to update job statuses');
+            });
+          }
+        }
+        break;
+    }
   };
 
-  const cardStyle = {
-    backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04)',
-    border: '1px solid #f3f4f6',
-    transition: 'all 0.3s ease'
-  };
-
-  const gradientTitleStyle = {
-    fontSize: '3rem',
-    fontWeight: 'bold',
-    background: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    marginBottom: '8px'
-  };
-
-  const buttonStyle = {
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    padding: '12px 24px',
-    borderRadius: '12px',
-    border: 'none',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.39)',
-    transition: 'all 0.2s ease'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    fontSize: '16px',
-    transition: 'all 0.2s ease',
-    outline: 'none'
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -258,29 +251,161 @@ const Jobs: React.FC = () => {
   };
 
   const getJobNumber = (job: Job) => {
-    const statusWord = job.status.charAt(0).toUpperCase() + job.status.slice(1); // Quote, Order, Invoice
+    const statusWord = job.status.charAt(0).toUpperCase() + job.status.slice(1);
     return `${statusWord} #${job.id.toString().padStart(4, '0')}`;
   };
 
-  return (
-    <div style={containerStyle}>
-      {/* Header */}
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px'}}>
+  const columns = [
+    {
+      key: 'job_info',
+      label: 'Job Info',
+      width: '40%',
+      render: (job: Job) => (
         <div>
-          <h1 style={gradientTitleStyle}>Jobs</h1>
-          <p style={{color: '#6b7280', fontSize: '20px', margin: 0}}>Manage quotes, orders, and invoices</p>
+          <div style={{ fontWeight: 600, marginBottom: '4px' }}>{job.title}</div>
+          <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '2px' }}>
+            {job.customer_name}
+          </div>
+          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+            {getJobNumber(job)}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '20%',
+      render: (job: Job) => {
+        const statusStyle = getStatusColor(job.status);
+        return (
+          <span style={{
+            padding: '4px 12px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: 600,
+            backgroundColor: statusStyle.bg,
+            color: statusStyle.color,
+            border: `1px solid ${statusStyle.border}`,
+            textTransform: 'capitalize'
+          }}>
+            {job.status}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'dates',
+      label: 'Dates',
+      width: '40%',
+      render: (job: Job) => (
+        <div>
+          <div style={{ fontSize: '14px', marginBottom: '2px' }}>
+            Created: {new Date(job.created_at).toLocaleDateString()}
+          </div>
+          {job.delivery_date && (
+            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+              Delivery: {new Date(job.delivery_date).toLocaleDateString()}
+            </div>
+          )}
+          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+            Updated: {new Date(job.updated_at).toLocaleDateString()}
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  // Custom render function for job rows to include special actions
+  const renderJobRow = (job: Job, isSelected: boolean, toggleSelection: (id: string | number) => void) => {
+    const statusStyle = getStatusColor(job.status);
+    
+    return (
+      <div
+        key={job.id}
+        className={`list-row ${isSelected ? 'selected' : ''}`}
+        style={{ position: 'relative' }}
+        onClick={(e) => {
+          if (!(e.target as HTMLElement).closest('.row-actions')) {
+            toggleSelection(job.id);
+          }
+        }}
+      >
+        <div className="list-cell checkbox-cell">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleSelection(job.id)}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select job ${job.id}`}
+          />
+        </div>
+        
+        {columns.map(column => (
+          <div 
+            key={column.key} 
+            className="list-cell"
+            style={{ width: column.width }}
+          >
+            {column.render(job)}
+          </div>
+        ))}
+        
+        <div className="list-cell actions-cell">
+          <div className="row-actions job-actions">
+            <button
+              className="row-action-button view"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewDetails(job.id);
+              }}
+              title="View Details"
+            >
+              👁️
+            </button>
+            <button
+              className="row-action-button pdf"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewPDF(job.id, job.title);
+              }}
+              title="View PDF"
+            >
+              📄
+            </button>
+            {job.status !== 'invoice' && (
+              <button
+                className="row-action-button next-stage"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextStage(job);
+                }}
+                title="Next Stage"
+              >
+                ➡️
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="container">
+      {/* Header */}
+      <div className="page-header">
+        <div className="page-title-section">
+          <h1 className="gradient-title">Jobs</h1>
+          <p className="page-subtitle">Manage quotes, orders, and invoices</p>
         </div>
         <button 
-          style={buttonStyle}
+          className="btn btn-primary"
           onClick={() => setShowJobForm(true)}
           disabled={loading}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
         >
-          <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <span style={{fontSize: '20px'}}>📋</span>
-            Create Job
-          </span>
+          <span>📋</span>
+          Create Job
         </button>
       </div>
 
@@ -304,223 +429,45 @@ const Jobs: React.FC = () => {
 
       {/* Loading State */}
       {loading && (
-        <div style={{...cardStyle, textAlign: 'center', padding: '48px 24px'}}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f4f6',
-            borderTop: '4px solid #3b82f6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }}></div>
-          <p style={{color: '#6b7280'}}>Loading jobs...</p>
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading jobs...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div style={{...cardStyle, textAlign: 'center', padding: '48px 24px', backgroundColor: '#fef2f2', borderColor: '#fecaca'}}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            backgroundColor: '#fee2e2',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            fontSize: '24px'
-          }}>
-            ⚠️
-          </div>
-          <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#dc2626', marginBottom: '8px'}}>
-            Error Loading Jobs
-          </h3>
-          <p style={{color: '#991b1b', marginBottom: '24px'}}>
-            {error}
-          </p>
+        <div className="error-state">
+          <div className="error-icon">⚠️</div>
+          <h3>Error Loading Jobs</h3>
+          <p>{error}</p>
           <button 
             onClick={() => fetchData()}
-            style={{
-              ...buttonStyle,
-              backgroundColor: '#dc2626'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+            className="btn btn-primary"
           >
             Try Again
           </button>
         </div>
       )}
 
-      {/* Jobs Grid */}
+      {/* Jobs List */}
       {!loading && !error && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px'
-        }}>
-        {filteredJobs.map((job) => {
-          const statusStyle = getStatusColor(job.status);
-          return (
-            <div
-              key={job.id}
-              style={{
-                ...cardStyle,
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 10px 60px -15px rgba(0, 0, 0, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04)';
-              }}
-            >
-              {/* Simplified Job Header */}
-              <div style={{display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px'}}>
-                <div>
-                  <h3 style={{
-                    fontSize: '20px',
-                    fontWeight: 'bold',
-                    color: '#1f2937',
-                    margin: '0 0 4px 0'
-                  }}>
-                    {job.title}
-                  </h3>
-                  <p style={{fontSize: '16px', color: '#6b7280', margin: '0 0 8px 0'}}>
-                    {job.customer_name}
-                  </p>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
-                    <span style={{fontSize: '14px'}}>📅</span>
-                    <span style={{fontSize: '14px', color: '#6b7280'}}>
-                      {new Date(job.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                
-                <div style={{
-                  padding: '6px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  backgroundColor: statusStyle.bg,
-                  color: statusStyle.color,
-                  border: `1px solid ${statusStyle.border}`,
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {getJobNumber(job)}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div style={{display: 'flex', gap: '8px'}}>
-                <button 
-                  onClick={() => handleViewDetails(job.id)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }} 
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
-                >
-                  👁️ View Details
-                </button>
-                <button 
-                  onClick={() => handleViewPDF(job.id, job.title)}
-                  style={{
-                    flex: 1,
-                    padding: '10px 16px',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }} 
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
-                >
-                  📄 View PDF
-                </button>
-                {job.status !== 'invoice' && (
-                  <button 
-                    onClick={() => handleNextStage(job)}
-                    style={{
-                      flex: 1,
-                      padding: '10px 16px',
-                      backgroundColor: 'white',
-                      color: '#374151',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }} 
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#10b981';
-                      e.currentTarget.style.backgroundColor = '#f0fdf4';
-                    }} 
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e5e7eb';
-                      e.currentTarget.style.backgroundColor = 'white';
-                    }}
-                  >
-                    ➡️ Next Stage
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && !error && filteredJobs.length === 0 && (
-        <div style={{...cardStyle, textAlign: 'center', padding: '48px 24px'}}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            backgroundColor: '#f3f4f6',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            fontSize: '24px'
-          }}>
-            📋
-          </div>
-          <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px'}}>
-            {getActiveFiltersCount() > 0 ? 'No jobs found' : 'No jobs yet'}
-          </h3>
-          <p style={{color: '#6b7280', marginBottom: '24px'}}>
-            {getActiveFiltersCount() > 0
-              ? 'Try adjusting your search criteria or filters' 
-              : 'Get started by creating your first job'}
-          </p>
-          <button 
-            onClick={() => setShowJobForm(true)}
-            style={buttonStyle}
-          >
-            <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span style={{fontSize: '20px'}}>📋</span>
-              Create Job
-            </span>
-          </button>
-        </div>
+        <SelectableList
+          items={filteredJobs}
+          columns={columns}
+          getItemId={(job) => job.id}
+          renderItem={renderJobRow}
+          onBulkAction={handleBulkAction}
+          bulkActions={[
+            { label: 'Export', action: 'export', icon: '📥' },
+            { label: 'Next Stage', action: 'bulk_next_stage', icon: '➡️' }
+          ]}
+          emptyMessage={
+            getActiveFiltersCount() > 0
+              ? 'No jobs found. Try adjusting your search criteria or filters.' 
+              : 'No jobs yet. Get started by creating your first job.'
+          }
+        />
       )}
 
       {/* Job Creation Modal */}
@@ -553,53 +500,11 @@ const Jobs: React.FC = () => {
 
       {/* Next Stage Confirmation Modal */}
       {confirmNextStage && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '32px',
-            maxWidth: '400px',
-            width: '90%',
-            boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.25)',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              backgroundColor: '#fef3c7',
-              borderRadius: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              fontSize: '24px'
-            }}>
-              ⚠️
-            </div>
-            <h3 style={{
-              fontSize: '20px',
-              fontWeight: 'bold',
-              color: '#1f2937',
-              marginBottom: '12px'
-            }}>
-              Confirm Status Change
-            </h3>
-            <p style={{
-              color: '#6b7280',
-              marginBottom: '24px',
-              lineHeight: '1.5'
-            }}>
+        <div className="modal-overlay">
+          <div className="modal confirmation-modal">
+            <div className="confirmation-icon">⚠️</div>
+            <h3>Confirm Status Change</h3>
+            <p>
               Are you sure you want to advance "{confirmNextStage.title}" from{' '}
               <strong>{confirmNextStage.status}</strong> to{' '}
               <strong>
@@ -607,48 +512,16 @@ const Jobs: React.FC = () => {
                  confirmNextStage.status === 'order' ? 'invoice' : 'completed'}
               </strong>?
             </p>
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'center'
-            }}>
+            <div className="modal-actions">
               <button
                 onClick={() => setConfirmNextStage(null)}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#374151',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#d1d5db';
-                  e.currentTarget.style.backgroundColor = '#f9fafb';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#e5e7eb';
-                  e.currentTarget.style.backgroundColor = 'white';
-                }}
+                className="btn btn-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmNextStage}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
+                className="btn btn-primary"
               >
                 Confirm
               </button>
@@ -656,15 +529,6 @@ const Jobs: React.FC = () => {
           </div>
         </div>
       )}
-
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
     </div>
   );
 };
