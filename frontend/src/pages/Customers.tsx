@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import customerService from '../services/customerService';
 import type { Customer, CreateCustomerRequest } from '../services/customerService';
 import CustomerForm from '../components/customers/CustomerForm';
-import { SelectableList } from '../components/common/SelectableList';
 import './Customers.css';
 import '../styles/common.css';
 
@@ -11,45 +10,44 @@ const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
-  // Load customers on component mount
+  // Load recent customers on component mount
   useEffect(() => {
-    loadCustomers();
+    loadRecentCustomers();
   }, []);
 
-  const loadCustomers = async () => {
+  const loadRecentCustomers = async () => {
     try {
       setError(null);
-      const customerData = await customerService.getAllCustomers();
-      setCustomers(customerData);
+      setLoading(true);
+      const recentCustomers = await customerService.getRecentCustomers();
+      setCustomers(recentCustomers);
     } catch (err: any) {
-      setError(err.message || 'Failed to load customers');
-      console.error('Error loading customers:', err);
+      setError(err.message || 'Failed to load recent customers');
+      console.error('Error loading recent customers:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await loadCustomers();
-    setIsRefreshing(false);
-  };
-
   const handleSearch = async (query: string) => {
     setSearchTerm(query);
+    
     if (!query.trim()) {
-      await loadCustomers();
+      // If search is cleared, show recent customers again
+      setIsSearching(false);
+      await loadRecentCustomers();
       return;
     }
 
     try {
       setError(null);
+      setIsSearching(true);
       const searchResults = await customerService.searchCustomers(query);
       setCustomers(searchResults);
     } catch (err: any) {
@@ -57,18 +55,18 @@ const Customers: React.FC = () => {
     }
   };
 
-  const handleDeleteCustomers = async (customersToDelete: Customer[]) => {
+  const handleDeleteCustomer = async (customer: Customer) => {
+    if (!window.confirm(`Are you sure you want to delete ${customer.name}?`)) {
+      return;
+    }
+    
     try {
       setError(null);
-      // Delete all selected customers
-      await Promise.all(
-        customersToDelete.map(customer => customerService.deleteCustomer(customer.id))
-      );
-      // Remove deleted customers from local state
-      const deletedIds = customersToDelete.map(c => c.id);
-      setCustomers(customers.filter(customer => !deletedIds.includes(customer.id)));
+      await customerService.deleteCustomer(customer.id);
+      // Remove deleted customer from local state
+      setCustomers(customers.filter(c => c.id !== customer.id));
     } catch (err: any) {
-      setError(err.message || 'Failed to delete customers');
+      setError(err.message || 'Failed to delete customer');
     }
   };
 
@@ -99,41 +97,35 @@ const Customers: React.FC = () => {
       const newCustomer = await customerService.createCustomer(customerData);
       setCustomers([newCustomer, ...customers]);
     }
-  };
-
-  const handleBulkAction = (action: string, selectedCustomers: Customer[]) => {
-    switch (action) {
-      case 'export':
-        // Export selected customers to CSV
-        const csvContent = [
-          ['Customer Name'],
-          ...selectedCustomers.map(c => [c.name])
-        ].map(row => row.join(',')).join('\n');
-        
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'customers.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-        break;
+    
+    // Refresh the list to get updated last_visited_at if needed
+    if (!isSearching) {
+      await loadRecentCustomers();
     }
   };
 
-
-  const columns = [
-    {
-      key: 'name',
-      label: 'Customer Name',
-      width: '100%',
-      render: (customer: Customer) => (
-        <div style={{ fontWeight: 600, fontSize: '16px' }}>
-          {customer.name}
-        </div>
-      )
+  const handleViewCustomer = async (customer: Customer) => {
+    try {
+      // Fetch customer by ID to trigger visit tracking
+      await customerService.getCustomerById(customer.id);
+      // Navigate or show details (for now just refresh the list)
+      if (!isSearching) {
+        await loadRecentCustomers();
+      }
+    } catch (err) {
+      console.error('Error viewing customer:', err);
     }
-  ];
+  };
+
+  const formatPhoneNumber = (phone?: string) => {
+    return phone || 'Not provided';
+  };
+
+  const formatAddress = (customer: Customer) => {
+    const parts = [customer.address, customer.city, customer.state, customer.zip_code]
+      .filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'No address provided';
+  };
 
   if (loading) {
     return (
@@ -152,37 +144,33 @@ const Customers: React.FC = () => {
       <div className="page-header">
         <div className="page-title-section">
           <h1 className="gradient-title">Customers</h1>
-          <p className="page-subtitle">Manage your client relationships</p>
+          <p className="page-subtitle">Search and manage your client relationships</p>
         </div>
-        <div className="flex gap-3">
-          <button 
-            className="btn btn-secondary"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            {isRefreshing ? '🔄' : '↻'} Refresh
-          </button>
-          <button className="btn btn-primary" onClick={handleAddCustomer}>
-            <span>👤</span>
-            Add Customer
-          </button>
-        </div>
+        <button className="btn btn-primary" onClick={handleAddCustomer}>
+          <span>👤</span>
+          Add Customer
+        </button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="card" style={{marginBottom: '24px'}}>
-        <div className="customers-controls">
-          <div className="search-container">
-            <div className="search-icon">🔍</div>
-            <input
-              type="text"
-              placeholder="Search customers by name..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="search-input"
-            />
-          </div>
+      {/* Large Search Bar */}
+      <div className="search-section">
+        <div className="search-container-large">
+          <div className="search-icon-large">🔍</div>
+          <input
+            type="text"
+            placeholder="Search customers by name, email, city, or state..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="search-input-large"
+            autoFocus
+          />
         </div>
+        {isSearching && (
+          <p className="search-status">Showing search results for "{searchTerm}"</p>
+        )}
+        {!isSearching && customers.length > 0 && (
+          <p className="search-status">Recently visited customers</p>
+        )}
       </div>
 
       {/* Error Message */}
@@ -195,23 +183,94 @@ const Customers: React.FC = () => {
         </div>
       )}
 
-      {/* Customer List */}
-      <SelectableList
-        items={customers}
-        columns={columns}
-        getItemId={(customer) => customer.id}
-        onEdit={handleEditCustomer}
-        onDelete={handleDeleteCustomers}
-        onBulkAction={handleBulkAction}
-        bulkActions={[
-          { label: 'Export', action: 'export', icon: '📥' }
-        ]}
-        emptyMessage={
-          searchTerm 
-            ? 'No customers found. Try adjusting your search criteria.' 
-            : 'No customers yet. Get started by adding your first customer.'
-        }
-      />
+      {/* Customer Cards Grid */}
+      {customers.length > 0 ? (
+        <div className="customers-grid">
+          {customers.map(customer => (
+            <div key={customer.id} className="customer-card" onClick={() => handleViewCustomer(customer)}>
+              <div className="customer-header">
+                <div className="customer-info">
+                  <h3 className="customer-name">{customer.name}</h3>
+                  <p className="customer-location">{formatAddress(customer)}</p>
+                </div>
+              </div>
+
+              <div className="customer-contact">
+                {customer.email && (
+                  <div className="contact-item">
+                    <span className="contact-icon">✉️</span>
+                    <span>{customer.email}</span>
+                  </div>
+                )}
+                {customer.phone && (
+                  <div className="contact-item">
+                    <span className="contact-icon">📞</span>
+                    <span>{formatPhoneNumber(customer.phone)}</span>
+                  </div>
+                )}
+                {customer.mobile && (
+                  <div className="contact-item">
+                    <span className="contact-icon">📱</span>
+                    <span>{formatPhoneNumber(customer.mobile)}</span>
+                  </div>
+                )}
+                {customer.accounting_email && (
+                  <div className="contact-item">
+                    <span className="contact-icon">💼</span>
+                    <span>{customer.accounting_email}</span>
+                  </div>
+                )}
+              </div>
+
+              {customer.notes && (
+                <div className="customer-notes">
+                  <p className="notes-label">Notes:</p>
+                  <p className="notes-content">{customer.notes}</p>
+                </div>
+              )}
+
+              <div className="customer-actions">
+                <button 
+                  className="action-btn" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditCustomer(customer);
+                  }}
+                >
+                  ✏️ Edit
+                </button>
+                <button 
+                  className="action-btn action-btn-danger" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCustomer(customer);
+                  }}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-customers">
+          <div className="empty-icon">🔍</div>
+          <h2 className="empty-title">
+            {isSearching ? 'No customers found' : 'No recent customers'}
+          </h2>
+          <p className="empty-desc">
+            {isSearching 
+              ? 'Try adjusting your search terms or add a new customer.'
+              : 'Start searching for customers or add a new one to get started.'}
+          </p>
+          {!isSearching && (
+            <button className="btn btn-primary" onClick={handleAddCustomer}>
+              <span>👤</span>
+              Add Your First Customer
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Customer Form Modal */}
       <CustomerForm

@@ -3,7 +3,25 @@ import pool from '../config/database';
 
 export const getAllCustomers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await pool.query('SELECT * FROM customers ORDER BY created_at DESC');
+    const { recent } = req.query;
+    
+    let query: string;
+    let params: any[] = [];
+    
+    if (recent === 'true') {
+      // Get last 10 visited customers
+      query = `
+        SELECT * FROM customers 
+        WHERE last_visited_at IS NOT NULL 
+        ORDER BY last_visited_at DESC 
+        LIMIT 10
+      `;
+    } else {
+      // Default to all customers ordered by name
+      query = 'SELECT * FROM customers ORDER BY name ASC';
+    }
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {
     next(error);
@@ -13,6 +31,14 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
 export const getCustomerById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    
+    // Update last_visited_at timestamp
+    await pool.query(
+      'UPDATE customers SET last_visited_at = NOW() WHERE id = $1',
+      [id]
+    );
+    
+    // Get the updated customer data
     const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
     
     if (result.rows.length === 0) {
@@ -73,6 +99,39 @@ export const deleteCustomer = async (req: Request, res: Response, next: NextFunc
     }
     
     res.json({ message: 'Customer deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const searchCustomers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || typeof q !== 'string' || q.trim().length === 0) {
+      return res.json([]);
+    }
+    
+    const searchTerm = q.trim();
+    const query = `
+      SELECT * FROM customers 
+      WHERE 
+        name ILIKE $1 OR
+        email ILIKE $1 OR
+        city ILIKE $1 OR
+        state ILIKE $1
+      ORDER BY 
+        CASE 
+          WHEN name ILIKE $2 THEN 1
+          WHEN name ILIKE $1 THEN 2
+          ELSE 3
+        END,
+        name ASC
+      LIMIT 50
+    `;
+    
+    const result = await pool.query(query, [`%${searchTerm}%`, `${searchTerm}%`]);
+    res.json(result.rows);
   } catch (error) {
     next(error);
   }

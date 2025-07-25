@@ -166,6 +166,18 @@ class JobService {
     }
   }
 
+  async getRecentJobs(): Promise<Job[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/jobs?recent=true`, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching recent jobs:', error);
+      throw error;
+    }
+  }
+
   async getJobById(id: number): Promise<Job> {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/jobs/${id}`, {

@@ -17,6 +17,7 @@ export interface Customer {
   notes?: string;
   created_at: string;
   updated_at: string;
+  last_visited_at?: string;
 }
 
 export interface CreateCustomerRequest {
@@ -62,6 +63,7 @@ class CustomerService {
       const response = await axios.get(`${API_BASE_URL}/api/customers/${id}`, {
         headers: this.getAuthHeaders(),
       });
+      // The backend automatically updates last_visited_at when fetching by ID
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -111,20 +113,25 @@ class CustomerService {
 
   async searchCustomers(query: string): Promise<Customer[]> {
     try {
-      // For now, we'll fetch all customers and filter client-side
-      // This can be optimized later with backend search
-      const allCustomers = await this.getAllCustomers();
-      
-      if (!query.trim()) {
-        return allCustomers;
-      }
-
-      const searchTerm = query.toLowerCase();
-      return allCustomers.filter(customer => 
-        customer.name.toLowerCase().includes(searchTerm)
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/customers/search`, {
+        headers: this.getAuthHeaders(),
+        params: { q: query }
+      });
+      return response.data;
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to search customers');
+      throw new Error(error.response?.data?.error || 'Failed to search customers');
+    }
+  }
+
+  async getRecentCustomers(): Promise<Customer[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/customers`, {
+        headers: this.getAuthHeaders(),
+        params: { recent: true }
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch recent customers');
     }
   }
 }

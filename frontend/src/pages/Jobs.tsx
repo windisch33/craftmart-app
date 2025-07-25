@@ -6,9 +6,7 @@ import type { Salesman } from '../services/salesmanService';
 import JobForm from '../components/jobs/JobForm';
 import JobPDFPreview from '../components/jobs/JobPDFPreview';
 import JobDetail from '../components/jobs/JobDetail';
-import AdvancedSearchBar, { type SearchCriteria } from '../components/jobs/AdvancedSearchBar';
 import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
-import { SelectableList } from '../components/common/SelectableList';
 import '../styles/common.css';
 import './Jobs.css';
 
@@ -18,99 +16,119 @@ const Jobs: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [salesmanFilter, setSalesmanFilter] = useState('all');
+  const [isSearching, setIsSearching] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
   const [jobFormLoading, setJobFormLoading] = useState(false);
   const [pdfPreview, setPdfPreview] = useState<{ jobId: number; jobTitle: string } | null>(null);
   const [jobDetail, setJobDetail] = useState<{ jobId: number } | null>(null);
   const [confirmNextStage, setConfirmNextStage] = useState<Job | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
-  // Advanced search and filter state
-  const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
-    searchTerm: '',
-    searchField: 'title',
-    searchOperator: 'contains'
-  });
+  // Filter state for advanced filters
   const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>({
     status: [],
     salesman: [],
     dateRange: null,
     amountRange: null,
-    sortBy: 'created_date',
+    sortBy: 'updated_at',
     sortOrder: 'desc'
   });
 
+  // Load recent jobs on mount
   useEffect(() => {
-    fetchData();
-  }, [statusFilter, salesmanFilter, searchCriteria, filterCriteria]);
+    loadRecentJobs();
+    loadSalesmen();
+  }, []);
 
-  const fetchData = async () => {
+  const loadRecentJobs = async () => {
     try {
       setLoading(true);
+      setError(null);
+      const recentJobs = await jobService.getRecentJobs();
+      setJobs(recentJobs);
+    } catch (err) {
+      setError('Failed to load recent jobs');
+      console.error('Error loading recent jobs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSalesmen = async () => {
+    try {
+      const salesmenData = await salesmanService.getAllSalesmen();
+      setSalesmen(salesmenData);
+    } catch (err) {
+      console.error('Error loading salesmen:', err);
+    }
+  };
+
+  const handleSearch = async (query: string) => {
+    setSearchTerm(query);
+    
+    if (!query.trim()) {
+      // If search is cleared, show recent jobs again
+      setIsSearching(false);
+      await loadRecentJobs();
+      return;
+    }
+
+    try {
+      setError(null);
+      setIsSearching(true);
+      setLoading(true);
       
-      // Build filters from both legacy and advanced criteria
-      const filters: any = {
-        // Legacy filters (for backward compatibility)
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        salesman_id: salesmanFilter !== 'all' ? parseInt(salesmanFilter) : undefined,
-        
-        // Advanced search parameters
-        searchTerm: searchCriteria.searchTerm || undefined,
-        searchField: searchCriteria.searchField !== 'title' ? searchCriteria.searchField : undefined,
-        searchOperator: searchCriteria.searchOperator !== 'contains' ? searchCriteria.searchOperator : undefined,
-        
-        // Filter parameters
-        statusFilter: filterCriteria.status.length > 0 ? filterCriteria.status : undefined,
-        salesmanFilter: filterCriteria.salesman.length > 0 ? filterCriteria.salesman : undefined,
+      const filters = {
+        searchTerm: query,
+        searchField: 'all',
+        searchOperator: 'contains',
+        sortBy: 'updated_at',
+        sortOrder: 'desc' as const
+      };
+      
+      const searchResults = await jobService.getAllJobs(filters);
+      setJobs(searchResults);
+    } catch (err: any) {
+      setError(err.message || 'Search failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdvancedFilter = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const filters = {
+        statusFilter: filterCriteria.status,
+        salesmanFilter: filterCriteria.salesman,
         dateRangeType: filterCriteria.dateRange?.type,
         dateRangeStart: filterCriteria.dateRange?.startDate,
         dateRangeEnd: filterCriteria.dateRange?.endDate,
         amountRangeType: filterCriteria.amountRange?.type,
         amountRangeMin: filterCriteria.amountRange?.min,
         amountRangeMax: filterCriteria.amountRange?.max,
-        
-        // Sort parameters
         sortBy: filterCriteria.sortBy,
-        sortOrder: filterCriteria.sortOrder
+        sortOrder: filterCriteria.sortOrder,
+        searchTerm: searchTerm || undefined,
+        searchField: searchTerm ? 'all' : undefined,
+        searchOperator: searchTerm ? 'contains' : undefined
       };
 
-      const [jobsData, salesmenData] = await Promise.all([
-        jobService.getAllJobs(filters),
-        salesmanService.getAllSalesmen()
-      ]);
-
-      setJobs(jobsData);
-      setSalesmen(salesmenData);
-      setError(null);
+      const filteredJobs = await jobService.getAllJobs(filters);
+      setJobs(filteredJobs);
     } catch (err) {
-      setError('Failed to fetch jobs');
-      console.error('Error fetching jobs:', err);
+      setError('Failed to apply filters');
+      console.error('Error applying filters:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearchChange = (criteria: SearchCriteria) => {
-    setSearchCriteria(criteria);
-  };
-
   const handleFilterChange = (criteria: FilterCriteria) => {
     setFilterCriteria(criteria);
   };
-
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (searchCriteria.searchTerm) count++;
-    if (filterCriteria.status.length > 0) count++;
-    if (filterCriteria.salesman.length > 0) count++;
-    if (filterCriteria.dateRange) count++;
-    if (filterCriteria.amountRange) count++;
-    return count;
-  };
-
-  // All filtering is now done server-side, so we use jobs directly
-  const filteredJobs = jobs;
 
   const handleCreateJob = async (jobData: any, sections: any[]) => {
     try {
@@ -148,7 +166,13 @@ const Jobs: React.FC = () => {
         }
       }
       
-      await fetchData(); // Refresh the jobs list
+      // Refresh the jobs list
+      if (!isSearching && !showAdvancedFilters) {
+        await loadRecentJobs();
+      } else {
+        await handleSearch(searchTerm);
+      }
+      
       setShowJobForm(false);
     } catch (err) {
       console.error('Error creating job:', err);
@@ -181,7 +205,13 @@ const Jobs: React.FC = () => {
         status: nextStatus
       });
       
-      await fetchData(); // Refresh the jobs list
+      // Refresh the jobs list
+      if (!isSearching) {
+        await loadRecentJobs();
+      } else {
+        await handleSearch(searchTerm);
+      }
+      
       setConfirmNextStage(null);
     } catch (err) {
       console.error('Error updating job status:', err);
@@ -189,65 +219,8 @@ const Jobs: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string, selectedJobs: Job[]) => {
-    switch (action) {
-      case 'export':
-        // Export selected jobs to CSV
-        const csvContent = [
-          ['Job Number', 'Title', 'Customer', 'Status', 'Created Date', 'Delivery Date'],
-          ...selectedJobs.map(job => [
-            getJobNumber(job),
-            job.title,
-            job.customer_name,
-            job.status,
-            new Date(job.created_at).toLocaleDateString(),
-            job.delivery_date ? new Date(job.delivery_date).toLocaleDateString() : 'Not set'
-          ])
-        ].map(row => row.join(',')).join('\n');
-        
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'jobs.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-        break;
-        
-      case 'bulk_next_stage':
-        // Bulk status progression for jobs that can advance
-        const eligibleJobs = selectedJobs.filter(job => job.status !== 'invoice');
-        if (eligibleJobs.length > 0) {
-          if (window.confirm(`Advance ${eligibleJobs.length} job(s) to the next stage?`)) {
-            Promise.all(
-              eligibleJobs.map(job => {
-                const nextStatus = job.status === 'quote' ? 'order' : 'invoice';
-                return jobService.updateJob(job.id, { status: nextStatus });
-              })
-            ).then(() => {
-              fetchData();
-            }).catch(err => {
-              console.error('Error updating job statuses:', err);
-              setError('Failed to update job statuses');
-            });
-          }
-        }
-        break;
-    }
-  };
-
-
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'quote':
-        return { bg: '#fef3c7', color: '#92400e', border: '#fbbf24' };
-      case 'order':
-        return { bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' };
-      case 'invoice':
-        return { bg: '#d1fae5', color: '#065f46', border: '#10b981' };
-      default:
-        return { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
-    }
+    return jobService.getStatusColor(status);
   };
 
   const getJobNumber = (job: Job) => {
@@ -255,141 +228,24 @@ const Jobs: React.FC = () => {
     return `${statusWord} #${job.id.toString().padStart(4, '0')}`;
   };
 
-  const columns = [
-    {
-      key: 'job_info',
-      label: 'Job Info',
-      width: '40%',
-      render: (job: Job) => (
-        <div>
-          <div style={{ fontWeight: 600, marginBottom: '4px' }}>{job.title}</div>
-          <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '2px' }}>
-            {job.customer_name}
-          </div>
-          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-            {getJobNumber(job)}
-          </div>
-        </div>
-      )
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      width: '20%',
-      render: (job: Job) => {
-        const statusStyle = getStatusColor(job.status);
-        return (
-          <span style={{
-            padding: '4px 12px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: 600,
-            backgroundColor: statusStyle.bg,
-            color: statusStyle.color,
-            border: `1px solid ${statusStyle.border}`,
-            textTransform: 'capitalize'
-          }}>
-            {job.status}
-          </span>
-        );
-      }
-    },
-    {
-      key: 'dates',
-      label: 'Dates',
-      width: '40%',
-      render: (job: Job) => (
-        <div>
-          <div style={{ fontSize: '14px', marginBottom: '2px' }}>
-            Created: {new Date(job.created_at).toLocaleDateString()}
-          </div>
-          {job.delivery_date && (
-            <div style={{ fontSize: '12px', color: '#6b7280' }}>
-              Delivery: {new Date(job.delivery_date).toLocaleDateString()}
-            </div>
-          )}
-          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-            Updated: {new Date(job.updated_at).toLocaleDateString()}
-          </div>
-        </div>
-      )
-    }
-  ];
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
-  // Custom render function for job rows to include special actions
-  const renderJobRow = (job: Job, isSelected: boolean, toggleSelection: (id: string | number) => void) => {
-    const statusStyle = getStatusColor(job.status);
-    
+  if (loading && jobs.length === 0) {
     return (
-      <div
-        key={job.id}
-        className={`list-row ${isSelected ? 'selected' : ''}`}
-        style={{ position: 'relative' }}
-        onClick={(e) => {
-          if (!(e.target as HTMLElement).closest('.row-actions')) {
-            toggleSelection(job.id);
-          }
-        }}
-      >
-        <div className="list-cell checkbox-cell">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => toggleSelection(job.id)}
-            onClick={(e) => e.stopPropagation()}
-            aria-label={`Select job ${job.id}`}
-          />
-        </div>
-        
-        {columns.map(column => (
-          <div 
-            key={column.key} 
-            className="list-cell"
-            style={{ width: column.width }}
-          >
-            {column.render(job)}
-          </div>
-        ))}
-        
-        <div className="list-cell actions-cell">
-          <div className="row-actions job-actions">
-            <button
-              className="row-action-button view"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleViewDetails(job.id);
-              }}
-              title="View Details"
-            >
-              👁️
-            </button>
-            <button
-              className="row-action-button pdf"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleViewPDF(job.id, job.title);
-              }}
-              title="View PDF"
-            >
-              📄
-            </button>
-            {job.status !== 'invoice' && (
-              <button
-                className="row-action-button next-stage"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNextStage(job);
-                }}
-                title="Next Stage"
-              >
-                ➡️
-              </button>
-            )}
-          </div>
+      <div className="container">
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading jobs...</p>
         </div>
       </div>
     );
-  };
+  }
 
   return (
     <div className="container">
@@ -397,77 +253,198 @@ const Jobs: React.FC = () => {
       <div className="page-header">
         <div className="page-title-section">
           <h1 className="gradient-title">Jobs</h1>
-          <p className="page-subtitle">Manage quotes, orders, and invoices</p>
+          <p className="page-subtitle">Search and manage quotes, orders, and invoices</p>
         </div>
         <button 
           className="btn btn-primary"
           onClick={() => setShowJobForm(true)}
-          disabled={loading}
         >
           <span>📋</span>
           Create Job
         </button>
       </div>
 
-      {/* Advanced Search */}
-      <AdvancedSearchBar
-        onSearchChange={handleSearchChange}
-        totalResults={filteredJobs.length}
-        isLoading={loading}
-      />
-
-      {/* Advanced Filters */}
-      <FilterPanel
-        onFilterChange={handleFilterChange}
-        salesmenOptions={salesmen.map(s => ({ 
-          id: s.id.toString(), 
-          name: salesmanService.formatSalesmanName(s) 
-        }))}
-        isLoading={loading}
-        activeFiltersCount={getActiveFiltersCount()}
-      />
-
-      {/* Loading State */}
-      {loading && (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading jobs...</p>
+      {/* Large Search Bar */}
+      <div className="search-section">
+        <div className="search-container-large">
+          <div className="search-icon-large">🔍</div>
+          <input
+            type="text"
+            placeholder="Search jobs by title, customer, job number, or salesman..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="search-input-large"
+            autoFocus
+          />
         </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="error-state">
-          <div className="error-icon">⚠️</div>
-          <h3>Error Loading Jobs</h3>
-          <p>{error}</p>
-          <button 
-            onClick={() => fetchData()}
-            className="btn btn-primary"
+        {isSearching && (
+          <p className="search-status">Showing search results for "{searchTerm}"</p>
+        )}
+        {!isSearching && jobs.length > 0 && (
+          <p className="search-status">Recently updated jobs</p>
+        )}
+        
+        {/* Advanced Filters Toggle */}
+        <div className="advanced-filters-toggle">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           >
-            Try Again
+            <span>{showAdvancedFilters ? '🔽' : '▶️'}</span>
+            Advanced Filters
           </button>
         </div>
+      </div>
+
+      {/* Advanced Filters Panel */}
+      {showAdvancedFilters && (
+        <div className="advanced-filters-panel">
+          <FilterPanel
+            onFilterChange={handleFilterChange}
+            salesmenOptions={salesmen.map(s => ({ 
+              id: s.id.toString(), 
+              name: salesmanService.formatSalesmanName(s) 
+            }))}
+            isLoading={loading}
+            activeFiltersCount={0}
+          />
+          <div className="filter-actions">
+            <button
+              className="btn btn-primary"
+              onClick={handleAdvancedFilter}
+            >
+              Apply Filters
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setFilterCriteria({
+                  status: [],
+                  salesman: [],
+                  dateRange: null,
+                  amountRange: null,
+                  sortBy: 'updated_at',
+                  sortOrder: 'desc'
+                });
+                setShowAdvancedFilters(false);
+                loadRecentJobs();
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Jobs List */}
-      {!loading && !error && (
-        <SelectableList
-          items={filteredJobs}
-          columns={columns}
-          getItemId={(job) => job.id}
-          renderItem={renderJobRow}
-          onBulkAction={handleBulkAction}
-          bulkActions={[
-            { label: 'Export', action: 'export', icon: '📥' },
-            { label: 'Next Stage', action: 'bulk_next_stage', icon: '➡️' }
-          ]}
-          emptyMessage={
-            getActiveFiltersCount() > 0
-              ? 'No jobs found. Try adjusting your search criteria or filters.' 
-              : 'No jobs yet. Get started by creating your first job.'
-          }
-        />
+      {/* Error Message */}
+      {error && (
+        <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
+            <span>⚠️</span>
+            {error}
+          </div>
+        </div>
+      )}
+
+      {/* Jobs Grid */}
+      {!loading && jobs.length > 0 ? (
+        <div className="jobs-grid">
+          {jobs.map(job => (
+            <div key={job.id} className="job-card">
+              <div className="job-header">
+                <div className="job-info">
+                  <h3 className="job-title">{job.title}</h3>
+                  <p className="job-number">{getJobNumber(job)}</p>
+                  <p className="job-customer">{job.customer_name}</p>
+                </div>
+                <div className="job-status">
+                  <span 
+                    className="status-badge"
+                    style={{
+                      backgroundColor: getStatusColor(job.status).bg,
+                      color: getStatusColor(job.status).color,
+                      border: `1px solid ${getStatusColor(job.status).border}`
+                    }}
+                  >
+                    {job.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="job-details">
+                <div className="detail-row">
+                  <span className="detail-label">📅 Created:</span>
+                  <span className="detail-value">{formatDate(job.created_at)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">🔄 Updated:</span>
+                  <span className="detail-value">{formatDate(job.updated_at)}</span>
+                </div>
+                {job.delivery_date && (
+                  <div className="detail-row">
+                    <span className="detail-label">🚚 Delivery:</span>
+                    <span className="detail-value">{formatDate(job.delivery_date)}</span>
+                  </div>
+                )}
+                {job.salesman_name && (
+                  <div className="detail-row">
+                    <span className="detail-label">👤 Salesman:</span>
+                    <span className="detail-value">{job.salesman_name}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="job-amount">
+                <div className="amount-label">Total Amount</div>
+                <div className="amount-value">{jobService.formatCurrency(job.total_amount)}</div>
+              </div>
+
+              <div className="job-actions">
+                <button 
+                  className="action-btn action-btn-primary" 
+                  onClick={() => handleViewDetails(job.id)}
+                  title="View Details"
+                >
+                  👁️ View
+                </button>
+                <button 
+                  className="action-btn action-btn-info" 
+                  onClick={() => handleViewPDF(job.id, job.title)}
+                  title="View PDF"
+                >
+                  📄 PDF
+                </button>
+                {job.status !== 'invoice' && (
+                  <button 
+                    className="action-btn action-btn-warning" 
+                    onClick={() => handleNextStage(job)}
+                    title="Next Stage"
+                  >
+                    ➡️ Next
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-jobs">
+          <div className="empty-icon">📋</div>
+          <h2 className="empty-title">
+            {isSearching ? 'No jobs found' : 'No recent jobs'}
+          </h2>
+          <p className="empty-desc">
+            {isSearching 
+              ? 'Try adjusting your search terms or filters.'
+              : 'Start by creating a new job or search for existing ones.'}
+          </p>
+          {!isSearching && (
+            <button className="btn btn-primary" onClick={() => setShowJobForm(true)}>
+              <span>📋</span>
+              Create Your First Job
+            </button>
+          )}
+        </div>
       )}
 
       {/* Job Creation Modal */}

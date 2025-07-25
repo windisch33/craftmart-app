@@ -49,6 +49,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     const { 
       status, 
       salesman_id,
+      recent,
       // Advanced search parameters
       searchTerm,
       searchField,
@@ -77,7 +78,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
       LEFT JOIN salesmen s ON j.salesman_id = s.id
     `;
     
-    const queryParams: any[] = [];
+    let queryParams: any[] = [];
     const conditions: string[] = [];
 
     // Legacy status and salesman_id filters (for backward compatibility)
@@ -254,6 +255,22 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     }
     
     query += ` ORDER BY ${orderByClause}`;
+    
+    // If recent parameter is true, get only the last 10 updated jobs
+    if (recent === 'true') {
+      query = `
+        SELECT j.*, 
+               c.name as customer_name, c.state as customer_state,
+               s.first_name as salesman_first_name, s.last_name as salesman_last_name,
+               (s.first_name || ' ' || s.last_name) as salesman_name
+        FROM jobs j 
+        LEFT JOIN customers c ON j.customer_id = c.id 
+        LEFT JOIN salesmen s ON j.salesman_id = s.id
+        ORDER BY j.updated_at DESC
+        LIMIT 10
+      `;
+      queryParams = [];
+    }
 
     const result = await pool.query(query, queryParams);
     res.json(result.rows);

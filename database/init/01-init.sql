@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS customers (
     accounting_email VARCHAR(255),
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_visited_at TIMESTAMP
 );
 
 -- Create salesmen table
@@ -129,6 +130,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_salesman_id ON jobs(salesman_id);
 CREATE INDEX IF NOT EXISTS idx_shops_job_id ON shops(job_id);
 CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_last_visited ON customers(last_visited_at DESC);
 CREATE INDEX IF NOT EXISTS idx_job_sections_job_id ON job_sections(job_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_job_id ON quote_items(job_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_section_id ON quote_items(section_id);
