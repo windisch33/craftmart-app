@@ -55,21 +55,6 @@ const Customers: React.FC = () => {
     }
   };
 
-  const handleDeleteCustomer = async (customer: Customer) => {
-    if (!window.confirm(`Are you sure you want to delete ${customer.name}?`)) {
-      return;
-    }
-    
-    try {
-      setError(null);
-      await customerService.deleteCustomer(customer.id);
-      // Remove deleted customer from local state
-      setCustomers(customers.filter(c => c.id !== customer.id));
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete customer');
-    }
-  };
-
   const handleAddCustomer = () => {
     setEditingCustomer(null);
     setIsFormOpen(true);
@@ -239,15 +224,7 @@ const Customers: React.FC = () => {
                 >
                   ✏️ Edit
                 </button>
-                <button 
-                  className="action-btn action-btn-danger" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteCustomer(customer);
-                  }}
-                >
-                  🗑️ Delete
-                </button>
+
               </div>
             </div>
           ))}

@@ -1,35 +1,37 @@
-/* Salesmen Page Styles - uses common.css for shared styles */
+/* Salesmen Page Styles */
+.salesmen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
 
-.salesmen-controls {
+/* Salesman Card */
+.salesman-card {
   background: white;
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1);
-  border: 1px solid #f3f4f6;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
 }
 
-.search-container {
-  min-width: 300px;
+.salesman-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #3b82f6;
 }
 
-/* List styling handled by SelectableList component */
-
-.salesman-card-header {
+.salesman-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .salesman-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   flex: 1;
 }
 
@@ -37,32 +39,38 @@
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
 }
 
-.commission-rate {
-  background: #f0fdf4;
-  color: #166534;
-  padding: 6px 12px;
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  border: 1px solid #bbf7d0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .salesman-contact {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #6b7280;
+  gap: 10px;
+  margin-bottom: 6px;
   font-size: 14px;
+  color: #4b5563;
 }
 
 .contact-icon {
@@ -70,50 +78,208 @@
 }
 
 .salesman-notes {
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #f9fafb;
+  margin-bottom: 12px;
+  padding: 10px;
+  background-color: #f9fafb;
   border-radius: 8px;
-  border-left: 3px solid #e5e7eb;
 }
 
-.salesman-notes p {
-  margin: 0;
-  color: #374151;
+.notes-label {
   font-size: 14px;
-  line-height: 1.4;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 4px 0;
+}
+
+.notes-content {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 .salesman-actions {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
 }
 
+.action-btn {
+  width: 100%;
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+}
 
-/* Salesmen-specific mobile styles */
+.action-btn:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.action-btn-danger {
+  color: #dc2626;
+}
+
+.action-btn-danger:hover {
+  background-color: #fee2e2;
+  border-color: #dc2626;
+}
+
+/* Search Section */
+.search-section {
+  margin-bottom: 32px;
+}
+
+.search-bar {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 12px 12px 48px;
+  font-size: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3b82f6;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-state-message {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.empty-state-hint {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-icon {
+  font-size: 20px;
+}
+
+.success-message {
+  background-color: #dcfce7;
+  color: #166534;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading Message */
+.loading-message {
+  text-align: center;
+  font-size: 18px;
+  color: #6b7280;
+  padding: 40px;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-  .salesmen-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-container {
-    min-width: auto;
-  }
-
   .salesmen-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
   }
 
-  .salesman-card-header {
+  .page-header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    gap: 20px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-actions button {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .salesman-card {
+    padding: 16px;
+  }
+
+  .salesman-name {
+    font-size: 18px;
   }
 }
 
 @media (max-width: 480px) {
+  .salesmen-grid {
+    grid-template-columns: 1fr;
+  }
+
   .salesman-actions {
     flex-direction: column;
+  }
+
+  .header-actions button {
+    width: 100%;
+  }
+
+  .search-input {
+    font-size: 16px;
   }
 }
