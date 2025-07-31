@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import customerService from '../services/customerService';
 import type { Customer, CreateCustomerRequest } from '../services/customerService';
 import CustomerForm from '../components/customers/CustomerForm';
+import CustomerJobs from '../components/customers/CustomerJobs';
 import './Customers.css';
 import '../styles/common.css';
 
@@ -15,6 +16,10 @@ const Customers: React.FC = () => {
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  
+  // CustomerJobs modal state
+  const [isJobsModalOpen, setIsJobsModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   // Load recent customers on component mount
   useEffect(() => {
@@ -69,6 +74,10 @@ const Customers: React.FC = () => {
     setIsFormOpen(false);
     setEditingCustomer(null);
   };
+  const handleCloseJobsModal = () => {
+    setIsJobsModalOpen(false);
+    setSelectedCustomer(null);
+  };
 
   const handleSaveCustomer = async (customerData: CreateCustomerRequest) => {
     if (editingCustomer) {
@@ -93,7 +102,10 @@ const Customers: React.FC = () => {
     try {
       // Fetch customer by ID to trigger visit tracking
       await customerService.getCustomerById(customer.id);
-      // Navigate or show details (for now just refresh the list)
+      // Open the customer jobs modal
+      setSelectedCustomer(customer);
+      setIsJobsModalOpen(true);
+      // Refresh the list if needed
       if (!isSearching) {
         await loadRecentCustomers();
       }
@@ -255,6 +267,13 @@ const Customers: React.FC = () => {
         isOpen={isFormOpen}
         onClose={handleCloseForm}
         onSave={handleSaveCustomer}
+      />
+
+      {/* Customer Jobs Modal */}
+      <CustomerJobs
+        customer={selectedCustomer}
+        isOpen={isJobsModalOpen}
+        onClose={handleCloseJobsModal}
       />
     </div>
   );

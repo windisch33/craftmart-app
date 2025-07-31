@@ -18,7 +18,7 @@
   background: white;
   border-radius: 16px;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px; /* Increased width to accommodate edit table */
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -509,5 +509,369 @@
   .footer-btn {
     flex: 1;
     min-width: 120px;
+  }
+}
+
+/* Edit Mode Styles */
+.edit-job-form {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.edit-job-form h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.edit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-field input.error,
+.form-field textarea.error,
+.form-field select.error {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.error-message {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+/* Sections Edit Styles */
+.sections-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.add-section-btn {
+  padding: 8px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-section-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.edit-section-card {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.edit-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-name-field {
+  flex: 1;
+}
+
+.section-name-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  background: white;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.add-item-btn,
+.remove-section-btn,
+.remove-item-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.add-item-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.add-item-btn:hover {
+  background: #2563eb;
+}
+
+.remove-section-btn,
+.remove-item-btn {
+  background: #dc2626;
+  color: white;
+}
+
+.remove-section-btn:hover,
+.remove-item-btn:hover {
+  background: #b91c1c;
+}
+
+.section-description-field {
+  margin-bottom: 16px;
+}
+
+.section-description-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  resize: vertical;
+}
+
+.section-options {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.section-options input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Edit Items Section */
+.edit-items-section {
+  margin-top: 16px;
+  overflow-x: auto; /* Allow horizontal scrolling for the entire section */
+}
+
+/* Edit Items Table Container */
+.edit-items-table {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  min-width: 700px; /* Increased minimum width */
+  display: block; /* Force block display */
+}
+
+.edit-table-header {
+  display: grid !important;
+  grid-template-columns: 100px 1fr 80px 100px 100px 60px 80px !important;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f1f5f9;
+  font-weight: 600;
+  font-size: 12px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-table-row {
+  display: grid !important;
+  grid-template-columns: 100px 1fr 80px 100px 100px 60px 80px !important;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  align-items: flex-start;
+  min-height: 40px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-table-row:last-child {
+  border-bottom: none;
+}
+
+.edit-table-row input[type="text"],
+.edit-table-row input[type="number"] {
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.edit-table-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  justify-self: center;
+}
+
+.col-total {
+  font-weight: 500;
+  padding-top: 6px;
+  font-size: 12px;
+  text-align: right;
+}
+
+.col-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Specific column styling */
+.col-part input,
+.col-qty input,
+.col-price input {
+  text-align: center;
+}
+
+.col-desc input {
+  text-align: left;
+}
+
+.no-items-edit,
+.no-sections-edit {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.no-items-edit button,
+.no-sections-edit button {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.no-items-edit button:hover,
+.no-sections-edit button:hover {
+  background: #2563eb;
+}
+
+/* Mobile Responsive for Edit Mode */
+@media (max-width: 768px) {
+  .edit-form-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .edit-section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .section-actions {
+    justify-content: flex-end;
+  }
+
+  .edit-items-table {
+    min-width: 500px; /* Reduced minimum width for mobile */
+  }
+
+  .edit-table-header,
+  .edit-table-row {
+    grid-template-columns: 70px 1fr 50px 70px 70px 40px 50px !important;
+    gap: 4px;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  .edit-table-row input[type="text"],
+  .edit-table-row input[type="number"] {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .section-options {
+    flex-direction: column;
+    gap: 8px;
   }
 }

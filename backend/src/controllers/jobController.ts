@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../config/database';
 import { generateJobPDF, getJobPDFFilename } from '../services/pdfService';
+import { pdfCache } from '../services/pdfCache';
 
 // Helper function to calculate tax based on customer state
 const calculateTaxForState = async (stateCode: string): Promise<number> => {
@@ -49,6 +50,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     const { 
       status, 
       salesman_id,
+      customer_id,
       recent,
       // Advanced search parameters
       searchTerm,
@@ -90,6 +92,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     if (salesman_id) {
       conditions.push(`j.salesman_id = $${queryParams.length + 1}`);
       queryParams.push(salesman_id);
+    }
+
+    if (customer_id) {
+      conditions.push(`j.customer_id = $${queryParams.length + 1}`);
+      queryParams.push(customer_id);
     }
 
     // Advanced search functionality
@@ -417,7 +424,9 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
     for (const [key, value] of Object.entries(updateFields)) {
       if (allowedFields.includes(key)) {
         updates.push(`${key} = $${paramCounter}`);
-        values.push(value);
+        // Convert empty strings to null for date fields
+        const processedValue = (key === 'delivery_date' && value === '') ? null : value;
+        values.push(processedValue);
         paramCounter++;
       }
     }
@@ -442,6 +451,9 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
       'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
       [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, id]
     );
+    
+    // Invalidate PDF cache for this job
+    await pdfCache.invalidateJob(parseInt(id!));
     
     res.json(result.rows[0]);
   } catch (error) {
@@ -567,6 +579,9 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
       [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, jobId]
     );
     
+    // Invalidate PDF cache for this job
+    await pdfCache.invalidateJob(parseInt(jobId!));
+    
     res.status(201).json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -609,6 +624,9 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
         'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
         [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, jobId]
       );
+      
+      // Invalidate PDF cache for this job
+      await pdfCache.invalidateJob(jobId);
     }
     
     res.json(result.rows[0]);
@@ -638,6 +656,9 @@ export const deleteQuoteItem = async (req: Request, res: Response, next: NextFun
         'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
         [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, jobId]
       );
+      
+      // Invalidate PDF cache for this job
+      await pdfCache.invalidateJob(jobId);
     }
     
     res.json({ message: 'Quote item deleted successfully' });
@@ -650,6 +671,10 @@ export const deleteQuoteItem = async (req: Request, res: Response, next: NextFun
 export const generateJobPDFEndpoint = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const { showLinePricing } = req.query;
+    
+    // Parse the showLinePricing parameter, default to true
+    const showPricing = showLinePricing !== 'false';
     
     // Get basic job info for filename
     const jobResult = await pool.query(`
@@ -666,8 +691,8 @@ export const generateJobPDFEndpoint = async (req: Request, res: Response, next: 
     const jobData = jobResult.rows[0];
     const filename = getJobPDFFilename(jobData);
 
-    // Generate PDF
-    const pdfBuffer = await generateJobPDF(parseInt(id!));
+    // Generate PDF with pricing parameter
+    const pdfBuffer = await generateJobPDF(parseInt(id!), showPricing);
 
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');

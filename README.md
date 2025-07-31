@@ -10,7 +10,7 @@ A comprehensive staircase manufacturing management system designed for small-to-
 - 👥 **Customer Management** - Complete customer database with contact information and job history
 - 📋 **Advanced Job System** - Quote → Order → Invoice workflow with real-time status tracking
 - 👨‍💼 **Salesmen Management** - Commission tracking, performance metrics, and assignment management
-- 🔧 **Product Catalog** - Handrail products, materials, and dynamic pricing system
+- 🔧 **Multi-Product Catalog** - Handrails, Landing Treads, Rail Parts with materials and dynamic pricing system
 - 🏭 **Shop Management** - Cut sheet generation and manufacturing workflow (planned)
 
 ### **Advanced Job Features**
@@ -150,7 +150,10 @@ craftmart-app/
 - **jobs** - Main job records with status progression
 - **job_sections** - Location-based job organization
 - **quote_items** - Detailed product line items
-- **products** - Product catalog with pricing
+- **products** - Multi-type product catalog (handrails, landing_treads, rail_parts)
+- **handrail_products** - Per-6-inch pricing for handrail products
+- **landing_tread_products** - Per-6-inch pricing for landing treads
+- **rail_parts_products** - Base price + multiplier for discrete parts
 - **materials** - Material types with cost multipliers
 - **tax_rates** - State-based tax rate lookup
 
@@ -186,8 +189,11 @@ craftmart-app/
 - `GET /api/salesmen/search` - Search salesmen by name
 
 ### **Products & Materials**
-- `GET /api/products` - Product catalog with filtering
-- `GET /api/materials` - Material types with multipliers
+- `GET /api/products` - Product catalog with type filtering (hanrail, landing_tread, rail_parts)
+- `GET /api/products/handrails` - Handrail products with per-6-inch pricing
+- `GET /api/products/landing-treads` - Landing tread products with per-6-inch pricing  
+- `GET /api/products/rail-parts` - Rail parts products with base price + material multiplier
+- `GET /api/materials` - Material types with pricing multipliers
 
 ## 🚀 Production Deployment
 

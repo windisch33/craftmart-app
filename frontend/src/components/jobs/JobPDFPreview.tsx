@@ -18,6 +18,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [showLinePricing, setShowLinePricing] = useState(true);
 
   useEffect(() => {
     if (isOpen && jobId) {
@@ -30,18 +31,24 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
         URL.revokeObjectURL(pdfUrl);
       }
     };
-  }, [isOpen, jobId]);
+  }, [isOpen, jobId, showLinePricing]);
 
   const loadPDF = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Clean up previous blob URL if exists
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+        setPdfUrl(null);
+      }
+      
       // Get auth token
       const token = localStorage.getItem('authToken');
       
-      // Fetch PDF as blob
-      const response = await fetch(`/api/jobs/${jobId}/pdf`, {
+      // Fetch PDF as blob with pricing parameter
+      const response = await fetch(`/api/jobs/${jobId}/pdf?showLinePricing=${showLinePricing}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -161,6 +168,10 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
     }
   };
 
+  const handleTogglePricing = () => {
+    setShowLinePricing(!showLinePricing);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -169,6 +180,15 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
         <div className="pdf-preview-header">
           <h2>Job PDF Preview</h2>
           <div className="pdf-preview-actions">
+            <label className="pdf-pricing-toggle">
+              <input
+                type="checkbox"
+                checked={showLinePricing}
+                onChange={handleTogglePricing}
+                disabled={loading}
+              />
+              Show line item pricing
+            </label>
             <button 
               className="pdf-action-button download"
               onClick={handleDownload}

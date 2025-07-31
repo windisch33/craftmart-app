@@ -152,9 +152,9 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
 
       if (!product) return 0;
 
-      // Handle handrail products with length calculation
-      if (product.product_type === 'handrail' && product.cost_per_6_inches) {
-        // For handrail products, we need a material to calculate price
+      // Handle handrail and landing tread products with length calculation
+      if ((product.product_type === 'handrail' || product.product_type === 'landing_tread') && product.cost_per_6_inches) {
+        // For handrail and landing tread products, we need a material to calculate price
         if (!material) return 0;
         
         const price = productService.calculateHandrailPrice(
@@ -164,6 +164,21 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           0, // Don't include labor in material price
           false
         ) * (formData.quantity || 1);
+        return isNaN(price) ? 0 : price;
+      }
+
+      // Handle rail parts products with base price calculation
+      if (product.product_type === 'rail_parts' && product.base_price) {
+        // For rail parts, we need a material to calculate price
+        if (!material) return 0;
+        
+        const price = productService.calculateRailPartsPrice(
+          Number(product.base_price) || 0,
+          Number(material.multiplier) || 1,
+          0, // Don't include labor in material price
+          false,
+          formData.quantity || 1
+        );
         return isNaN(price) ? 0 : price;
       }
 
@@ -228,9 +243,9 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     const unitPrice = getCalculatedUnitPrice();
     
     let description = formData.customDescription || selectedProduct.name;
-    if (selectedMaterial && selectedProduct.product_type === 'handrail') {
+    if (selectedMaterial && requiresMaterial) {
       description += ` - ${selectedMaterial.name}`;
-      if (formData.lengthInches > 0) {
+      if (isHandrailProduct && formData.lengthInches > 0) {
         description += ` (${formData.lengthInches}")`;
       }
     }
@@ -380,7 +395,9 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     return materials.find(m => m.id === formData.materialId) || null;
   }, [materials, formData.materialId]);
 
-  const isHandrailProduct = selectedProduct?.product_type === 'handrail';
+  const isHandrailProduct = selectedProduct?.product_type === 'handrail' || selectedProduct?.product_type === 'landing_tread';
+  const isRailPartsProduct = selectedProduct?.product_type === 'rail_parts';
+  const requiresMaterial = isHandrailProduct || isRailPartsProduct;
   
   // Memoize calculations to prevent unnecessary recalculations and improve stability
   const { materialPrice, laborPrice, totalPrice } = useMemo(() => {
@@ -506,6 +523,20 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                       </option>
                     ))}
                   </optgroup>
+                  <optgroup label="Landing Treads">
+                    {getProductsByType('landing_tread').map(product => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Rail Parts">
+                    {getProductsByType('rail_parts').map(product => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </optgroup>
                   <optgroup label="Newels">
                     {getProductsByType('newel').map(product => (
                       <option key={product.id} value={product.id}>
@@ -530,7 +561,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                 </select>
               </div>
 
-              {selectedProduct && (
+              {selectedProduct && requiresMaterial && (
                 <div className="form-field">
                   <label htmlFor="material-select">Material</label>
                   <select

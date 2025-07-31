@@ -86,8 +86,7 @@ const JobForm: React.FC<JobFormProps> = ({
     order_designation: 'INSTALL',
     model_name: '',
     installer: '',
-    terms: '1/2 DN BAL C.O.D.',
-    show_line_pricing: true
+    terms: '1/2 DN BAL C.O.D.'
   });
 
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -587,18 +586,7 @@ const JobForm: React.FC<JobFormProps> = ({
                   />
                 </div>
 
-                <div className="form-field checkbox-field">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      name="show_line_pricing"
-                      checked={formData.show_line_pricing}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                    />
-                    Show line item pricing on PDF
-                  </label>
-                </div>
+
               </div>
 
               <div className="form-field">

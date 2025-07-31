@@ -75,7 +75,6 @@ export interface CreateJobData {
   model_name?: string;
   installer?: string;
   terms?: string;
-  show_line_pricing?: boolean;
 }
 
 export interface UpdateJobData extends Partial<CreateJobData> {}
@@ -174,6 +173,18 @@ class JobService {
       return response.data;
     } catch (error) {
       console.error('Error fetching recent jobs:', error);
+      throw error;
+    }
+  }
+
+  async getJobsByCustomerId(customerId: number): Promise<Job[]> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/jobs?customer_id=${customerId}`, {
+        headers: this.getAuthHeaders()
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching jobs by customer:', error);
       throw error;
     }
   }
@@ -355,16 +366,16 @@ class JobService {
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
 
-  getStatusColor(status: string): { bg: string; color: string; border: string } {
+ getStatusColor(status: string): { bg: string; color: string; border: string } {
     switch (status) {
       case 'quote':
-        return { bg: '#fef3c7', color: '#92400e', border: '#fbbf24' };
+        return { bg: '#fef3c7', color: '#92400e', border: '#fbbf24' }; // Yellow
       case 'order':
-        return { bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' };
+        return { bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' }; // Blue
       case 'invoice':
-        return { bg: '#d1fae5', color: '#065f46', border: '#10b981' };
+        return { bg: '#d1fae5', color: '#065f46', border: '#10b981' }; // Green
       default:
-        return { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
+        return { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' }; // Gray
     }
   }
 

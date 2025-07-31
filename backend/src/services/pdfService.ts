@@ -1,4 +1,6 @@
 import puppeteer from 'puppeteer';
+import { browserPool } from './browserPool';
+import { pdfCache } from './pdfCache';
 import pool from '../config/database';
 import path from 'path';
 
@@ -57,7 +59,7 @@ interface JobData {
   }>;
 }
 
-const generateJobPDFHTML = (jobData: JobData): string => {
+const generateJobPDFHTML = (jobData: JobData, showLinePricing: boolean = true): string => {
   const formatCurrency = (amount: number | string | null | undefined) => {
     const numAmount = parseFloat(String(amount || 0));
     return `$${(isNaN(numAmount) ? 0 : numAmount).toFixed(2)}`;
@@ -363,7 +365,7 @@ const generateJobPDFHTML = (jobData: JobData): string => {
             <th>Order Designation</th>
         </tr>
         <tr>
-            <td>${formatDate(jobData.delivery_date)}</td>
+            <td>${jobData.delivery_date ? formatDate(jobData.delivery_date) : ''}</td>
             <td>/ /</td>
             <td>${jobData.order_designation || 'INSTALL'}</td>
         </tr>
@@ -381,7 +383,7 @@ const generateJobPDFHTML = (jobData: JobData): string => {
                     <th class="qty-col">Qty</th>
                     <th class="part-col">Part Number</th>
                     <th class="desc-col">Description</th>
-                    ${jobData.show_line_pricing ? '<th class="price-col">Price</th>' : ''}
+                    ${showLinePricing ? '<th class="price-col">Price</th>' : ''}
                 </tr>
             </thead>
             <tbody>
@@ -390,7 +392,7 @@ const generateJobPDFHTML = (jobData: JobData): string => {
                     <td class="qty-col">${item.quantity}</td>
                     <td class="part-col">${item.part_number || ''}</td>
                     <td class="desc-col">${item.description}</td>
-                    ${jobData.show_line_pricing ? `<td class="price-col">${formatCurrency(item.line_total)}</td>` : ''}
+                    ${showLinePricing ? `<td class="price-col">${formatCurrency(item.line_total)}</td>` : ''}
                 </tr>
                 `).join('')}
             </tbody>
@@ -425,9 +427,27 @@ const generateJobPDFHTML = (jobData: JobData): string => {
   `;
 };
 
-export const generateJobPDF = async (jobId: number): Promise<Buffer> => {
+export const generateJobPDF = async (jobId: number, showLinePricing: boolean = true): Promise<Buffer> => {
+  const startTime = Date.now();
+  
   try {
-    // Get job data with all details
+    // First, get job updated timestamp for cache validation
+    const timestampResult = await pool.query('SELECT updated_at FROM jobs WHERE id = $1', [jobId]);
+    if (timestampResult.rows.length === 0) {
+      throw new Error('Job not found');
+    }
+    
+    const jobUpdatedAt = timestampResult.rows[0].updated_at.toISOString();
+    
+    // Check cache first
+    const cachedPDF = await pdfCache.get(jobId, showLinePricing, jobUpdatedAt);
+    if (cachedPDF) {
+      console.log(`PDF cache hit for job ${jobId} (${Date.now() - startTime}ms)`);
+      return cachedPDF;
+    }
+    
+    console.log(`PDF cache miss for job ${jobId}, generating new PDF...`);
+    // Get job data with simplified separate queries for better debugging
     const jobResult = await pool.query(`
       SELECT j.*, 
              c.name as customer_name, c.address, c.city, c.state, c.zip_code,
@@ -444,7 +464,7 @@ export const generateJobPDF = async (jobId: number): Promise<Buffer> => {
       throw new Error('Job not found');
     }
 
-    // Get job sections with their items
+    // Get sections with their items
     const sectionsResult = await pool.query(`
       SELECT js.*, 
              COALESCE(json_agg(
@@ -461,7 +481,7 @@ export const generateJobPDF = async (jobId: number): Promise<Buffer> => {
       FROM job_sections js
       LEFT JOIN quote_items qi ON js.id = qi.section_id
       WHERE js.job_id = $1
-      GROUP BY js.id
+      GROUP BY js.id, js.job_id, js.name, js.description, js.display_order, js.is_labor_section, js.is_misc_section, js.created_at, js.updated_at
       ORDER BY js.display_order, js.id
     `, [jobId]);
 
@@ -470,40 +490,50 @@ export const generateJobPDF = async (jobId: number): Promise<Buffer> => {
       sections: sectionsResult.rows
     };
 
+    if (!jobData) {
+      throw new Error('Job not found');
+    }
+
     // Generate HTML
-    const html = generateJobPDFHTML(jobData);
+    const html = generateJobPDFHTML(jobData, showLinePricing);
 
-    // Launch puppeteer and generate PDF
-    const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins',
-        '--disable-site-isolation-trials'
-      ]
-    });
-
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Get browser from pool and generate PDF
+    const browser = await browserPool.getBrowser();
+    let page;
     
-    const pdfBuffer = await page.pdf({
-      format: 'Letter',
-      margin: {
-        top: '0.5in',
-        right: '0.5in',
-        bottom: '0.5in',
-        left: '0.5in'
-      },
-      printBackground: true
-    });
+    try {
+      page = await browser.newPage();
+      
+      // Optimize page settings for faster rendering
+      await page.setViewport({ width: 1200, height: 1600 });
+      await page.setContent(html, { waitUntil: 'domcontentloaded' });
+      
+      const pdfBuffer = await page.pdf({
+        format: 'Letter',
+        margin: {
+          top: '0.5in',
+          right: '0.5in',
+          bottom: '0.5in',
+          left: '0.5in'
+        },
+        printBackground: true,
+        preferCSSPageSize: false
+      });
 
-    await browser.close();
-    return Buffer.from(pdfBuffer);
+      const finalBuffer = Buffer.from(pdfBuffer);
+      
+      // Cache the generated PDF
+      await pdfCache.set(jobId, showLinePricing, jobUpdatedAt, finalBuffer);
+      
+      console.log(`PDF generated for job ${jobId} (${Date.now() - startTime}ms)`);
+      return finalBuffer;
+    } finally {
+      // Always close the page and release the browser back to the pool
+      if (page) {
+        await page.close();
+      }
+      browserPool.releaseBrowser(browser);
+    }
 
   } catch (error) {
     console.error('Error generating PDF:', error);

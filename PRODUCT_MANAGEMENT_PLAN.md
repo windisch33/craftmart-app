@@ -61,7 +61,7 @@
 **Dependencies**: Task 2 complete
 
 **Requirements**:
-- ✅ Product dropdown organized by type (handrail, newel, baluster, other)
+- ✅ Product dropdown organized by type (handrail, landing_tread, rail_parts, newel, baluster, other)
 - ✅ Material selection dropdown with multipliers display
 - ✅ Length input field for handrail calculations
 - ✅ Quantity input with validation
@@ -77,7 +77,8 @@
 
 **Technical Notes**:
 - Use `productService.getAllProducts()` and `materialService.getAllMaterials()`
-- Handrail calculation: `(length ÷ 6) × cost_per_6_inches × material_multiplier`
+- **Handrail & Landing Tread calculation**: `(length ÷ 6) × cost_per_6_inches × material_multiplier`
+- **Rail Parts calculation**: `base_price × material_multiplier × quantity`
 - Item interface: `{ part_number?, description, quantity, unit_price, is_taxable }`
 - Use `jobService.addQuoteItem(jobId, sectionId, itemData)`
 
@@ -269,6 +270,9 @@ Price Breakdown:
 - ✅ `PUT /api/jobs/items/:itemId` - Update quote items
 - ✅ `DELETE /api/jobs/items/:itemId` - Delete quote items
 - ✅ `GET /api/products` - Get all products with type filtering
+- ✅ `GET /api/products/handrails` - Get handrail products specifically
+- ✅ `GET /api/products/landing-treads` - Get landing tread products specifically
+- ✅ `GET /api/products/rail-parts` - Get rail parts products specifically
 - ✅ `GET /api/materials` - Get all materials with multipliers
 
 ### Database Schema Reference
@@ -340,6 +344,27 @@ CREATE TABLE quote_items (
 - ✅ Mobile-responsive design throughout
 - ✅ Products and sections properly saved to database
 - ✅ PDF generation integration (from previous work)
+
+### ✅ **PRODUCT SYSTEM EXPANSION** (July 30, 2025)
+**Landing Treads Implementation**:
+- ✅ Database table: `landing_tread_products` with per-6-inch pricing
+- ✅ Form component: `LandingTreadForm.tsx` with consistent UX
+- ✅ API endpoints: Full CRUD operations for landing treads
+- ✅ ProductSelector integration: Handrail-style length calculations
+- ✅ Sample data: 6" Landing Tread ($35/6", $125 labor)
+
+**Rail Parts Implementation**:
+- ✅ Database table: `rail_parts_products` with base price model
+- ✅ Form component: `RailPartsForm.tsx` with base price inputs
+- ✅ API endpoints: Full CRUD operations for rail parts
+- ✅ ProductSelector integration: Base price × material multiplier calculations
+- ✅ Sample data: End Cap ($15), Mounting Bracket ($12.50), Joint Connector ($8)
+
+**Technical Architecture**:
+- ✅ Three distinct pricing models unified under common interface
+- ✅ Type-safe API routes with proper route ordering to prevent conflicts
+- ✅ Enhanced ProductSelector with smart material requirements
+- ✅ Products page with tabbed interface for all product types
 
 ### 📋 **PHASE 2 OPPORTUNITIES** (Future Development)
 - ⏱️ Task 6: JobDetail component (Enhanced job viewing/editing)
@@ -419,6 +444,6 @@ frontend/src/
 
 ---
 
-*Last Updated: July 23, 2025 - PHASE 1 COMPLETION*
-*Status: ✅ PRODUCTION READY - All critical functionality implemented and tested*
+*Last Updated: July 30, 2025 - PRODUCT SYSTEM EXPANSION*
+*Status: ✅ PRODUCTION READY - Multi-product catalog system fully operational*
 *Next Update: When Phase 2 development begins*

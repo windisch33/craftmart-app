@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS materials (
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    product_type VARCHAR(50) NOT NULL CHECK (product_type IN ('handrail', 'newel', 'baluster', 'other')),
+    product_type VARCHAR(50) NOT NULL CHECK (product_type IN ('handrail', 'newel', 'baluster', 'landing_tread', 'rail_parts', 'other')),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -202,6 +202,24 @@ CREATE TABLE IF NOT EXISTS handrail_products (
     id SERIAL PRIMARY KEY,
     product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
     cost_per_6_inches DECIMAL(8,2) NOT NULL CHECK (cost_per_6_inches >= 0),
+    labor_install_cost DECIMAL(8,2) NOT NULL CHECK (labor_install_cost >= 0),
+    UNIQUE(product_id)
+);
+
+-- Create landing_tread_products table with specific landing tread properties
+CREATE TABLE IF NOT EXISTS landing_tread_products (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+    cost_per_6_inches DECIMAL(8,2) NOT NULL CHECK (cost_per_6_inches >= 0),
+    labor_install_cost DECIMAL(8,2) NOT NULL CHECK (labor_install_cost >= 0),
+    UNIQUE(product_id)
+);
+
+-- Create rail_parts_products table with base price and material multiplier
+CREATE TABLE IF NOT EXISTS rail_parts_products (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+    base_price DECIMAL(8,2) NOT NULL CHECK (base_price >= 0),
     labor_install_cost DECIMAL(8,2) NOT NULL CHECK (labor_install_cost >= 0),
     UNIQUE(product_id)
 );
@@ -229,6 +247,8 @@ CREATE INDEX IF NOT EXISTS idx_materials_active ON materials(is_active);
 CREATE INDEX IF NOT EXISTS idx_products_type ON products(product_type);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
 CREATE INDEX IF NOT EXISTS idx_handrail_products_product_id ON handrail_products(product_id);
+CREATE INDEX IF NOT EXISTS idx_landing_tread_products_product_id ON landing_tread_products(product_id);
+CREATE INDEX IF NOT EXISTS idx_rail_parts_products_product_id ON rail_parts_products(product_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_job_id ON quote_items(job_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_product_id ON quote_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_material_id ON quote_items(material_id);
@@ -253,6 +273,24 @@ INSERT INTO handrail_products (product_id, cost_per_6_inches, labor_install_cost
 (1, 25.00, 150.00),
 (2, 30.00, 175.00),
 (3, 45.00, 200.00)
+ON CONFLICT DO NOTHING;
+
+-- Insert sample landing tread product
+INSERT INTO products (name, product_type) VALUES
+('6" Landing Tread', 'landing_tread'),
+('End Cap - Standard', 'rail_parts'),
+('Mounting Bracket - Heavy Duty', 'rail_parts'),
+('Joint Connector', 'rail_parts')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO landing_tread_products (product_id, cost_per_6_inches, labor_install_cost) VALUES
+(4, 35.00, 125.00)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO rail_parts_products (product_id, base_price, labor_install_cost) VALUES
+(5, 15.00, 25.00),
+(6, 12.50, 30.00),
+(7, 8.00, 15.00)
 ON CONFLICT DO NOTHING;
 
 -- Create salesmen table (separate from users)

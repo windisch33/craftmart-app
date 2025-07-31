@@ -59,6 +59,7 @@ craftmart-app/
 │   │   │   ├── common/     # Shared components (Header, Sidebar)
 │   │   │   ├── customers/  # Customer-specific components (CustomerForm)
 │   │   │   ├── salesmen/   # Salesman-specific components (SalesmanForm)
+│   │   │   ├── products/   # Product-specific components (HandrailForm, LandingTreadForm, RailPartsForm, MaterialForm)
 │   │   │   └── jobs/       # Job-specific components
 │   │   │       ├── JobForm.tsx          # Job creation wizard
 │   │   │       ├── JobDetail.tsx        # Job detail modal viewer
@@ -139,9 +140,12 @@ docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/m
 - Notes for shop-specific information
 
 ### Products & Materials Tables
-- Handrail products with pricing per 6" segments
-- Materials with pricing multipliers
-- Quote items for job integration
+- **Base Products Table**: Core product information with type constraints (handrail, landing_tread, rail_parts, newel, baluster, other)
+- **Handrail Products Table**: Per 6-inch segment pricing with labor costs (cost_per_6_inches, labor_install_cost)
+- **Landing Tread Products Table**: Per 6-inch segment pricing for treads (cost_per_6_inches, labor_install_cost)
+- **Rail Parts Products Table**: Base price with material multipliers for discrete parts (base_price, labor_install_cost)
+- **Materials Table**: Wood types and other materials with pricing multipliers (name, multiplier, color, description)
+- **Quote Items Table**: Job line items with product references, quantities, pricing, and tax status
 
 ## API Endpoints
 
@@ -204,10 +208,17 @@ docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/m
 - `DELETE /api/jobs/items/:itemId` - Delete quote item
 
 ### Products & Materials
-- `GET /api/products` - List all products
+- `GET /api/products` - List all products with optional type filtering
 - `GET /api/products/handrails` - List handrail products
-- `POST /api/products` - Create product
-- `PUT /api/products/:id` - Update product
+- `POST /api/products/handrails` - Create handrail product
+- `PUT /api/products/handrails/:id` - Update handrail product
+- `GET /api/products/landing-treads` - List landing tread products
+- `POST /api/products/landing-treads` - Create landing tread product
+- `PUT /api/products/landing-treads/:id` - Update landing tread product
+- `GET /api/products/rail-parts` - List rail parts products
+- `POST /api/products/rail-parts` - Create rail parts product
+- `PUT /api/products/rail-parts/:id` - Update rail parts product
+- `GET /api/products/:id` - Get specific product
 - `DELETE /api/products/:id` - Delete product
 - `GET /api/materials` - List all materials
 - `POST /api/materials` - Create material
@@ -246,11 +257,14 @@ docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/m
 - Search functionality
 - Notes displayed with consistent formatting
 
-### ✅ Handrail Products System (COMPLETED)
-- Products and materials management
-- Pricing calculation system
-- Sample data with wood types and multipliers
-- Ready for quote system integration
+### ✅ Multi-Product Catalog System (COMPLETED)
+- **Hanrail Products**: Per 6-inch pricing with length calculations and material multipliers
+- **Landing Tread Products**: Per 6-inch pricing like handrails for tread components (6", 8", etc.)
+- **Rail Parts Products**: Base price + material multiplier for discrete components (end caps, brackets, connectors)
+- **Materials Management**: Wood types with pricing multipliers (Pine 1.0x, Oak 1.0x, Cherry 1.5x, etc.)  
+- **Unified Pricing System**: Consistent calculation logic across all product types
+- **Optional Labor Costs**: Each product can include installation/labor charges
+- **Full CRUD Operations**: Complete management interface for all product types
 
 ### ✅ Mobile Responsiveness (COMPLETED)
 - Complete mobile-first responsive design
@@ -398,6 +412,88 @@ docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/m
   - **Flexible Grid System**: Responsive layouts that adapt gracefully across all device sizes
   - **Performance Optimization**: Reduced CSS duplication and improved maintainability
 - **Current Status**: Comprehensive UI standardization and mobile responsiveness implemented across all pages
+
+### ✅ Search-Focused Page Transformations (COMPLETED - July 25, 2025)
+- **Feature Delivered**: Transformed Customers and Jobs pages from list-based to search-focused card interfaces
+- **Customer Page Transformation**:
+  - **Search-First Design**: Large, auto-focused search bar as primary interaction method
+  - **Recent Visitors**: Shows last 10 visited customers instead of loading all customers
+  - **Visit Tracking**: Automatic customer visit tracking with `last_visited_at` database field
+  - **Card Layout**: Responsive grid layout (3→2→1 columns) with comprehensive customer details
+  - **Database Migration**: Added `database/migrations/04-add-customer-last-visited.sql` with indexing
+  - **API Enhancement**: New `getRecentCustomers()` endpoint with `?recent=true` parameter
+- **Jobs Page Transformation**:
+  - **Search-First Design**: Large search bar with real-time search across all job fields
+  - **Recent Jobs**: Shows last 10 recently updated jobs instead of loading all jobs
+  - **Card Layout**: Professional job cards with status badges, amounts, and action buttons
+  - **Advanced Filters Preserved**: Collapsible panel maintains all existing filtering capabilities
+  - **API Enhancement**: New `getRecentJobs()` endpoint leveraging existing `updated_at` field
+- **Technical Implementation**:
+  - **Backend Enhancements**: Added `?recent=true` support in customerController and jobController
+  - **Database Optimization**: Efficient recent data queries with proper indexing
+  - **Mobile-First Design**: Touch-friendly cards with 44px+ touch targets
+  - **Search Integration**: Real-time search with backend integration for both pages
+  - **Critical Bug Fix**: Resolved `TypeError: Assignment to constant variable` in jobController
+- **User Experience Improvements**:
+  - **Faster Page Loads**: Only loads 10 recent items instead of entire datasets
+  - **Immediate Search**: Auto-focused search bars for instant user interaction
+  - **Visual Feedback**: Clear indicators for recent vs. search results
+  - **Progressive Enhancement**: Search functionality works seamlessly with existing features
+- **Current Status**: Both pages successfully transformed with search-focused interfaces and improved performance
+
+### ✅ UI Refinements and Salesmen Page Alignment (COMPLETED - July 28, 2025)
+- **Feature Delivered**: Aligned Salesmen page with Customers page design and removed delete functionality
+- **Salesmen Page Updates**:
+  - **Layout Alignment**: Changed from `page-container` to `container` class matching Customers page
+  - **Search Bar Transformation**: Converted to large centered search bar with `search-container-large`
+  - **Removed Refresh Button**: Simplified interface to match Customers page (only Add button remains)
+  - **Card Styling**: Updated to use `customer-card` classes for visual consistency
+  - **Removed Status Badges**: Eliminated active/inactive badges for cleaner card design
+  - **Import Updates**: Added `common.css` import for shared styling
+- **Customers Page Updates**:
+  - **Delete Button Removal**: Removed delete functionality for safer data management
+  - **Simplified Actions**: Now only shows Edit button on customer cards
+- **Technical Implementation**:
+  - **CSS Consolidation**: Reused existing customer CSS classes for salesmen
+  - **Component Consistency**: Both pages now follow identical layout patterns
+  - **Code Cleanup**: Removed unused delete handler functions
+- **User Experience Improvements**:
+  - **Safer Data Management**: Prevents accidental deletion of customers
+  - **Consistent Navigation**: Users experience the same interface patterns across pages
+  - **Cleaner Cards**: Salesmen cards focus on essential information without status clutter
+- **Current Status**: UI consistency achieved across Customers and Salesmen pages
+
+### ✅ Landing Treads and Rail Parts Product System (COMPLETED - July 30, 2025)
+- **Feature Delivered**: Expanded product catalog with two new product types beyond handrails
+- **Landing Tread Products Implementation**:
+  - **Database Schema**: Created `landing_tread_products` table with per-6-inch pricing model
+  - **Pricing Model**: Same as handrails - length-based calculations with material multipliers
+  - **Sample Products**: 6" Landing Tread with $35/6" base cost and $125 labor option
+  - **Form Component**: `LandingTreadForm.tsx` with consistent styling and validation
+  - **API Endpoints**: Full CRUD operations (`/api/products/landing-treads`)
+  - **Migration Applied**: `database/migrations/05-add-landing-tread-product-type.sql`
+- **Rail Parts Products Implementation**:
+  - **Database Schema**: Created `rail_parts_products` table with base price model
+  - **Pricing Model**: Base price × material multiplier × quantity (no length calculations)
+  - **Sample Products**: End Cap ($15), Mounting Bracket ($12.50), Joint Connector ($8)
+  - **Form Component**: `RailPartsForm.tsx` with base price and labor cost inputs
+  - **API Endpoints**: Full CRUD operations (`/api/products/rail-parts`)
+  - **Migration Applied**: `database/migrations/06-add-rail-parts-product-type.sql`
+- **Product Selector Enhancement**:
+  - **Multi-Product Support**: Updated `ProductSelector.tsx` to handle all three product types
+  - **Pricing Calculations**: Separate calculation logic for each product type
+  - **Material Requirements**: Smart material selector based on product type compatibility
+  - **UI Organization**: Products grouped by type in dropdown (Hanrails, Landing Treads, Rail Parts)
+- **Products Page Enhancement**:
+  - **Tab Interface**: Added Landing Treads and Rail Parts tabs with 🪜 and 🔩 icons
+  - **Consistent UX**: All product types follow same CRUD patterns and form layouts
+  - **Tab Labels**: Updated "Hanrail Products" to "Hanrail" for consistency
+- **Technical Architecture**:
+  - **Polymorphic Pricing**: Three distinct pricing models unified under common interface
+  - **Type Safety**: Full TypeScript interfaces for all product request/response types
+  - **Database Constraints**: Proper foreign keys and validation for all product tables
+  - **Route Organization**: Specific routes before generic to prevent path conflicts
+- **Current Status**: Complete multi-product catalog system operational with three product types
 
 ## UI/UX Standards
 
@@ -570,14 +666,17 @@ CREATE INDEX idx_tax_rates_state_code ON tax_rates(state_code);   -- State tax l
 
 ---
 
-## Project Status Summary (Updated July 24, 2025)
+## Project Status Summary (Updated July 30, 2025)
 
 ### ✅ **Completed Major Features**
 - Complete customer and salesmen management with advanced search
 - Comprehensive job system with PDF generation and sections-based organization  
 - Advanced search and filtering with server-side processing
+- Search-focused page transformations with card-based interfaces and recent data loading
 - Mobile-first responsive design with touch optimization
 - UI standardization and CSS architecture refactoring
+- UI refinements with consistent Customers/Salesmen page layouts
+- **Multi-Product Catalog System** - Handrails, Landing Treads, and Rail Parts with unified pricing
 - Production deployment with enterprise security (Cloudflare Tunnel)
 
 ### 🚧 **Next Priority Items**
@@ -597,4 +696,4 @@ CREATE INDEX idx_tax_rates_state_code ON tax_rates(state_code);   -- State tax l
 
 Remember: Always check current documentation and read outline.txt before making significant changes or architectural decisions. Update this guide after implementing new features or making architectural changes.
 
-*Last Updated: July 24, 2025 - UI Standardization & Mobile Responsiveness Overhaul*
+*Last Updated: July 30, 2025 - Landing Treads and Rail Parts Product System Implementation*

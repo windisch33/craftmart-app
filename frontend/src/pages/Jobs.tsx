@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import jobService from '../services/jobService';
 import salesmanService from '../services/salesmanService';
 import type { Job } from '../services/jobService';
@@ -11,6 +12,7 @@ import '../styles/common.css';
 import './Jobs.css';
 
 const Jobs: React.FC = () => {
+  const location = useLocation();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,16 @@ const Jobs: React.FC = () => {
     loadRecentJobs();
     loadSalesmen();
   }, []);
+
+  // Check for pre-selected job from navigation state
+  useEffect(() => {
+    const state = location.state as { selectedJobId?: number } | null;
+    if (state?.selectedJobId) {
+      setJobDetail({ jobId: state.selectedJobId });
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const loadRecentJobs = async () => {
     try {
@@ -362,8 +374,7 @@ const Jobs: React.FC = () => {
                     className="status-badge"
                     style={{
                       backgroundColor: getStatusColor(job.status).bg,
-                      color: getStatusColor(job.status).color,
-                      border: `1px solid ${getStatusColor(job.status).border}`
+                      color: getStatusColor(job.status).color
                     }}
                   >
                     {job.status}

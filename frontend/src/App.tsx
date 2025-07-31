@@ -7,7 +7,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Products from './pages/Products';
-import SalesmenBasic from './pages/SalesmenBasic';
+import Salesmen from './pages/Salesmen';
 import Jobs from './pages/Jobs';
 import Shops from './pages/Shops';
 import Reports from './pages/Reports';
@@ -32,7 +32,7 @@ function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/products" element={<Products />} />
-                      <Route path="/salesmen" element={<SalesmenBasic />} />
+                      <Route path="/salesmen" element={<Salesmen />} />
                       <Route path="/jobs" element={<Jobs />} />
                       <Route path="/shops" element={<Shops />} />
                       <Route path="/reports" element={<Reports />} />
