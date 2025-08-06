@@ -8,7 +8,10 @@ router.post('/register', authenticateToken, requireAdmin, authController.registe
 router.post('/login', authController.login);
 router.get('/profile', authenticateToken, authController.getProfile);
 router.get('/users', authenticateToken, requireAdmin, authController.getAllUsers);
+router.post('/users', authenticateToken, requireAdmin, authController.createUser);
 router.put('/users/:id', authenticateToken, authController.updateUser);
+router.delete('/users/:id', authenticateToken, requireAdmin, authController.deleteUser);
+router.post('/users/:id/reset-password', authenticateToken, requireAdmin, authController.resetUserPassword);
 
 // Simple test endpoint
 router.get('/test', (req, res) => {

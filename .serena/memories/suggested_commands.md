@@ -1,98 +1,96 @@
 # CraftMart Development Commands
 
-## Docker Commands (Primary Development Method)
+## Docker Development
 ```bash
 # Start all services
 docker-compose up -d
 
-# Stop all services
-docker-compose down
-
 # View logs
-docker-compose logs frontend
-docker-compose logs backend
-docker-compose logs postgres
+docker-compose logs -f frontend
+docker-compose logs -f backend
+docker-compose logs -f postgres
 
-# Restart specific service
+# Restart services
 docker-compose restart frontend
 docker-compose restart backend
 
-# Clean rebuild
+# Stop all services
 docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+
+# Clean rebuild
+docker-compose down -v
+docker-compose up -d --build
 ```
 
-## Local Development Commands
-```bash
-# Backend development
-cd backend
-npm install
-npm run dev        # Starts on port 3001
-npm run build      # Production build
-npm test           # Run tests
-
-# Frontend development
-cd frontend
-npm install
-npm run dev        # Starts on port 3000
-npm run build      # Production build
-npm run lint       # Run ESLint
-npm run preview    # Preview production build
-```
-
-## Database Commands
+## Database Operations
 ```bash
 # Connect to PostgreSQL
 docker-compose exec postgres psql -U craftmart_user -d craftmart
 
 # Apply migrations
-docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/migrations/02-enhance-jobs-table.sql
+docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/migrations/[migration-file].sql
 
 # Backup database
 docker-compose exec postgres pg_dump -U craftmart_user craftmart > backup.sql
+```
 
-# Restore database
-docker-compose exec -T postgres psql -U craftmart_user -d craftmart < backup.sql
+## Local Development (without Docker)
+```bash
+# Backend
+cd backend
+npm install
+npm run dev        # Development with hot reload
+npm run build      # Production build
+npm run start      # Start production server
+
+# Frontend
+cd frontend
+npm install
+npm run dev        # Development server
+npm run build      # Production build
+npm run lint       # Run ESLint
+npm run preview    # Preview production build
 ```
 
 ## Git Commands
 ```bash
-# Clone repository
-git clone git@github.com:windisch33/craftmart-app.git
-
-# Create feature branch
-git checkout -b feature/new-feature
-
-# Commit changes
+# Common workflow
+git status
 git add .
 git commit -m "Description of changes"
+git push origin main
 
-# Push to remote
+# Feature branch workflow
+git checkout -b feature/new-feature
+git add .
+git commit -m "feat: description"
 git push origin feature/new-feature
-
-# Check current branch status
-git status
 ```
 
-## TypeScript Commands
+## TypeScript Checking
 ```bash
-# Check TypeScript compilation (frontend)
-cd frontend
-npx tsc --noEmit --skipLibCheck
+# Backend TypeScript check
+cd backend && npx tsc --noEmit
 
-# Check TypeScript compilation (backend)
-cd backend
-npx tsc --noEmit
+# Frontend TypeScript check
+cd frontend && npx tsc --noEmit --skipLibCheck
 ```
 
-## Access URLs
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:3001
-- PostgreSQL: localhost:5432
-- Production: https://www.cmioe.com
+## System Utilities (Linux)
+```bash
+# File operations
+ls -la             # List all files with details
+cd                 # Change directory
+pwd                # Print working directory
+cp -r              # Copy recursively
+rm -rf             # Remove recursively (careful!)
 
-## Test Credentials
-- Admin: admin@craftmart.com / password123
-- User: john.doe@craftmart.com / password123
-- User: jane.smith@craftmart.com / password123
+# Process management
+ps aux | grep node # Find node processes
+kill -9 [PID]      # Force kill process
+lsof -i :3000      # Check what's using port 3000
+
+# Text search
+grep -r "pattern" . # Search recursively
+find . -name "*.ts" # Find TypeScript files
+```

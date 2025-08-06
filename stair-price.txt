@@ -1,0 +1,26 @@
+when creating a job we need the option to add and price a stair. a stair will be added to the job similar to a product.
+
+the user will enter
+
+floor to floor
+the number of risers
+width & width type for the number of risers
+	box
+	open left
+	open right
+	double open
+tread and nose size
+	example	
+	10" rough cut
+	1.25" nose
+riser height calculated by floor to floor divided by number of risers
+type and size of stringers (should have a stringer product with a bunch of pre configured stringers)
+	example 1" x 9 1/4" poplar 
+tread material
+riser material
+
+if open end select bracket type or no bracket type(which would be marked as "full mitre no  brackets")
+
+a special notes section where we can have saved special notes that be applied 
+
+stair-page-1.png is an example of our current stair quote layout 

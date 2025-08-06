@@ -12,6 +12,7 @@ import Jobs from './pages/Jobs';
 import Shops from './pages/Shops';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
+import Users from './pages/Users';
 import './styles/App.css';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
                       <Route path="/jobs" element={<Jobs />} />
                       <Route path="/shops" element={<Shops />} />
                       <Route path="/reports" element={<Reports />} />
+                      <Route path="/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />
                     </Routes>
                   </main>
                 </div>

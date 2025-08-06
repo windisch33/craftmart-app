@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useMobile } from '../../hooks/useMobile';
+import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const { isMobileMenuOpen, closeMobileMenu } = useMobile();
+  const { user } = useAuth();
 
   const menuItems = [
     { 
@@ -51,6 +53,16 @@ const Sidebar: React.FC = () => {
       ariaLabel: 'Navigate to Salesmen page'
     },
   ];
+
+  // Add Users menu item for admin users
+  if (user?.role === 'admin') {
+    menuItems.push({
+      name: 'Users',
+      path: '/users',
+      icon: '🔐',
+      ariaLabel: 'Navigate to Users management page'
+    });
+  }
 
   const handleLinkClick = () => {
     closeMobileMenu();

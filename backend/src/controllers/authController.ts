@@ -205,3 +205,111 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     next(error);
   }
 };
+
+export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const currentUser = (req as any).user;
+    
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { email, password, first_name, last_name, role = 'employee' } = req.body;
+
+    if (!email || !password || !first_name || !last_name) {
+      return res.status(400).json({ error: 'Email, password, first name, and last name are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const existingUser = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({ error: 'User with this email already exists' });
+    }
+
+    const saltRounds = 12;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const result = await pool.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [email, password_hash, first_name, last_name, role]
+    );
+
+    const user = result.rows[0];
+    const userResponse = excludePassword(user);
+
+    res.status(201).json({
+      message: 'User created successfully',
+      user: userResponse
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const currentUser = (req as any).user;
+    
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    if (currentUser.userId === parseInt(id || '0')) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deactivated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetUserPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const currentUser = (req as any).user;
+    const { newPassword } = req.body;
+    
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters long' });
+    }
+
+    const saltRounds = 12;
+    const password_hash = await bcrypt.hash(newPassword, saltRounds);
+
+    const result = await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [password_hash, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

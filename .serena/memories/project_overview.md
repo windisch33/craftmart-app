@@ -1,29 +1,33 @@
 # CraftMart Project Overview
 
-CraftMart is a custom staircase manufacturer management system built for small-to-medium manufacturing businesses (6-10 employees). It's a comprehensive web application that helps manage customers, jobs (quotes → orders → invoices), shops with cut sheets, salesmen, and generate sales/tax reports.
+## Project Purpose
+CraftMart is a custom staircase manufacturer management system built for 6-10 employees. This web application helps manage:
+- Customers (contact information, job history)
+- Jobs (quotes → orders → invoices workflow)
+- Shops with cut sheets
+- Salesmen (commission tracking, performance metrics)
+- Products (handrails, landing treads, rail parts)
+- Sales and tax reports
 
-## Live Production Site
-- **URL**: https://www.cmioe.com
+## Production Environment
+- **Live Site**: https://www.cmioe.com
 - **Infrastructure**: Cloudflare Tunnel with Nginx reverse proxy
-- **Security**: Zero-trust network access, automatic HTTPS
+- **Security**: Zero-trust network access, JWT authentication
 
-## Core Features
-1. **Customer Management** - Complete CRUD operations with search functionality
-2. **Jobs System** - Advanced workflow from quotes to orders to invoices with:
-   - Multi-step creation wizard
-   - Section-based organization (Basement, Main Floor, etc.)
-   - Product selection with materials and labor
-   - Real-time tax calculations
-   - Professional PDF generation
-   - Advanced search and filtering
-3. **Salesmen Management** - Commission tracking and performance metrics
-4. **Products & Materials** - Handrail products with dynamic pricing
-5. **Shop Management** - Cut sheet generation (planned feature)
-6. **Reports** - Sales and tax reports (backend complete, frontend planned)
+## Development Environment
+- **System**: Linux (WSL/Ubuntu VM)
+- **Container Platform**: Docker Compose
+- **Database**: PostgreSQL 15
+- **Main Ports**: 
+  - Frontend: 3000
+  - Backend API: 3001
+  - Database: 5432
 
-## Design Principles
-- Modern, clean interface optimized for readability
+## Key Features
+- JWT Authentication with role-based access
+- Advanced job search and filtering system
+- PDF generation for jobs
 - Mobile-first responsive design
-- Touch-friendly with 44px+ touch targets
-- Consistent design system with gradient headers
-- Professional color palette suitable for manufacturing business
+- Real-time tax calculations
+- Section-based job organization
+- Multi-product catalog with dynamic pricing

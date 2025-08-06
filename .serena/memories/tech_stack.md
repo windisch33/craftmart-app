@@ -1,37 +1,32 @@
 # CraftMart Tech Stack
 
 ## Backend
-- **Node.js 20** - Runtime environment
-- **Express.js** - Web framework
-- **TypeScript** - Type safety
-- **PostgreSQL** - Primary database
-- **bcryptjs** - Password hashing (Alpine Linux compatible)
-- **JWT (jsonwebtoken)** - Authentication with 24-hour tokens
-- **Puppeteer** - PDF generation
-- **Multer** - File upload handling
-- **Joi** - Input validation
-- **Morgan** - HTTP request logging
-- **Helmet** - Security headers
-- **CORS** - Cross-origin resource sharing
+- **Runtime**: Node.js 20 (Alpine Linux in Docker)
+- **Framework**: Express.js with TypeScript
+- **Database**: PostgreSQL 15
+- **Authentication**: JWT with bcryptjs
+- **PDF Generation**: Puppeteer
+- **Validation**: Joi
+- **Security**: Helmet, CORS
+- **File Upload**: Multer
+- **Development**: ts-node-dev for hot reload
 
 ## Frontend
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router** - Client-side routing
-- **Axios** - HTTP client
-- **Zustand** - State management
-- **External CSS Modules** - Component-scoped styling
-- **No CSS frameworks** - Custom CSS architecture
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite
+- **Routing**: React Router v6
+- **State Management**: Zustand
+- **HTTP Client**: Axios
+- **Styling**: External CSS modules (no CSS frameworks)
+- **Linting**: ESLint with TypeScript config
 
 ## Infrastructure
-- **Docker & Docker Compose** - Container orchestration
-- **Nginx** - Reverse proxy
-- **Cloudflare Tunnel** - Secure internet access
-- **Alpine Linux** - Base Docker image
+- **Containerization**: Docker & Docker Compose
+- **Reverse Proxy**: Nginx (Alpine)
+- **Production Access**: Cloudflare Tunnel
+- **Version Control**: Git/GitHub
 
-## Development Tools
-- **ESLint** - Code linting (frontend)
-- **TypeScript Compiler** - Type checking
-- **ts-node-dev** - Backend development server
-- **Jest** - Testing framework (backend)
+## TypeScript Configuration
+- **Backend**: Strict mode enabled, CommonJS modules, ES2020 target
+- **Frontend**: ES modules, composite project with app/node configs
+- **All strict checks enabled**: noImplicitAny, strictNullChecks, etc.

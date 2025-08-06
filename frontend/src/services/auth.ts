@@ -94,6 +94,55 @@ class AuthService {
     }
   }
 
+  async createUser(userData: RegisterRequest): Promise<User> {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/users`, userData);
+      return response.data.user;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to create user');
+    }
+  }
+
+  async updateUser(userId: number, updates: Partial<User>): Promise<User> {
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/auth/users/${userId}`, updates);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to update user');
+    }
+  }
+
+  async deleteUser(userId: number): Promise<void> {
+    try {
+      await axios.delete(`${API_BASE_URL}/api/auth/users/${userId}`);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to delete user');
+    }
+  }
+
+  async resetUserPassword(userId: number, newPassword: string): Promise<void> {
+    try {
+      await axios.post(`${API_BASE_URL}/api/auth/users/${userId}/reset-password`, { newPassword });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to reset password');
+    }
+  }
+
+  async searchUsers(searchTerm: string): Promise<User[]> {
+    try {
+      const users = await this.getAllUsers();
+      const term = searchTerm.toLowerCase();
+      return users.filter(user => 
+        user.email.toLowerCase().includes(term) ||
+        user.first_name.toLowerCase().includes(term) ||
+        user.last_name.toLowerCase().includes(term) ||
+        user.role.toLowerCase().includes(term)
+      );
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to search users');
+    }
+  }
+
   logout() {
     this.token = null;
     localStorage.removeItem('authToken');
