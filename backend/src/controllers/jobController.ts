@@ -556,20 +556,84 @@ export const deleteJobSection = async (req: Request, res: Response, next: NextFu
 export const addQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId, sectionId } = req.params;
-    const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true } = req.body;
+    const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true, stair_configuration } = req.body;
     
     if (!description) {
       return res.status(400).json({ error: 'Description is required' });
     }
     
     const lineTotal = quantity * unit_price;
+    let stairConfigId = null;
+    let finalPartNumber = part_number;
+    
+    // Check if this is a stair configuration item
+    if (part_number === 'STAIR-CONFIG' && stair_configuration) {
+      // Create the stair configuration first (riser_height is computed, don't insert it)
+      const stairResult = await pool.query(
+        `INSERT INTO stair_configurations (
+          job_id, config_name, floor_to_floor, num_risers,
+          tread_material_id, riser_material_id, tread_size, rough_cut_width, nose_size,
+          stringer_type, stringer_material_id, num_stringers, center_horses, full_mitre,
+          bracket_type, special_notes, subtotal, labor_total, tax_amount, total_amount
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
+        RETURNING id`,
+        [
+          jobId,
+          stair_configuration.configName || description,
+          stair_configuration.floorToFloor || 108,
+          stair_configuration.numRisers || 14,
+          stair_configuration.treadMaterialId || 5,
+          stair_configuration.riserMaterialId || 4,
+          stair_configuration.treadSize || '10x1.25',
+          stair_configuration.roughCutWidth || 10,
+          stair_configuration.noseSize || 1.25,
+          stair_configuration.stringerType || '1x9.25_Poplar',
+          stair_configuration.stringerMaterialId || 7,
+          stair_configuration.numStringers || 2,
+          stair_configuration.centerHorses || 0,
+          stair_configuration.fullMitre || false,
+          stair_configuration.bracketType || null,
+          stair_configuration.specialNotes || null,
+          stair_configuration.subtotal || unit_price,
+          stair_configuration.laborTotal || 0,
+          stair_configuration.taxAmount || 0,
+          stair_configuration.totalAmount || unit_price
+        ]
+      );
+      
+      stairConfigId = stairResult.rows[0].id;
+      finalPartNumber = `STAIR-${stairConfigId}`;
+      
+      // If stair items were provided, insert them
+      if (stair_configuration.items && Array.isArray(stair_configuration.items)) {
+        for (const item of stair_configuration.items) {
+          await pool.query(
+            `INSERT INTO stair_config_items (
+              config_id, item_type, riser_number, tread_type, width, 
+              material_id, quantity, unit_price, total_price
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [
+              stairConfigId,
+              item.itemType || 'tread',
+              item.riserNumber || null,
+              item.treadType || 'box',
+              item.stairWidth || item.width || 0,
+              item.materialId || 5,
+              item.quantity || 1,
+              item.unitPrice || 0,
+              item.totalPrice || 0
+            ]
+          );
+        }
+      }
+    }
     
     const result = await pool.query(
       `INSERT INTO quote_items (
         job_id, section_id, part_number, description, quantity, unit_price, line_total, is_taxable,
-        product_type, product_name
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-      [jobId, sectionId, part_number, description, quantity, unit_price, lineTotal, is_taxable, 'custom', description]
+        product_type, product_name, stair_config_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [jobId, sectionId, finalPartNumber, description, quantity, unit_price, lineTotal, is_taxable, 'custom', description, stairConfigId]
     );
     
     // Recalculate job totals

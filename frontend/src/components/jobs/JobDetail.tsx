@@ -2,7 +2,8 @@ import React, { useState, useEffect, Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import jobService from '../../services/jobService';
 import salesmanService from '../../services/salesmanService';
-import type { JobWithDetails } from '../../services/jobService';
+import ProductSelector from './ProductSelector';
+import type { JobWithDetails, QuoteItem } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
 import { formatCurrency } from '../../utils/jobCalculations';
 import '../../styles/common.css';
@@ -402,6 +403,27 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     const updatedSections = [...editSections];
     updatedSections[sectionIndex].items = updatedSections[sectionIndex].items.filter((_, index) => index !== itemIndex);
     setEditSections(updatedSections);
+  };
+
+  // Handler for ProductSelector items changes during job editing
+  const handleProductSelectorItemsChange = (sectionId: number, items: QuoteItem[]) => {
+    const sectionIndex = editSections.findIndex(section => section.id === sectionId);
+    if (sectionIndex !== -1) {
+      const updatedSections = [...editSections];
+      // Convert QuoteItem[] to EditableItem[] for consistency
+      const editableItems = items.map(item => ({
+        id: item.id,
+        part_number: item.part_number || '',
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
+        is_taxable: item.is_taxable,
+        isNew: item.id <= 0 // Negative IDs are new items
+      }));
+      updatedSections[sectionIndex].items = editableItems;
+      setEditSections(updatedSections);
+    }
   };
 
   const getJobNumber = (job: JobWithDetails) => {
@@ -815,6 +837,37 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                                 <button onClick={() => addNewItem(sectionIndex)}>Add First Item</button>
                               </div>
                             )}
+                          </div>
+
+                          {/* Product Selector for Adding New Items */}
+                          <div className="product-selector-section job-edit-product-selector">
+                            <ProductSelector
+                              jobId={jobId}
+                              section={{
+                                id: section.id || -1,
+                                name: section.name,
+                                description: section.description,
+                                display_order: section.display_order,
+                                is_labor_section: section.is_labor_section,
+                                is_misc_section: section.is_misc_section,
+                                items: section.items.map(item => ({
+                                  id: item.id || -1,
+                                  job_id: jobId,
+                                  section_id: section.id || -1,
+                                  part_number: item.part_number || '',
+                                  description: item.description,
+                                  quantity: item.quantity,
+                                  unit_price: item.unit_price,
+                                  line_total: item.line_total,
+                                  is_taxable: item.is_taxable,
+                                  created_at: new Date().toISOString()
+                                }))
+                              }}
+                              onItemsChange={handleProductSelectorItemsChange}
+                              isReadOnly={isSaving}
+                              isLoading={isSaving}
+                              isDraftMode={false}
+                            />
                           </div>
                         </div>
                       ))

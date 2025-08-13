@@ -233,7 +233,7 @@
 
 .tread-controls {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
   align-items: end;
 }
@@ -251,6 +251,65 @@
 .tread-controls select {
   padding: 0.5rem;
   font-size: 0.875rem;
+}
+
+/* Tread Sizing Grid */
+.tread-sizing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+.tread-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tread-input-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.tread-input-group input {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.tread-total-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 0.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.tread-total-display label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.total-size {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 0.25rem;
+}
+
+.tread-total-display small {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 /* Materials Section */
@@ -546,6 +605,15 @@
   .tread-controls {
     grid-template-columns: 1fr;
     gap: 0.5rem;
+  }
+  
+  .tread-sizing-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .tread-total-display {
+    text-align: center;
   }
   
   .summary-grid {

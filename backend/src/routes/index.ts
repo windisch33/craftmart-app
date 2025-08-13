@@ -20,6 +20,6 @@ router.use('/reports', authenticateToken, reportRoutes);
 router.use('/products', authenticateToken, productRoutes);
 router.use('/materials', authenticateToken, materialRoutes);
 router.use('/salesmen', authenticateToken, salesmenRoutes);
-router.use('/stairs', stairRoutes);
+router.use('/stairs', authenticateToken, stairRoutes);
 
 export default router;

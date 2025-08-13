@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useMemo, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo, Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import productService from '../../services/productService';
 import materialService from '../../services/materialService';
 import jobService from '../../services/jobService';
+import StairConfigurator from '../stairs/StairConfigurator';
 import type { Product } from '../../services/productService';
 import type { Material } from '../../services/materialService';
 import type { JobSection, CreateQuoteItemData, QuoteItem } from '../../services/jobService';
+import type { StairConfiguration } from '../../services/stairService';
 import './ProductSelector.css';
 
 interface ErrorBoundaryState {
@@ -63,10 +66,11 @@ interface ProductSelectorProps {
   onItemTotalChange?: (sectionId: number, total: number) => void;
   isReadOnly?: boolean;
   isLoading?: boolean;
+  isDraftMode?: boolean; // Flag to indicate job creation mode
 }
 
 interface ProductFormData {
-  productId: number;
+  productId: number | string;
   materialId: number;
   customDescription: string;
   quantity: number;
@@ -83,7 +87,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   onItemsChange,
   onItemTotalChange,
   isReadOnly = false,
-  isLoading = false
+  isLoading = false,
+  isDraftMode = false
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -92,6 +97,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [addingItem, setAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
+  const [showStairConfigurator, setShowStairConfigurator] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
     productId: 0,
@@ -206,17 +212,6 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     }
   };
 
-  const calculateTotalPrice = (product: Product | null, material: Material | null): number => {
-    try {
-      const materialCost = calculateMaterialPrice(product, material) || 0;
-      const laborCost = calculateLaborPrice(product) || 0;
-      const total = materialCost + laborCost;
-      return isNaN(total) ? 0 : total;
-    } catch (error) {
-      console.error('Error in calculateTotalPrice:', error);
-      return 0;
-    }
-  };
 
   const getCalculatedUnitPrice = (): number => {
     try {
@@ -376,6 +371,13 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   const handleFormChange = (field: keyof ProductFormData, value: any) => {
     console.log('ProductSelector: Form change -', field, ':', value);
     if (field === 'productId') {
+      // Handle stair configurator selection
+      if (value === 'stair-configurator') {
+        setShowStairConfigurator(true);
+        setShowAddForm(false);
+        return;
+      }
+      
       const product = products.find(p => p.id === value);
       console.log('ProductSelector: Selected product:', product);
     }
@@ -384,6 +386,123 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
 
   const getProductsByType = (type: string) => {
     return products.filter(p => p.product_type === type && p.is_active);
+  };
+
+  const handleStairSave = async (stairConfig: StairConfiguration) => {
+    console.log('ProductSelector: handleStairSave called with config:', stairConfig);
+    console.log('Stair configuration ID:', stairConfig.id);
+    
+    try {
+      setAddingItem(true);
+      
+      if (isDraftMode) {
+        // Draft mode: just add the configuration as a local item for display
+        // The actual stair configuration will be saved when the job is created
+        const stairItem: QuoteItem & { stair_configuration?: any } = {
+          id: 0, // Temporary ID for display
+          job_section_id: section.id,
+          part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
+          description: stairConfig.configName || 'Custom Staircase',
+          quantity: 1,
+          unit_price: stairConfig.totalAmount,
+          line_total: stairConfig.totalAmount,
+          is_taxable: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          // Include the full stair configuration data so it gets saved when job is created
+          stair_configuration: {
+            configName: stairConfig.configName,
+            floorToFloor: stairConfig.floorToFloor,
+            numRisers: stairConfig.numRisers,
+            riserHeight: stairConfig.riserHeight,
+            treadMaterialId: stairConfig.treadMaterialId,
+            riserMaterialId: stairConfig.riserMaterialId,
+            treadSize: stairConfig.treadSize,
+            roughCutWidth: stairConfig.roughCutWidth,
+            noseSize: stairConfig.noseSize,
+            stringerType: stairConfig.stringerType,
+            stringerMaterialId: stairConfig.stringerMaterialId,
+            numStringers: stairConfig.numStringers,
+            centerHorses: stairConfig.centerHorses,
+            fullMitre: stairConfig.fullMitre,
+            bracketType: stairConfig.bracketType,
+            specialNotes: stairConfig.specialNotes,
+            subtotal: stairConfig.subtotal,
+            laborTotal: stairConfig.laborTotal,
+            taxAmount: stairConfig.taxAmount,
+            totalAmount: stairConfig.totalAmount,
+            items: stairConfig.items
+          }
+        };
+
+        const updatedItems = [...items, stairItem];
+        setItems(updatedItems);
+        onItemsChange(section.id, updatedItems);
+        
+        setShowStairConfigurator(false);
+        alert('Stair configuration added! It will be saved when you save the job.');
+      } else {
+        // Normal mode: validate that we have a real job and section
+        if (!jobId || jobId <= 0 || !section.id || section.id <= 0) {
+          alert('Stair configurations can only be added to saved jobs with sections. Please:\n1. Save the job first\n2. Add a section\n3. Then configure your staircase');
+          setShowStairConfigurator(false);
+          setAddingItem(false);
+          return;
+        }
+        
+        // Create a quote item for the stair configuration
+        console.log('Creating quote item with ID:', stairConfig.id);
+        const stairItem: CreateQuoteItemData = {
+          part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
+          description: stairConfig.configName || 'Custom Staircase',
+          quantity: 1,
+          unit_price: stairConfig.totalAmount,
+          is_taxable: true,
+          // Include the full stair configuration data
+          stair_configuration: {
+            configName: stairConfig.configName,
+            floorToFloor: stairConfig.floorToFloor,
+            numRisers: stairConfig.numRisers,
+            riserHeight: stairConfig.riserHeight,
+            treadMaterialId: stairConfig.treadMaterialId,
+            riserMaterialId: stairConfig.riserMaterialId,
+            treadSize: stairConfig.treadSize,
+            roughCutWidth: stairConfig.roughCutWidth,
+            noseSize: stairConfig.noseSize,
+            stringerType: stairConfig.stringerType,
+            stringerMaterialId: stairConfig.stringerMaterialId,
+            numStringers: stairConfig.numStringers,
+            centerHorses: stairConfig.centerHorses,
+            fullMitre: stairConfig.fullMitre,
+            bracketType: stairConfig.bracketType,
+            specialNotes: stairConfig.specialNotes,
+            subtotal: stairConfig.subtotal,
+            laborTotal: stairConfig.laborTotal,
+            taxAmount: stairConfig.taxAmount,
+            totalAmount: stairConfig.totalAmount,
+            items: stairConfig.items
+          }
+        } as any;
+        console.log('Quote item part_number:', stairItem.part_number);
+
+        const newItem = await jobService.addQuoteItem(jobId || 0, section.id, stairItem);
+        const updatedItems = [...items, newItem];
+        setItems(updatedItems);
+        onItemsChange(section.id, updatedItems);
+        
+        setShowStairConfigurator(false);
+        alert('Stair configuration added successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding stair configuration:', error);
+      alert('Failed to add stair configuration. Please try again.');
+    } finally {
+      setAddingItem(false);
+    }
+  };
+
+  const handleStairCancel = () => {
+    setShowStairConfigurator(false);
   };
 
   // Memoize selected product to prevent unnecessary lookups
@@ -512,10 +631,20 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                 <select
                   id="product-select"
                   value={formData.productId}
-                  onChange={(e) => handleFormChange('productId', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'stair-configurator') {
+                      handleFormChange('productId', value);
+                    } else {
+                      handleFormChange('productId', parseInt(value));
+                    }
+                  }}
                   disabled={addingItem}
                 >
                   <option value={0}>Select Product...</option>
+                  <optgroup label="🪜 Stairs">
+                    <option value="stair-configurator">Configure Custom Stair...</option>
+                  </optgroup>
                   <optgroup label="Handrails">
                     {getProductsByType('handrail').map(product => (
                       <option key={product.id} value={product.id}>
@@ -822,6 +951,17 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           </div>
         )}
       </div>
+
+      {/* Stair Configurator Modal */}
+      {showStairConfigurator && (
+        <StairConfigurator
+          jobId={jobId}
+          sectionId={section.id > 0 ? section.id : undefined}
+          sectionTempId={section.id <= 0 ? section.id : undefined}
+          onSave={handleStairSave}
+          onCancel={handleStairCancel}
+        />
+      )}
     </div>
     );
   } catch (error) {

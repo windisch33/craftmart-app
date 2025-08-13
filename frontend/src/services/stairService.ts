@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -93,8 +93,7 @@ export interface StairPriceRule {
 export interface TreadConfiguration {
   riserNumber: number;
   type: 'box' | 'open_left' | 'open_right' | 'double_open';
-  width: number;
-  length: number;
+  stairWidth: number; // Renamed from length - left-to-right measurement of staircase
 }
 
 export interface SpecialPartConfiguration {
@@ -122,8 +121,7 @@ export interface StairPriceBreakdown {
   treads: {
     riserNumber: number;
     type: string;
-    width: number;
-    length: number;
+    stairWidth: number; // Updated to match backend - left-to-right measurement
     basePrice: number;
     oversizedCharge: number;
     mitreCharge: number;
@@ -177,7 +175,8 @@ export interface StairConfiguration {
   riserHeight?: number;
   treadMaterialId: number;
   riserMaterialId: number;
-  treadSize: string;
+  treadSize: string; // Legacy field for backward compatibility
+  roughCutWidth: number; // New field for flexible tread sizing
   noseSize: number;
   stringerType?: string;
   stringerMaterialId?: number;

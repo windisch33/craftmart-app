@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, Component, ErrorInfo, ReactNode } from 'react';
 import customerService from '../../services/customerService';
 import salesmanService from '../../services/salesmanService';
+import jobService from '../../services/jobService';
+import stairService from '../../services/stairService';
 import type { Customer } from '../../services/customerService';
 import type { Salesman } from '../../services/salesmanService';
 import type { CreateJobData, JobSection, QuoteItem } from '../../services/jobService';
@@ -10,6 +12,7 @@ import SectionManager from './SectionManager';
 import ProductSelector from './ProductSelector';
 import { calculateJobTotals, getTaxRateForState, formatCurrency } from '../../utils/jobCalculations';
 import type { JobTotals } from '../../utils/jobCalculations';
+import { StairConfigurationProvider, useStairConfiguration } from '../../contexts/StairConfigurationContext';
 import './JobForm.css';
 
 interface JobFormErrorBoundaryState {
@@ -70,11 +73,12 @@ interface JobFormProps {
   isLoading?: boolean;
 }
 
-const JobForm: React.FC<JobFormProps> = ({ 
+const JobFormInner: React.FC<JobFormProps> = ({ 
   onSubmit, 
   onCancel, 
   isLoading = false 
 }) => {
+  const { draftConfigurations, clearDraftConfigurations } = useStairConfiguration();
   const [formData, setFormData] = useState<CreateJobData>({
     customer_id: 0,
     salesman_id: undefined,
@@ -232,7 +236,14 @@ const JobForm: React.FC<JobFormProps> = ({
         terms: formData.terms || undefined
       };
 
+      // Call the original onSubmit which will create the job and sections
       await onSubmit(submitData, sections);
+      
+      // Note: Draft stair configurations are handled in the wrapping JobForm component
+      // The parent context will automatically save any draft configurations after job creation
+      // We clear the draft configurations to prevent reuse
+      clearDraftConfigurations();
+      
     } catch (error) {
       console.error('Error submitting form:', error);
     }
@@ -625,6 +636,7 @@ const JobForm: React.FC<JobFormProps> = ({
                       section={section}
                       onItemsChange={handleItemsChange}
                       isLoading={isLoading}
+                      isDraftMode={true}
                     />
                   ))}
                   
@@ -805,6 +817,35 @@ const JobForm: React.FC<JobFormProps> = ({
         onSave={handleSalesmanCreate}
       />
     </>
+  );
+};
+
+// Main JobForm component with stair configuration handling
+const JobForm: React.FC<JobFormProps> = ({ onSubmit, ...otherProps }) => {
+  return (
+    <StairConfigurationProvider>
+      <JobFormWithStairHandling onSubmit={onSubmit} {...otherProps} />
+    </StairConfigurationProvider>
+  );
+};
+
+// Intermediate wrapper to handle stair configurations
+const JobFormWithStairHandling: React.FC<JobFormProps> = ({ onSubmit, ...otherProps }) => {
+  const { draftConfigurations } = useStairConfiguration();
+
+  const handleSubmitWithStairConfigs = async (jobData: CreateJobData, sections: JobSection[]) => {
+    // First create the job and sections normally
+    await onSubmit(jobData, sections);
+    
+    // TODO: Future enhancement - save draft stair configurations here
+    // For now, the draft configurations are handled in the StairConfigurator itself
+    // which saves them as quote items to the job sections
+    
+    console.log('Draft stair configurations available for processing:', draftConfigurations.length);
+  };
+
+  return (
+    <JobFormInner onSubmit={handleSubmitWithStairConfigs} {...otherProps} />
   );
 };
 

@@ -875,3 +875,29 @@
     gap: 8px;
   }
 }
+
+/* Product Selector Integration in Job Detail */
+.job-edit-product-selector {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.job-edit-product-selector .section-items-header h4 {
+  color: #3b82f6;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.job-edit-product-selector .product-selector {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.job-edit-product-selector .add-item-form {
+  background: white;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+}

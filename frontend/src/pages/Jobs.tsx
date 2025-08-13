@@ -165,13 +165,20 @@ const Jobs: React.FC = () => {
             // Add items to the section if they exist
             if (section.items && section.items.length > 0) {
               for (const item of section.items) {
-                await jobService.addQuoteItem(newJob.id, newSection.id, {
+                const itemData: any = {
                   part_number: item.part_number,
                   description: item.description,
                   quantity: item.quantity,
                   unit_price: item.unit_price,
                   is_taxable: item.is_taxable
-                });
+                };
+                
+                // If this is a stair configuration, include the stair data
+                if (item.part_number === 'STAIR-CONFIG' && item.stair_configuration) {
+                  itemData.stair_configuration = item.stair_configuration;
+                }
+                
+                await jobService.addQuoteItem(newJob.id, newSection.id, itemData);
               }
             }
           }

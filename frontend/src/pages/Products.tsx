@@ -1,38 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import productService, { type Product } from '../services/productService';
 import materialService, { type Material } from '../services/materialService';
+import stairProductService, { 
+  type StairMaterial, 
+  type StairBoardType, 
+  type StairSpecialPart 
+} from '../services/stairProductService';
 import HandrailForm from '../components/products/HandrailForm';
 import LandingTreadForm from '../components/products/LandingTreadForm';
 import RailPartsForm from '../components/products/RailPartsForm';
 import MaterialForm from '../components/products/MaterialForm';
+import StairMaterialForm from '../components/stairs/StairMaterialForm';
+import BoardTypeForm from '../components/stairs/BoardTypeForm';
+
+import StairSpecialPartsForm from '../components/stairs/StairSpecialPartsForm';
 import { SelectableList } from '../components/common/SelectableList';
 import '../styles/common.css';
 import './Products.css';
 
+type TabType = 'handrails' | 'landing_treads' | 'rail_parts' | 'materials' | 'stair_materials' | 'board_types' | 'special_parts';
+
 const Products: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'handrails' | 'landing_treads' | 'rail_parts' | 'materials'>('handrails');
+  const [activeTab, setActiveTab] = useState<TabType>('handrails');
+  
+  // Existing product states
   const [handrailProducts, setHandrailProducts] = useState<Product[]>([]);
   const [landingTreadProducts, setLandingTreadProducts] = useState<Product[]>([]);
   const [railPartsProducts, setRailPartsProducts] = useState<Product[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
+  
+  // New stair component states
+  const [stairMaterials, setStairMaterials] = useState<StairMaterial[]>([]);
+  const [boardTypes, setBoardTypes] = useState<StairBoardType[]>([]);
+
+  const [specialParts, setSpecialParts] = useState<StairSpecialPart[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Handrail form state
+  // Existing product form states
   const [showHandrailForm, setShowHandrailForm] = useState(false);
   const [editingHandrail, setEditingHandrail] = useState<Product | null>(null);
-  
-  // Landing tread form state
   const [showLandingTreadForm, setShowLandingTreadForm] = useState(false);
   const [editingLandingTread, setEditingLandingTread] = useState<Product | null>(null);
-  
-  // Rail parts form state
   const [showRailPartsForm, setShowRailPartsForm] = useState(false);
   const [editingRailParts, setEditingRailParts] = useState<Product | null>(null);
-  
-  // Material form state
   const [showMaterialForm, setShowMaterialForm] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  
+  // New stair component form states
+  const [showStairMaterialForm, setShowStairMaterialForm] = useState(false);
+  const [editingStairMaterial, setEditingStairMaterial] = useState<StairMaterial | null>(null);
+  const [showBoardTypeForm, setShowBoardTypeForm] = useState(false);
+  const [editingBoardType, setEditingBoardType] = useState<StairBoardType | null>(null);
+
+  const [showSpecialPartsForm, setShowSpecialPartsForm] = useState(false);
+  const [editingSpecialParts, setEditingSpecialParts] = useState<StairSpecialPart | null>(null);
 
   // Load data on component mount and tab change
   useEffect(() => {
@@ -44,21 +67,52 @@ const Products: React.FC = () => {
     setError(null);
     
     try {
-      if (activeTab === 'handrails') {
-        const products = await productService.getHandrailProducts();
-        setHandrailProducts(products);
-      } else if (activeTab === 'landing_treads') {
-        const products = await productService.getLandingTreadProducts();
-        setLandingTreadProducts(products);
-      } else if (activeTab === 'rail_parts') {
-        const products = await productService.getRailPartsProducts();
-        setRailPartsProducts(products);
-      } else {
-        const materialsData = await materialService.getAllMaterials();
-        setMaterials(materialsData);
+      switch (activeTab) {
+        case 'handrails':
+          const handrailData = await productService.getHandrailProducts();
+          setHandrailProducts(handrailData);
+          break;
+        case 'landing_treads':
+          const landingTreadData = await productService.getLandingTreadProducts();
+          setLandingTreadProducts(landingTreadData);
+          break;
+        case 'rail_parts':
+          const railPartsData = await productService.getRailPartsProducts();
+          setRailPartsProducts(railPartsData);
+          break;
+        case 'materials':
+          const materialsData = await materialService.getAllMaterials();
+          setMaterials(materialsData);
+          break;
+        case 'stair_materials':
+          const stairMaterialsData = await stairProductService.getStairMaterials();
+          setStairMaterials(stairMaterialsData);
+          break;
+        case 'board_types':
+          const boardTypesData = await stairProductService.getBoardTypes();
+          setBoardTypes(boardTypesData);
+          break;
+
+        case 'special_parts':
+          console.log('Loading special parts data...');
+          const specialPartsData = await stairProductService.getSpecialParts();
+          console.log('Special parts data:', specialPartsData);
+          setSpecialParts(specialPartsData || []);
+          break;
+        default:
+          break;
       }
     } catch (err) {
+      console.error('Error loading data for tab:', activeTab, err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
+      
+      // Initialize empty arrays to prevent blank screens
+      switch (activeTab) {
+
+        case 'special_parts':
+          setSpecialParts([]);
+          break;
+      }
     } finally {
       setLoading(false);
     }
@@ -147,7 +201,75 @@ const Products: React.FC = () => {
     }
   };
 
+  // Stair Materials Handlers
+  const handleCreateStairMaterial = () => {
+    setEditingStairMaterial(null);
+    setShowStairMaterialForm(true);
+  };
+
+  const handleEditStairMaterial = (material: StairMaterial) => {
+    setEditingStairMaterial(material);
+    setShowStairMaterialForm(true);
+  };
+
+  const handleDeleteStairMaterials = async (materials: StairMaterial[]) => {
+    try {
+      await Promise.all(
+        materials.map(material => stairProductService.deleteStairMaterial(material.id))
+      );
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete stair materials');
+    }
+  };
+
+  // Board Types Handlers
+  const handleCreateBoardType = () => {
+    setEditingBoardType(null);
+    setShowBoardTypeForm(true);
+  };
+
+  const handleEditBoardType = (boardType: StairBoardType) => {
+    setEditingBoardType(boardType);
+    setShowBoardTypeForm(true);
+  };
+
+  const handleDeleteBoardTypes = async (boardTypes: StairBoardType[]) => {
+    try {
+      await Promise.all(
+        boardTypes.map(boardType => stairProductService.deleteBoardType(boardType.id))
+      );
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete board types');
+    }
+  };
+
+
+  // Special Parts Handlers
+  const handleCreateSpecialParts = () => {
+    setEditingSpecialParts(null);
+    setShowSpecialPartsForm(true);
+  };
+
+  const handleEditSpecialParts = (specialPart: StairSpecialPart) => {
+    setEditingSpecialParts(specialPart);
+    setShowSpecialPartsForm(true);
+  };
+
+  const handleDeleteSpecialParts = async (specialParts: StairSpecialPart[]) => {
+    try {
+      await Promise.all(
+        specialParts.map(specialPart => stairProductService.deleteSpecialPart(specialPart.id))
+      );
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete special parts');
+    }
+  };
+
   const handleFormClose = async () => {
+    // Close all existing product forms
     setShowHandrailForm(false);
     setShowLandingTreadForm(false);
     setShowRailPartsForm(false);
@@ -156,6 +278,17 @@ const Products: React.FC = () => {
     setEditingLandingTread(null);
     setEditingRailParts(null);
     setEditingMaterial(null);
+    
+    // Close all stair component forms
+    setShowStairMaterialForm(false);
+    setShowBoardTypeForm(false);
+
+    setShowSpecialPartsForm(false);
+    setEditingStairMaterial(null);
+    setEditingBoardType(null);
+
+    setEditingSpecialParts(null);
+    
     await loadData();
   };
 
@@ -212,6 +345,89 @@ const Products: React.FC = () => {
     }
   ];
 
+  // Stair component columns
+  const stairMaterialColumns = [
+    {
+      key: 'matrl_nam',
+      label: 'Stair Material Details',
+      width: '100%',
+      render: (material: StairMaterial) => (
+        <div>
+          <div style={{ fontWeight: 600, fontSize: '16px' }}>
+            {material.matrl_nam}
+          </div>
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+            Stair Price Multiplier: <span style={{ fontWeight: 600 }}>{material.multiplier}x</span>
+            {material.multiplier === 1 && ' (Base Price - Red Oak)'}
+          </div>
+          {material.description && (
+            <div style={{ fontSize: '13px', color: '#9ca3af' }}>
+              {material.description}
+            </div>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  const boardTypeColumns = [
+    {
+      key: 'brdtyp_des',
+      label: 'Board Type with Simplified Pricing',
+      width: '100%',
+      render: (boardType: any) => (
+        <div>
+          <div style={{ fontWeight: 600, fontSize: '16px' }}>
+            {boardType.brdtyp_des}
+          </div>
+          {boardType.base_price ? (
+            <div style={{ fontSize: '14px', color: '#6b7280' }}>
+              Base: ${Number(boardType.base_price).toFixed(2)} 
+              {Number(boardType.length_increment_price) > 0 && ` • +$${boardType.length_increment_price}/6" over ${boardType.base_length}"`}
+              {Number(boardType.width_increment_price) > 0 && ` • +$${boardType.width_increment_price}/inch over ${boardType.base_width}"`}
+              {Number(boardType.mitre_price) > 0 && ` • Mitre: $${boardType.mitre_price}`}
+            </div>
+          ) : (
+            <div style={{ fontSize: '14px', color: '#6b7280' }}>
+              No pricing configured
+            </div>
+          )}
+          {boardType.purpose && (
+            <div style={{ fontSize: '13px', color: '#9ca3af' }}>
+              {boardType.purpose}
+            </div>
+          )}
+        </div>
+      )
+    }
+  ];
+
+
+
+  const specialPartsColumns = [
+    {
+      key: 'stpar_desc',
+      label: 'Special Part Details',
+      width: '100%',
+      render: (specialPart: StairSpecialPart) => (
+        <div>
+          <div style={{ fontWeight: 600, fontSize: '16px' }}>
+            {specialPart.stpar_desc || 'Special Part'}
+          </div>
+          <div style={{ fontSize: '14px', color: '#6b7280' }}>
+            {specialPart.matrl_nam || 'Material'} • Cost: ${Number(specialPart.unit_cost || 0).toFixed(2)}
+            {Number(specialPart.labor_cost || 0) > 0 && ` • Labor: $${Number(specialPart.labor_cost || 0).toFixed(2)}`}
+          </div>
+          {specialPart.position && (
+            <div style={{ fontSize: '13px', color: '#9ca3af' }}>
+              Position: {specialPart.position}
+            </div>
+          )}
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="container">
       <div className="page-header">
@@ -230,6 +446,7 @@ const Products: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="tab-navigation">
+        {/* Existing Product Tabs */}
         <button
           className={`tab-button ${activeTab === 'handrails' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('handrails')}
@@ -253,6 +470,27 @@ const Products: React.FC = () => {
           onClick={() => setActiveTab('materials')}
         >
           🪵 Materials
+        </button>
+        
+        {/* New Stair Component Tabs */}
+        <button
+          className={`tab-button ${activeTab === 'stair_materials' ? 'tab-button--active' : ''}`}
+          onClick={() => setActiveTab('stair_materials')}
+        >
+          🪜 Stair Materials
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'board_types' ? 'tab-button--active' : ''}`}
+          onClick={() => setActiveTab('board_types')}
+        >
+          📏 Stair Pricing
+        </button>
+
+        <button
+          className={`tab-button ${activeTab === 'special_parts' ? 'tab-button--active' : ''}`}
+          onClick={() => setActiveTab('special_parts')}
+        >
+          🔧 Special Parts
         </button>
       </div>
 
@@ -365,6 +603,96 @@ const Products: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* New Stair Component Tabs */}
+        {activeTab === 'stair_materials' && (
+          <div className="stair-materials-tab">
+            <div className="tab-header">
+              <h2>Stair Material Pricing</h2>
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateStairMaterial}
+              >
+                + Add Stair Material
+              </button>
+            </div>
+            <p style={{ margin: '0 0 16px 0', color: '#6b7280', fontSize: '14px' }}>
+              Stair materials with pricing multipliers relative to Red Oak (base = 1.0)
+            </p>
+
+            {loading ? (
+              <div className="loading-spinner">Loading stair materials...</div>
+            ) : (
+              <SelectableList
+                items={stairMaterials}
+                columns={stairMaterialColumns}
+                getItemId={(material) => material.id}
+                onEdit={handleEditStairMaterial}
+                onDelete={handleDeleteStairMaterials}
+                emptyMessage="No stair materials configured."
+              />
+            )}
+          </div>
+        )}
+
+        {activeTab === 'board_types' && (
+          <div className="board-types-tab">
+            <div className="tab-header">
+              <h2>Stair Pricing Configuration</h2>
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateBoardType}
+              >
+                + Add Board Type
+              </button>
+            </div>
+            <p style={{ margin: '0 0 16px 0', color: '#6b7280', fontSize: '14px' }}>
+              Base prices with increment formulas for each stair board type
+            </p>
+
+            {loading ? (
+              <div className="loading-spinner">Loading pricing configuration...</div>
+            ) : (
+              <SelectableList
+                items={boardTypes}
+                columns={boardTypeColumns}
+                getItemId={(boardType) => boardType.id}
+                onEdit={handleEditBoardType}
+                onDelete={handleDeleteBoardTypes}
+                emptyMessage="No pricing configuration found."
+              />
+            )}
+          </div>
+        )}
+
+
+
+        {activeTab === 'special_parts' && (
+          <div className="special-parts-tab">
+            <div className="tab-header">
+              <h2>Special Parts</h2>
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateSpecialParts}
+              >
+                + Add Special Part
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="loading-spinner">Loading special parts...</div>
+            ) : (
+              <SelectableList
+                items={specialParts}
+                columns={specialPartsColumns}
+                getItemId={(specialPart) => specialPart.id}
+                onEdit={handleEditSpecialParts}
+                onDelete={handleDeleteSpecialParts}
+                emptyMessage="No special parts found. Create your first special part to get started."
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Forms */}
@@ -392,6 +720,30 @@ const Products: React.FC = () => {
       {showMaterialForm && (
         <MaterialForm
           material={editingMaterial}
+          onClose={handleFormClose}
+        />
+      )}
+
+      {/* New Stair Component Forms */}
+      {showStairMaterialForm && (
+        <StairMaterialForm
+          material={editingStairMaterial}
+          onClose={handleFormClose}
+        />
+      )}
+
+      {showBoardTypeForm && (
+        <BoardTypeForm
+          boardType={editingBoardType}
+          onClose={handleFormClose}
+        />
+      )}
+
+
+
+      {showSpecialPartsForm && (
+        <StairSpecialPartsForm
+          specialPart={editingSpecialParts}
           onClose={handleFormClose}
         />
       )}

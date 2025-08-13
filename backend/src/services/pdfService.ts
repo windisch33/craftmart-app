@@ -55,11 +55,294 @@ interface JobData {
       unit_price: number;
       line_total: number;
       is_taxable: boolean;
+      stair_config_id?: number;
     }>;
   }>;
 }
 
-const generateJobPDFHTML = (jobData: JobData, showLinePricing: boolean = true): string => {
+interface StairConfigurationData {
+  id: number;
+  job_id: number;
+  config_name: string;
+  floor_to_floor: number;
+  num_risers: number;
+  riser_height: number;
+  tread_material_id: number;
+  riser_material_id: number;
+  tread_size: string;
+  rough_cut_width: number;
+  nose_size: number;
+  stringer_type: string;
+  stringer_material_id: number;
+  num_stringers: number;
+  center_horses: number;
+  full_mitre: boolean;
+  bracket_type: string;
+  special_notes: string;
+  tread_material_name: string;
+  riser_material_name: string;
+  stringer_material_name: string;
+  items: Array<{
+    id: number;
+    config_id: number;
+    item_type: string;
+    riser_number: number;
+    tread_type: string;
+    width: number;
+    length: number;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    material_name: string;
+  }>;
+}
+
+// Function to get detailed stair configuration data
+const getStairConfigurationDetails = async (configId: number): Promise<StairConfigurationData | null> => {
+  try {
+    // Get main configuration with material names
+    const configResult = await pool.query(`
+      SELECT c.*, 
+        tm.material_name as tread_material_name,
+        rm.material_name as riser_material_name,
+        sm.material_name as stringer_material_name
+      FROM stair_configurations c
+      LEFT JOIN material_multipliers tm ON c.tread_material_id = tm.material_id
+      LEFT JOIN material_multipliers rm ON c.riser_material_id = rm.material_id
+      LEFT JOIN material_multipliers sm ON c.stringer_material_id = sm.material_id
+      WHERE c.id = $1
+    `, [configId]);
+
+    if (configResult.rows.length === 0) {
+      return null;
+    }
+
+    const configuration = configResult.rows[0];
+
+    // Get configuration items
+    const itemsResult = await pool.query(`
+      SELECT ci.*, mm.material_name
+      FROM stair_config_items ci
+      LEFT JOIN material_multipliers mm ON ci.material_id = mm.material_id
+      WHERE ci.config_id = $1
+      ORDER BY ci.item_type, ci.riser_number
+    `, [configId]);
+
+    configuration.items = itemsResult.rows;
+    return configuration;
+  } catch (error) {
+    console.error('Error fetching stair configuration details:', error);
+    return null;
+  }
+};
+
+// Function to format stair configuration details for PDF
+const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): string => {
+  const { 
+    floor_to_floor, 
+    num_risers, 
+    riser_height,
+    tread_material_name, 
+    riser_material_name,
+    stringer_material_name,
+    stringer_type,
+    num_stringers,
+    center_horses,
+    full_mitre,
+    bracket_type,
+    special_notes,
+    items,
+    rough_cut_width,
+    nose_size,
+    tread_size
+  } = stairConfig;
+
+  // Helper function to convert decimal to fraction string
+  const toFraction = (decimal: number | string): string => {
+    const num = typeof decimal === 'string' ? parseFloat(decimal) : decimal;
+    if (!num || num === 0) return '0';
+    
+    const wholeNumber = Math.floor(num);
+    const fraction = num - wholeNumber;
+    
+    // Common fractions mapping
+    const fractionMap: { [key: string]: string } = {
+      '0.125': '1/8',
+      '0.25': '1/4',
+      '0.375': '3/8',
+      '0.5': '1/2',
+      '0.625': '5/8',
+      '0.75': '3/4',
+      '0.875': '7/8',
+      '1.125': '1 1/8',
+      '1.25': '1 1/4',
+      '1.375': '1 3/8',
+      '1.5': '1 1/2',
+      '1.625': '1 5/8',
+      '1.75': '1 3/4',
+      '1.875': '1 7/8'
+    };
+    
+    // Try to convert decimal to fraction
+    const convertToFraction = (value: number): string => {
+      // Try direct mapping first
+      const mapped = fractionMap[value.toFixed(3)] || fractionMap[value.toFixed(2)];
+      if (mapped) return mapped;
+      
+      // Convert to fraction for common denominators
+      const tolerance = 0.003; // Tolerance for floating point comparison
+      const denominators = [2, 4, 8, 16, 32];
+      
+      for (const denom of denominators) {
+        const numerator = Math.round(value * denom);
+        if (Math.abs(value - numerator / denom) < tolerance) {
+          // Simplify fraction
+          let n = numerator;
+          let d = denom;
+          const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+          const g = gcd(n, d);
+          n = n / g;
+          d = d / g;
+          
+          if (d === 1) return n.toString();
+          return `${n}/${d}`;
+        }
+      }
+      
+      // If no good fraction found, return decimal
+      return value.toFixed(3).replace(/\.?0+$/, '');
+    };
+    
+    // For values with whole number and fraction
+    if (wholeNumber > 0 && fraction > 0) {
+      const fractionStr = convertToFraction(fraction);
+      return fractionStr.includes('/') ? `${wholeNumber} ${fractionStr}` : `${wholeNumber} ${fractionStr}`;
+    }
+    
+    // For just fractions or whole numbers
+    if (fraction === 0) {
+      return wholeNumber.toString();
+    }
+    
+    return convertToFraction(num);
+  };
+
+  // Group items by type
+  const treadItems = items.filter(item => item.item_type === 'tread');
+  const specialItems = items.filter(item => item.item_type === 'special_part');
+  
+  // Count different tread types
+  const boxTreads = treadItems.filter(t => t.tread_type === 'box').length;
+  const openRightTreads = treadItems.filter(t => t.tread_type === 'open_right').length;
+  const openLeftTreads = treadItems.filter(t => t.tread_type === 'open_left').length;
+  const doubleOpenTreads = treadItems.filter(t => t.tread_type === 'double_open').length;
+  
+  // Get typical width (most common width from treads)
+  const widths = treadItems.map(t => t.width).filter(w => w > 0);
+  const typicalWidth = widths.length > 0 ? Math.round(widths[0]) : 42;
+
+  let output = `Floor to Floor: ${Math.round(floor_to_floor)}\"<br>`;
+  
+  // Extract rough cut width from configuration or tread_size
+  let actualRoughCutWidth = rough_cut_width || 10; // Use configuration value if available
+  if (!rough_cut_width && tread_size) {
+    // Try to extract from legacy tread_size format (e.g., "10.5x1.25")
+    const match = tread_size.match(/^(\d+(?:\.\d+)?)/);
+    if (match) {
+      actualRoughCutWidth = parseFloat(match[1]);
+    }
+  }
+  
+  // Format rough cut as a whole number or fraction
+  const roughCutFormatted = Math.round(actualRoughCutWidth);
+  
+  // Main stair specification line - simplified
+  output += `${num_risers} Rise<br>`;
+  
+  // Add tread details - use actual tread count (risers - 1)
+  const actualTreadCount = num_risers - 1;
+  
+  if (boxTreads > 0) {
+    const boxCount = Math.min(boxTreads, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${boxCount} Box Treads @ ${typicalWidth}\"<br>`;
+  }
+  if (openRightTreads > 0) {
+    const rightCount = Math.min(openRightTreads, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${rightCount} Right-Open Treads @ ${typicalWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
+  }
+  if (openLeftTreads > 0) {
+    const leftCount = Math.min(openLeftTreads, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${leftCount} Left-Open Treads @ ${typicalWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
+  }
+  if (doubleOpenTreads > 0) {
+    const doubleCount = Math.min(doubleOpenTreads, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${doubleCount} Double-Open Treads @ ${typicalWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
+  }
+  
+  // Calculate actual riser height
+  const calculatedRiserHeight = riser_height || (floor_to_floor / num_risers);
+  const riserHeightFormatted = toFraction(calculatedRiserHeight);
+  
+  // Format nose size
+  const actualNoseSize = nose_size || 1.25;
+  const noseFormatted = toFraction(actualNoseSize);
+  
+  // Format rough cut for dimensions line (show as whole number if it is one)
+  const roughCutFraction = actualRoughCutWidth % 1 === 0 ? 
+    Math.round(actualRoughCutWidth).toString() : 
+    toFraction(actualRoughCutWidth);
+  
+  // Dimensions line: riser height x rough cut x nose
+  output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${riserHeightFormatted}\" X ${roughCutFraction}\" X ${noseFormatted}\"<br>`;
+  
+  // Materials
+  const treadMaterial = tread_material_name || 'Oak';
+  const riserMaterial = riser_material_name || 'Primed';
+  output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Treads, ${riserMaterial} Risers<br>`;
+  output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Landing Tread<br>`;
+  
+  // Stringers
+  const stringerMaterial = stringer_material_name || 'Prime White';
+  const stringerTypeDisplay = stringer_type ? stringer_type.replace('_', ' ') : '1\" x 9 1/4\"';
+  // Check if the stringer type already contains the material name to avoid duplication
+  const stringerTypeIncludesMaterial = stringerTypeDisplay && stringerMaterial && 
+    stringerTypeDisplay.toLowerCase().includes(stringerMaterial.toLowerCase());
+  
+  if (stringerTypeIncludesMaterial) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stringers: ${stringerTypeDisplay}<br>`;
+  } else {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stringers: ${stringerTypeDisplay} ${stringerMaterial}<br>`;
+  }
+  
+  // Special options
+  if (full_mitre) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* Full Mitre No Brackets *<br>`;
+  } else if (bracket_type) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* ${bracket_type} *<br>`;
+  }
+  
+  // Tread protectors (check special parts)
+  const hasTreadProtectors = specialItems.some(item => 
+    item.material_name && item.material_name.toLowerCase().includes('protector')
+  );
+  if (hasTreadProtectors) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* TREAD PROTECTORS *<br>`;
+  }
+  
+  // Special notes
+  if (special_notes) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${special_notes}<br>`;
+  }
+  
+  // Only add separator if there are special notes
+  if (special_notes && special_notes.trim()) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;******************************************<br>`;
+  }
+  
+  return output;
+};;
+
+const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = true): Promise<string> => {
   const formatCurrency = (amount: number | string | null | undefined) => {
     const numAmount = parseFloat(String(amount || 0));
     return `$${(isNaN(numAmount) ? 0 : numAmount).toFixed(2)}`;
@@ -78,6 +361,53 @@ const generateJobPDFHTML = (jobData: JobData, showLinePricing: boolean = true): 
     : 'Not Assigned';
 
   const statusLabel = jobData.status.toUpperCase();
+  
+  // Process sections to handle stair configurations
+  const processedSections = [];
+  for (const section of jobData.sections) {
+    const processedItems = [];
+    for (const item of section.items) {
+      if (item.part_number && item.part_number.startsWith('STAIR-')) {
+        // This is a stair configuration item
+        // Check if we have a stair_config_id or need to extract it from part_number
+        let configId = item.stair_config_id;
+        
+        // Try to extract config ID from part_number if not in stair_config_id column
+        if (!configId && item.part_number.match(/STAIR-([0-9]+)/)) {
+          const match = item.part_number.match(/STAIR-([0-9]+)/);
+          if (match) {
+            configId = parseInt(match[1]);
+          }
+        }
+        
+        if (configId) {
+          // Get detailed stair configuration data
+          const stairConfig = await getStairConfigurationDetails(configId);
+          if (stairConfig) {
+            processedItems.push({
+              ...item,
+              isStairConfig: true,
+              stairDetails: formatStairConfigurationForPDF(stairConfig)
+            });
+          } else {
+            // Config ID exists but no configuration found
+            console.warn(`Stair configuration ${configId} not found for item ${item.id}`);
+            processedItems.push(item);
+          }
+        } else {
+          // No config ID available, just use the description
+          console.warn(`No stair configuration ID found for item ${item.id} with part_number ${item.part_number}`);
+          processedItems.push(item);
+        }
+      } else {
+        processedItems.push(item);
+      }
+    }
+    processedSections.push({
+      ...section,
+      items: processedItems
+    });
+  }
   
   return `
 <!DOCTYPE html>
@@ -306,6 +636,17 @@ const generateJobPDFHTML = (jobData: JobData, showLinePricing: boolean = true): 
             font-size: 9px;
         }
         
+        .stair-details {
+            font-family: 'Arial', sans-serif;
+            font-size: 10px;
+            line-height: 1.4;
+            padding: 5px 0;
+        }
+        
+        .stair-config-row {
+            background-color: #fafafa;
+        }
+        
         @media print {
             .no-print { display: none; }
         }
@@ -374,7 +715,7 @@ const generateJobPDFHTML = (jobData: JobData, showLinePricing: boolean = true): 
     ${jobData.model_name ? `<div class="model-name">Model Name: ${jobData.model_name}</div>` : ''}
 
     <!-- Sections and Items -->
-    ${jobData.sections.map(section => `
+    ${processedSections.map(section => `
         <div class="section-header">Location: ${section.name}</div>
         ${section.items.length > 0 ? `
         <table class="items-table">
@@ -388,10 +729,15 @@ const generateJobPDFHTML = (jobData: JobData, showLinePricing: boolean = true): 
             </thead>
             <tbody>
                 ${section.items.map(item => `
-                <tr>
+                <tr ${item.isStairConfig ? 'class="stair-config-row"' : ''}>
                     <td class="qty-col">${item.quantity}</td>
                     <td class="part-col">${item.part_number || ''}</td>
-                    <td class="desc-col">${item.description}</td>
+                    <td class="desc-col">
+                        ${item.isStairConfig ? 
+                          `<div class="stair-details">${item.stairDetails}</div>` : 
+                          item.description
+                        }
+                    </td>
                     ${showLinePricing ? `<td class="price-col">${formatCurrency(item.line_total)}</td>` : ''}
                 </tr>
                 `).join('')}
@@ -464,7 +810,7 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
       throw new Error('Job not found');
     }
 
-    // Get sections with their items
+    // Get sections with their items, including detailed stair configuration data
     const sectionsResult = await pool.query(`
       SELECT js.*, 
              COALESCE(json_agg(
@@ -475,7 +821,8 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
                  'quantity', qi.quantity,
                  'unit_price', qi.unit_price,
                  'line_total', qi.line_total,
-                 'is_taxable', qi.is_taxable
+                 'is_taxable', qi.is_taxable,
+                 'stair_config_id', qi.stair_config_id
                ) ORDER BY qi.created_at
              ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
       FROM job_sections js
@@ -495,7 +842,7 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
     }
 
     // Generate HTML
-    const html = generateJobPDFHTML(jobData, showLinePricing);
+    const html = await generateJobPDFHTML(jobData, showLinePricing);
 
     // Get browser from pool and generate PDF
     const browser = await browserPool.getBrowser();

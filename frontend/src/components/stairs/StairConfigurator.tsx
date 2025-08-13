@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import './StairConfigurator.css';
-import stairService, {
+import stairService from '../../services/stairService';
+import { useStairConfiguration } from '../../contexts/StairConfigurationContext';
+import type { DraftStairConfiguration } from '../../contexts/StairConfigurationContext';
+import type {
   StairMaterial,
   StairSpecialPart,
   TreadConfiguration,
@@ -11,6 +14,8 @@ import stairService, {
 
 interface StairConfiguratorProps {
   jobId?: number;
+  sectionId?: number;
+  sectionTempId?: number; // For draft mode during job creation
   onSave: (configuration: StairConfiguration) => void;
   onCancel: () => void;
   initialConfig?: Partial<StairConfiguration>;
@@ -22,7 +27,8 @@ interface FormData {
   numRisers: number;
   treadMaterialId: number;
   riserMaterialId: number;
-  treadSize: string;
+  treadSize: string; // Legacy field for backward compatibility
+  roughCutWidth: number; // New field for flexible tread sizing
   noseSize: number;
   stringerType: string;
   stringerMaterialId: number;
@@ -39,10 +45,13 @@ interface FormErrors {
 
 const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   jobId,
+  sectionId,
+  sectionTempId,
   onSave,
   onCancel,
   initialConfig
 }) => {
+  const { addDraftConfiguration } = useStairConfiguration();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     configName: initialConfig?.configName || '',
@@ -50,9 +59,10 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
     numRisers: initialConfig?.numRisers || 14,
     treadMaterialId: initialConfig?.treadMaterialId || 5, // Oak default
     riserMaterialId: initialConfig?.riserMaterialId || 5, // Oak default
-    treadSize: initialConfig?.treadSize || '10" x 1.25"',
+    treadSize: initialConfig?.treadSize || '10x1.25', // Legacy field
+    roughCutWidth: initialConfig?.roughCutWidth || 10.0, // New flexible field
     noseSize: initialConfig?.noseSize || 1.25,
-    stringerType: initialConfig?.stringerType || '1" x 9.25" Poplar',
+    stringerType: initialConfig?.stringerType || '1x9.25',
     stringerMaterialId: initialConfig?.stringerMaterialId || 7, // Poplar default
     numStringers: initialConfig?.numStringers || 2,
     centerHorses: initialConfig?.centerHorses || 0,
@@ -100,12 +110,17 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   const initializeTreads = () => {
     if (formData.numRisers > 0) {
       const newTreads: TreadConfiguration[] = [];
-      for (let i = 1; i <= formData.numRisers; i++) {
+      // Preserve existing tread widths if available
+      const existingWidths = treads.map(t => t.stairWidth);
+      
+      // Create numRisers - 1 regular treads (landing tread is handled separately)
+      const numTreads = formData.numRisers - 1;
+      for (let i = 1; i <= numTreads; i++) {
         newTreads.push({
           riserNumber: i,
           type: 'box',
-          width: 10,
-          length: 42
+          // Use existing width if available, otherwise leave empty for user to enter
+          stairWidth: existingWidths[i - 1] || 0 // User must enter width
         });
       }
       setTreads(newTreads);
@@ -162,12 +177,16 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
         treads,
         treadMaterialId: formData.treadMaterialId,
         riserMaterialId: formData.riserMaterialId,
+        roughCutWidth: formData.roughCutWidth,
+        noseSize: formData.noseSize,
         stringerType: formData.stringerType,
         stringerMaterialId: formData.stringerMaterialId,
         numStringers: formData.numStringers,
         centerHorses: formData.centerHorses,
         fullMitre: formData.fullMitre,
-        specialParts
+        specialParts,
+        // Landing tread will use same material as regular treads, with 3.5" width
+        includeLandingTread: true
       };
 
       const response = await stairService.calculatePrice(request);
@@ -193,14 +212,20 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
         if (formData.numRisers <= 0 || formData.numRisers > 30) {
           newErrors.numRisers = 'Number of risers must be between 1 and 30';
         }
+        if (formData.roughCutWidth < 8 || formData.roughCutWidth > 20) {
+          newErrors.roughCutWidth = 'Rough cut width must be between 8 and 20 inches';
+        }
+        if (formData.noseSize < 0.5 || formData.noseSize > 3) {
+          newErrors.noseSize = 'Nose size must be between 0.5 and 3 inches';
+        }
         break;
       case 2:
         // Validate treads
         const invalidTreads = treads.some(tread => 
-          tread.width <= 0 || tread.length <= 0 || tread.width > 20 || tread.length > 120
+          tread.stairWidth <= 0 || tread.stairWidth < 30 || tread.stairWidth > 120
         );
         if (invalidTreads) {
-          newErrors.treads = 'All treads must have valid dimensions (width: 1-20", length: 1-120")';
+          newErrors.treads = 'All treads must have valid stair width (30-120 inches)';
         }
         break;
       case 3:
@@ -231,18 +256,70 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   };
 
   const handleSave = async () => {
-    if (!priceResponse) return;
+    if (!priceResponse) {
+      alert('Please calculate pricing before saving the configuration.');
+      return;
+    }
 
     setLoading(true);
     try {
-      const configuration: Omit<StairConfiguration, 'id'> = {
-        jobId,
+      // Transform treads into items for database storage
+      const treadItems = treads.map((tread) => {
+        // Determine board type ID based on tread type
+        let boardTypeId = 1; // Default to box tread
+        if (tread.type === 'open_left' || tread.type === 'open_right') boardTypeId = 2;
+        if (tread.type === 'double_open') boardTypeId = 3;
+        
+        // Get price from the breakdown if available
+        const treadPriceInfo = priceResponse.breakdown?.treads?.find(
+          t => t.riserNumber === tread.riserNumber
+        );
+        
+        return {
+          itemType: 'tread',
+          riserNumber: tread.riserNumber,
+          treadType: tread.type,
+          stairWidth: tread.stairWidth, // Left-to-right measurement
+          boardTypeId,
+          materialId: formData.treadMaterialId,
+          quantity: 1,
+          unitPrice: treadPriceInfo?.totalPrice || 0,
+          laborPrice: 0, // Labor is tracked separately
+          totalPrice: treadPriceInfo?.totalPrice || 0,
+          notes: null
+        };
+      });
+      
+      // Add special parts as items if any
+      const specialPartItems = specialParts.map((part) => {
+        const partInfo = priceResponse.breakdown?.specialParts?.find(
+          p => p.description // Match by description for now
+        );
+        
+        return {
+          itemType: 'special_part',
+          riserNumber: null,
+          treadType: null,
+          stairWidth: null,
+          boardTypeId: null,
+          materialId: part.materialId || formData.treadMaterialId,
+          specialPartId: part.partId,
+          quantity: part.quantity,
+          unitPrice: partInfo?.unitPrice || 0,
+          laborPrice: partInfo?.laborCost || 0,
+          totalPrice: partInfo?.totalPrice || 0,
+          notes: null
+        };
+      });
+      
+      const baseConfig = {
         configName: formData.configName,
         floorToFloor: formData.floorToFloor,
         numRisers: formData.numRisers,
         treadMaterialId: formData.treadMaterialId,
         riserMaterialId: formData.riserMaterialId,
-        treadSize: formData.treadSize,
+        treadSize: formData.treadSize, // Legacy field
+        roughCutWidth: formData.roughCutWidth, // New flexible field
         noseSize: formData.noseSize,
         stringerType: formData.stringerType,
         stringerMaterialId: formData.stringerMaterialId,
@@ -250,16 +327,52 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
         centerHorses: formData.centerHorses,
         fullMitre: formData.fullMitre,
         bracketType: formData.bracketType,
-        subtotal: parseFloat(priceResponse.subtotal),
-        laborTotal: parseFloat(priceResponse.laborTotal),
-        taxAmount: parseFloat(priceResponse.taxAmount),
-        totalAmount: parseFloat(priceResponse.total),
+        subtotal: Number(priceResponse.subtotal) || 0,
+        laborTotal: Number(priceResponse.laborTotal) || 0,
+        taxAmount: Number(priceResponse.taxAmount) || 0,
+        totalAmount: Number(priceResponse.total) || 0,
         specialNotes: formData.specialNotes,
-        items: [] // TODO: Add detailed items
+        items: [...treadItems, ...specialPartItems] // Include all items
       };
 
-      const savedConfig = await stairService.saveConfiguration(configuration);
-      onSave(savedConfig);
+      // Check if we're in draft mode (job creation) or normal mode (job editing)
+      const isDraftMode = !jobId || jobId <= 0 || !sectionId || sectionId <= 0;
+      
+      if (isDraftMode && sectionTempId !== undefined) {
+        // Draft mode: save to context for later batch processing
+        const draftConfig: DraftStairConfiguration = {
+          ...baseConfig,
+          tempId: `stair-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          sectionTempId
+        };
+        
+        console.log('Saving draft configuration:', draftConfig);
+        addDraftConfiguration(draftConfig);
+        
+        // Create a temporary StairConfiguration object for the callback
+        const tempConfig: StairConfiguration = {
+          id: 0, // Temporary ID
+          jobId: jobId || 0,
+          ...baseConfig,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        onSave(tempConfig);
+      } else {
+        // Normal mode: save directly to database
+        const configuration: Omit<StairConfiguration, 'id'> = {
+          jobId,
+          ...baseConfig
+        };
+
+        console.log('Saving configuration to database:', configuration);
+        console.log('Configuration items count:', configuration.items?.length || 0);
+        const savedConfig = await stairService.saveConfiguration(configuration);
+        console.log('Saved configuration with ID:', savedConfig.id);
+        console.log('Full saved configuration:', savedConfig);
+        onSave(savedConfig);
+      }
     } catch (error) {
       console.error('Error saving configuration:', error);
     } finally {
@@ -355,26 +468,57 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label>Tread & Nose Size</label>
-                    <div className="form-row">
-                      <select 
-                        value={formData.treadSize}
-                        onChange={(e) => handleFormChange('treadSize', e.target.value)}
-                      >
-                        <option value="10" x 1.25"">10" x 1.25"</option>
-                        <option value="11" x 1.25"">11" x 1.25"</option>
-                        <option value="10" x 1.5"">10" x 1.5"</option>
-                        <option value="11" x 1.5"">11" x 1.5"</option>
-                      </select>
-                      <input
-                        type="number"
-                        value={formData.noseSize}
-                        onChange={(e) => handleFormChange('noseSize', parseFloat(e.target.value))}
-                        min="0.5"
-                        max="2"
-                        step="0.125"
-                        placeholder="Nose size"
-                      />
+                    <label>Tread Dimensions</label>
+                    <div className="tread-sizing-grid">
+                      <div className="tread-input-group">
+                        <label htmlFor="roughCutWidth">Rough Cut Width (inches)</label>
+                        <input
+                          type="number"
+                          id="roughCutWidth"
+                          value={formData.roughCutWidth}
+                          onChange={(e) => {
+                            const newWidth = parseFloat(e.target.value) || 0;
+                            handleFormChange('roughCutWidth', newWidth);
+                            // Update legacy treadSize field for compatibility
+                            handleFormChange('treadSize', `${newWidth}x${formData.noseSize}`);
+                          }}
+                          min="8"
+                          max="20"
+                          step="0.25"
+                          placeholder="10.0"
+                          className={errors.roughCutWidth ? 'error' : ''}
+                        />
+                        {errors.roughCutWidth && <span className="error-message">{errors.roughCutWidth}</span>}
+                      </div>
+                      
+                      <div className="tread-input-group">
+                        <label htmlFor="noseSize">Nose Size (inches)</label>
+                        <input
+                          type="number"
+                          id="noseSize"
+                          value={formData.noseSize}
+                          onChange={(e) => {
+                            const newNose = parseFloat(e.target.value) || 0;
+                            handleFormChange('noseSize', newNose);
+                            // Update legacy treadSize field for compatibility
+                            handleFormChange('treadSize', `${formData.roughCutWidth}x${newNose}`);
+                          }}
+                          min="0.5"
+                          max="3"
+                          step="0.125"
+                          placeholder="1.25"
+                          className={errors.noseSize ? 'error' : ''}
+                        />
+                        {errors.noseSize && <span className="error-message">{errors.noseSize}</span>}
+                      </div>
+                      
+                      <div className="tread-total-display">
+                        <label>Total Tread Size</label>
+                        <div className="total-size">
+                          {(formData.roughCutWidth + formData.noseSize).toFixed(3)}"
+                        </div>
+                        <small>({formData.roughCutWidth}" + {formData.noseSize}")</small>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -384,6 +528,11 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
               {currentStep === 2 && (
                 <div className="step-content">
                   <h3>🪜 Tread Configuration</h3>
+                  
+                  <div className="tread-info-banner">
+                    <p><strong>Number of Treads:</strong> {formData.numRisers - 1} regular treads + 1 landing tread (3.5" width)</p>
+                    <p><small>Landing tread will use the same material as regular treads</small></p>
+                  </div>
                   
                   <div className="bulk-controls">
                     <h4>Bulk Actions:</h4>
@@ -397,24 +546,14 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                         <option value="double_open">Double Open</option>
                       </select>
                       
-                      <label>All Widths:</label>
+                      <label>All Stair Widths:</label>
                       <input
                         type="number"
-                        placeholder="Width (inches)"
-                        min="8"
-                        max="20"
-                        step="0.25"
-                        onChange={(e) => e.target.value && bulkUpdateTreads('width', parseFloat(e.target.value))}
-                      />
-                      
-                      <label>All Lengths:</label>
-                      <input
-                        type="number"
-                        placeholder="Length (inches)"
+                        placeholder="Enter width for all"
                         min="30"
                         max="120"
                         step="0.25"
-                        onChange={(e) => e.target.value && bulkUpdateTreads('length', parseFloat(e.target.value))}
+                        onChange={(e) => e.target.value && bulkUpdateTreads('stairWidth', parseFloat(e.target.value))}
                       />
                     </div>
                   </div>
@@ -443,27 +582,17 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                           </div>
                           
                           <div className="form-group">
-                            <label>Width (in)</label>
+                            <label>Stair Width (in)</label>
                             <input
                               type="number"
-                              value={tread.width}
-                              onChange={(e) => handleTreadChange(index, 'width', parseFloat(e.target.value))}
-                              min="8"
-                              max="20"
-                              step="0.25"
-                            />
-                          </div>
-                          
-                          <div className="form-group">
-                            <label>Length (in)</label>
-                            <input
-                              type="number"
-                              value={tread.length}
-                              onChange={(e) => handleTreadChange(index, 'length', parseFloat(e.target.value))}
+                              value={tread.stairWidth}
+                              onChange={(e) => handleTreadChange(index, 'stairWidth', parseFloat(e.target.value))}
                               min="30"
                               max="120"
                               step="0.25"
+                              placeholder="Enter width"
                             />
+                            <small>Left-to-right measurement of staircase</small>
                           </div>
                         </div>
                       </div>
@@ -489,7 +618,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                         <option value="">Select material...</option>
                         {materials.map(material => (
                           <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                            {material.matrl_nam} ({material.matrl_abv}) - {material.multiplier}x
+                            {material.matrl_nam} - {material.multiplier}x
                           </option>
                         ))}
                       </select>
@@ -510,7 +639,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                         <option value="">Select material...</option>
                         {materials.map(material => (
                           <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                            {material.matrl_nam} ({material.matrl_abv}) - {material.multiplier}x
+                            {material.matrl_nam} - {material.multiplier}x
                           </option>
                         ))}
                       </select>
@@ -523,16 +652,19 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
 
                   <div className="form-group">
                     <label>Stringer Configuration</label>
+                    <small style={{ display: 'block', marginBottom: '8px', color: '#6b7280', fontSize: '13px' }}>
+                      Pricing adjusts based on thickness and width dimensions
+                    </small>
                     <div className="form-row">
                       <select
                         value={formData.stringerType}
                         onChange={(e) => handleFormChange('stringerType', e.target.value)}
+                        title="Stringer dimensions affect pricing"
                       >
-                        <option value="1" x 9.25" Poplar">1" x 9.25" Poplar</option>
-                        <option value="2" x 9.25" Poplar">2" x 9.25" Poplar</option>
-                        <option value="1" x 9.25" Pine">1" x 9.25" Pine</option>
-                        <option value="1" x 9.25" Oak">1" x 9.25" Oak</option>
-                        <option value="2" x 9.25" Oak">2" x 9.25" Oak</option>
+                        <option value="1x9.25">1" × 9.25" (Standard)</option>
+                        <option value="2x9.25">2" × 9.25" (Heavy)</option>
+                        <option value="1x11.25">1" × 11.25" (Wide)</option>
+                        <option value="2x11.25">2" × 11.25" (Extra Heavy)</option>
                       </select>
                       
                       <input
@@ -542,6 +674,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                         min="2"
                         max="5"
                         placeholder="# Stringers"
+                        title="Number of stringers"
                       />
                       
                       <input
@@ -551,8 +684,30 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                         min="0"
                         max="3"
                         placeholder="# Center Horses"
+                        title="Center horses use double thickness"
                       />
                     </div>
+                    {formData.centerHorses > 0 && (
+                      <small style={{ display: 'block', marginTop: '4px', color: '#9ca3af', fontSize: '12px' }}>
+                        Center horses will be {formData.stringerType.match(/^\d+/)?.[0] ? parseInt(formData.stringerType.match(/^\d+/)[0]) * 2 : 2}" thick
+                      </small>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="stringerMaterial">Stringer Material</label>
+                    <select
+                      id="stringerMaterial"
+                      value={formData.stringerMaterialId}
+                      onChange={(e) => handleFormChange('stringerMaterialId', parseInt(e.target.value))}
+                    >
+                      <option value="">Select material...</option>
+                      {materials.map(material => (
+                        <option key={material.mat_seq_n} value={material.mat_seq_n}>
+                          {material.matrl_nam} - {material.multiplier}x
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-group">
@@ -588,9 +743,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                       </button>
                     </div>
                     
-                    {specialParts.map((part, index) => {
-                      const partData = availableSpecialParts.find(p => p.stpart_id === part.partId);
-                      return (
+                    {specialParts.map((part, index) => (
                         <div key={index} className="special-part-config">
                           <select
                             value={part.partId}
@@ -620,8 +773,8 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                             Remove
                           </button>
                         </div>
-                      );
-                    })}
+                      )
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -674,10 +827,20 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                             <h5>Treads</h5>
                             {priceResponse.breakdown.treads.map((tread, index) => (
                               <div key={index} className="breakdown-item">
-                                <span>Riser {tread.riserNumber} - {tread.type} ({tread.width}" x {tread.length}")</span>
+                                <span>Riser {tread.riserNumber} - {tread.type} ({tread.stairWidth}" wide)</span>
                                 <span>${tread.totalPrice.toFixed(2)}</span>
                               </div>
-                            ))}
+                                ))}
+                          </div>
+                        )}
+
+                        {priceResponse.breakdown.landingTread && (
+                          <div className="breakdown-section">
+                            <h5>Landing Tread</h5>
+                            <div className="breakdown-item">
+                              <span>Landing Tread - Box (3.5" width)</span>
+                              <span>${priceResponse.breakdown.landingTread.totalPrice.toFixed(2)}</span>
+                            </div>
                           </div>
                         )}
 
