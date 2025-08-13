@@ -7,6 +7,7 @@ import reportRoutes from './reports';
 import productRoutes from './products';
 import materialRoutes from './materials';
 import salesmenRoutes from './salesmen';
+import stairRoutes from './stairs';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -19,5 +20,6 @@ router.use('/reports', authenticateToken, reportRoutes);
 router.use('/products', authenticateToken, productRoutes);
 router.use('/materials', authenticateToken, materialRoutes);
 router.use('/salesmen', authenticateToken, salesmenRoutes);
+router.use('/stairs', authenticateToken, stairRoutes);
 
 export default router;

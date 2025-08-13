@@ -158,6 +158,7 @@ totalPrice = quantity × finalUnitCost
 - 1" Oak stringers: $12 per riser
 - 2" Oak stringers: $15 per riser
 - Poplar stringers: $3 per riser
+- PGS stringers: $3 per riser
 - Pine stringers: $2 per riser
 
 #### Special Parts (from StPrt_Prc):
@@ -181,16 +182,19 @@ IF using MAT_PRICE table:
 ## Example Calculations
 
 ### Example 1: Standard Oak Box Stair
-- 10 box treads, Oak, 40" × 10" × 1"
+- **Important**: Number of treads = Number of risers - 1
+- 15 risers = 14 treads + 1 landing tread
+- 14 box treads, Oak, 40" × 10" × 1"
 - Query returns: Unit_Cost = $42.22
-- Total: 10 × $42.22 = **$422.20**
+- Total: 14 × $42.22 = **$591.08**
 
-### Example 2: Open Stair with Full Mitre
-- 8 open treads, Oak, 45" × 10" × 1", with full mitre
-- Query returns: Unit_Cost = $61.49, Fulmit_Cst = $6.30
-- Base: 8 × $61.49 = $491.92
-- Full mitre: 7 × $6.30 = $44.10
-- Total: $491.92 + $44.10 = **$536.02**
+### Example 2: Complete Stair with Landing Tread
+- 15-rise stair with Oak components
+- **Treads**: 14 box treads, Oak, 38" × 11" × 1" = 14 × $42.22 = $591.08
+- **Landing Tread**: 1 box tread, Oak, 38" × 3.5" × 1" = 1 × $34.42 = $34.42
+- **Risers**: 15 risers, Oak, 38" × 8" = 15 × $3.995 = $59.93
+- **Stringers**: 2 PGS stringers × 15 risers × $3 = $90.00
+- Total: $591.08 + $34.42 + $59.93 + $90.00 = **$775.43**
 
 ### Example 3: Oversized Double Open Stair
 - 5 double open treads, Oak, 80" × 12" × 1"
@@ -205,18 +209,29 @@ IF using MAT_PRICE table:
 
 ## Implementation Notes
 
-1. **Database Queries**: All pricing lookups should validate:
+1. **Tread Count**: 
+   - **CRITICAL**: Number of treads = Number of risers - 1
+   - For a 15-rise stair: 14 regular treads + 15 risers
+   - Landing tread is priced separately using narrower width (typically 3.5")
+
+2. **Landing Tread Pricing**:
+   - Use standard box tread pricing (Brd_Typ_ID = 1)
+   - Width typically 3.5" instead of full tread width
+   - Same length and material as regular treads
+   - Query BRD_PRICE with the narrower width dimension
+
+3. **Database Queries**: All pricing lookups should validate:
    - Date ranges (Begin_Date < current_date < End_Date)
    - IsActive flag = true (-1 in FoxPro)
    - Dimensional constraints match exactly
 
-2. **Rounding**: FoxPro uses banker's rounding. Ensure consistent rounding in new implementation.
+4. **Rounding**: FoxPro uses banker's rounding. Ensure consistent rounding in new implementation.
 
-3. **Material Codes**: The system uses both numeric IDs and character abbreviations. Maintain both for compatibility.
+5. **Material Codes**: The system uses both numeric IDs and character abbreviations. Maintain both for compatibility.
 
-4. **Tax Calculation**: Apply state tax rate to final net price (tax calculation happens after all pricing).
+6. **Tax Calculation**: Apply state tax rate to final net price (tax calculation happens after all pricing).
 
-5. **Error Handling**: If no matching price rule is found, the system should return 0 and log the error rather than crash.
+7. **Error Handling**: If no matching price rule is found, the system should return 0 and log the error rather than crash.
 
 ## Migration Recommendations
 
