@@ -329,7 +329,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
         const left = individualStringers.left;
         const stringerResult = await pool.query(
           `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-          [5, left.materialId, left.width, left.thickness, numRisers, false]
+          [5, left.materialId, left.thickness, left.width, numRisers, false]
         );
 
         if (stringerResult.rows.length > 0) {
@@ -356,7 +356,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
         const right = individualStringers.right;
         const stringerResult = await pool.query(
           `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-          [5, right.materialId, right.width, right.thickness, numRisers, false]
+          [5, right.materialId, right.thickness, right.width, numRisers, false]
         );
 
         if (stringerResult.rows.length > 0) {
@@ -383,7 +383,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
         const center = individualStringers.center;
         const stringerResult = await pool.query(
           `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-          [6, center.materialId, center.width, center.thickness, numRisers, false] // Board type 6 for center horse
+          [6, center.materialId, center.thickness, center.width, numRisers, false] // Board type 6 for center horse
         );
 
         if (stringerResult.rows.length > 0) {
@@ -419,7 +419,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
       
       const stringerResult = await pool.query(
         `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-        [5, stringerMaterialId, stringerWidth, stringerThickness, numRisers * numStringers, false]
+        [5, stringerMaterialId, stringerThickness, stringerWidth, numRisers * numStringers, false]
       );
 
       if (stringerResult.rows.length > 0) {
@@ -454,7 +454,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
       
       const centerHorseResult = await pool.query(
         `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-        [6, 20, horseWidth, horseThickness, numRisers * centerHorses, false] // Using Red Oak as default
+        [6, 20, horseThickness, horseWidth, numRisers * centerHorses, false] // Using Red Oak as default
       );
       
       if (centerHorseResult.rows.length > 0) {
