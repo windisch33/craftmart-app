@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { config } from '../config/env';
 
 interface CacheEntry {
   buffer: Buffer;
@@ -15,7 +16,7 @@ class PDFCache {
   private maxMemoryEntries = 50; // Keep up to 50 PDFs in memory
 
   constructor() {
-    this.cacheDir = process.env.PDF_CACHE_DIR || path.join(process.cwd(), 'temp', 'pdf-cache');
+    this.cacheDir = config.PDF_CACHE_DIR;
     this.maxAge = 15 * 60 * 1000; // 15 minutes
     this.ensureCacheDir();
     this.startCleanupInterval();

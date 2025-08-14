@@ -1,6 +1,6 @@
 STAIR PRICING FORMULA DOCUMENTATION
 ====================================
-Last Updated: August 2025
+Last Updated: August 13, 2025
 
 The stair pricing system uses a simplified formula-based approach that calculates costs based on 
 base prices, dimensional modifiers, material multipliers, and labor.
@@ -85,14 +85,19 @@ Example: 38" × 3.5" Oak landing tread
 
 MATERIAL MULTIPLIERS
 --------------------
-- Pine: 0.50×
-- Poplar: 0.40×
-- Oak/Red Oak: 1.00× (base)
-- Maple: 1.20×
-- White Oak: 1.30×
+Current active materials (from material_multipliers table):
+- CDX: 0.60×
+- Pine: 0.60×
+- PGS (Prime Ground Stock): 0.65×
+- Poplar: 0.65×
+- Red Oak: 1.00× (base)
+- White Oak: 1.10×
+- Maple: 1.30×
+- HeartPine: 1.50×
+- 1/4 Sawn Red Oak: 1.40×
+- 1/4 Sawn White Oak: 1.50×
 - American Cherry: 1.70×
-- Brazilian Cherry: 2.00×
-- PGS (Prime Ground Stock): 0.85×
+- Brazilian Cherry: 1.90×
 
 SPECIAL PARTS PRICING
 ---------------------
@@ -166,3 +171,63 @@ To adjust pricing:
 4. Update special parts pricing in stair_special_parts table
 
 All pricing changes take effect immediately without code modifications.
+
+ADVANCED FEATURES (August 2025)
+===============================
+
+INDIVIDUAL STRINGER PRICING
+----------------------------
+The system now supports individual pricing for each stringer, allowing different materials and dimensions:
+
+Left Stringer: Can have unique width, thickness, and material
+Right Stringer: Can have unique width, thickness, and material  
+Center Stringer/Horse: Optional, can have unique dimensions and material
+
+Example with mixed materials:
+- Left: 1" × 9.25" Poplar = ($3.00 + $0 + $0) × 0.65 × 14 = $27.30
+- Right: 1.5" × 11" Red Oak = ($3.00 + $0.875 + $0.25) × 1.0 × 14 = $57.75
+- Center: 2" × 9.25" Maple = ($5.00 + $0 + $0.35) × 1.30 × 14 = $97.37
+
+VARIABLE RISER WIDTHS
+---------------------
+Risers are automatically sized based on their corresponding tread types:
+
+Standard Risers: Match box tread widths (e.g., 38" treads = 38" risers)
+Open Risers: Match open tread widths (e.g., 42" open treads = 42" risers)
+Double Open Risers: Match double open tread widths (e.g., 40" double = 40" risers)
+
+This ensures proper fit and eliminates manual width calculations.
+
+QUICK STAIR PRICER TOOL
+------------------------
+Location: Products page → Quick Stair Pricer tab
+Features:
+- Real-time pricing without saving configurations
+- Individual stringer configuration with live material selection
+- Detailed price breakdown showing formulas and calculations  
+- Expandable sections for each component type
+- Debounced calculations to prevent form resets
+- Support for variable tread counts and dimensions
+
+BULK TREAD CONFIGURATION
+-------------------------
+Instead of configuring individual treads, users specify:
+- Box Treads: Count and width for standard box treads
+- Open Treads: Count, width, and direction (left/right)
+- Double Open Treads: Count and width for double open treads
+
+The system automatically generates the appropriate tread list and matches risers.
+
+PRICING INTERFACE UPDATES
+--------------------------
+Frontend TypeScript interfaces updated to support:
+- individualStringers parameter with left/right/center objects
+- roughCutWidth and noseSize for flexible tread sizing
+- includeLandingTread flag for landing tread calculations
+- Enhanced StairPriceBreakdown with detailed component data
+
+Backend API enhanced to handle:
+- Individual stringer calculations per component
+- Variable riser width grouping by type and dimension
+- Comprehensive price breakdown with formulas
+- Detailed logging for debugging and verification

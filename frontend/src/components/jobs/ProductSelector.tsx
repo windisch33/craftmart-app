@@ -402,7 +402,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           id: 0, // Temporary ID for display
           job_section_id: section.id,
           part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
-          description: stairConfig.configName || 'Custom Staircase',
+          description: stairConfig.configName || 'Straight Staircase',
           quantity: 1,
           unit_price: stairConfig.totalAmount,
           line_total: stairConfig.totalAmount,
@@ -454,7 +454,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         console.log('Creating quote item with ID:', stairConfig.id);
         const stairItem: CreateQuoteItemData = {
           part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
-          description: stairConfig.configName || 'Custom Staircase',
+          description: stairConfig.configName || 'Straight Staircase',
           quantity: 1,
           unit_price: stairConfig.totalAmount,
           is_taxable: true,
@@ -643,7 +643,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                 >
                   <option value={0}>Select Product...</option>
                   <optgroup label="🪜 Stairs">
-                    <option value="stair-configurator">Configure Custom Stair...</option>
+                    <option value="stair-configurator">Configure Straight Stair...</option>
                   </optgroup>
                   <optgroup label="Handrails">
                     {getProductsByType('handrail').map(product => (

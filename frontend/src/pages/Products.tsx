@@ -14,14 +14,15 @@ import StairMaterialForm from '../components/stairs/StairMaterialForm';
 import BoardTypeForm from '../components/stairs/BoardTypeForm';
 
 import StairSpecialPartsForm from '../components/stairs/StairSpecialPartsForm';
+import QuickPricer from '../components/stairs/QuickPricer';
 import { SelectableList } from '../components/common/SelectableList';
 import '../styles/common.css';
 import './Products.css';
 
-type TabType = 'handrails' | 'landing_treads' | 'rail_parts' | 'materials' | 'stair_materials' | 'board_types' | 'special_parts';
+type TabType = 'quick_pricer' | 'handrails' | 'landing_treads' | 'rail_parts' | 'materials' | 'stair_materials' | 'board_types' | 'special_parts';
 
 const Products: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('handrails');
+  const [activeTab, setActiveTab] = useState<TabType>('quick_pricer');
   
   // Existing product states
   const [handrailProducts, setHandrailProducts] = useState<Product[]>([]);
@@ -68,6 +69,9 @@ const Products: React.FC = () => {
     
     try {
       switch (activeTab) {
+        case 'quick_pricer':
+          // No data loading needed for quick pricer
+          break;
         case 'handrails':
           const handrailData = await productService.getHandrailProducts();
           setHandrailProducts(handrailData);
@@ -446,6 +450,14 @@ const Products: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="tab-navigation">
+        {/* Quick Pricer Tab */}
+        <button
+          className={`tab-button ${activeTab === 'quick_pricer' ? 'tab-button--active' : ''}`}
+          onClick={() => setActiveTab('quick_pricer')}
+        >
+          💰 Quick Pricer
+        </button>
+        
         {/* Existing Product Tabs */}
         <button
           className={`tab-button ${activeTab === 'handrails' ? 'tab-button--active' : ''}`}
@@ -496,6 +508,12 @@ const Products: React.FC = () => {
 
       {/* Tab Content */}
       <div className="tab-content">
+        {activeTab === 'quick_pricer' && (
+          <div className="quick-pricer-tab">
+            <QuickPricer />
+          </div>
+        )}
+
         {activeTab === 'handrails' && (
           <div className="handrails-tab">
             <div className="tab-header">

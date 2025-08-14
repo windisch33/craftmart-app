@@ -53,38 +53,28 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('Login attempt received:', req.body);
     const { email, password }: LoginInput = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    console.log('Querying database for user:', email);
     const result = await pool.query('SELECT * FROM users WHERE email = $1 AND is_active = true', [email]);
     
     if (result.rows.length === 0) {
-      console.log('User not found');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    console.log('User found, checking password');
     const user: User = result.rows[0];
-    console.log('Password to check:', password);
-    console.log('Hash from DB:', user.password_hash);
     
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    console.log('Password validation result:', isValidPassword);
 
     if (!isValidPassword) {
-      console.log('Invalid password');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    console.log('Password valid, updating last_login');
     await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
 
-    console.log('Creating JWT token');
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -97,14 +87,12 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     const userResponse = excludePassword(user);
 
-    console.log('Login successful, sending response');
     res.json({
       message: 'Login successful',
       token,
       user: userResponse
     });
   } catch (error) {
-    console.error('Login error:', error);
     next(error);
   }
 };

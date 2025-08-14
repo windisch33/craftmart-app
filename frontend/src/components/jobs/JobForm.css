@@ -368,18 +368,19 @@
   }
 }
 
-/* Step Navigation */
-.step-navigation {
-  display: flex;
+/* Job Form Step Navigation */
+.job-form-step-navigation {
+  display: flex !important;
   justify-content: center;
   align-items: center;
   padding: 24px 32px;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 32px;
   gap: 24px;
+  flex-direction: row !important;
 }
 
-.step {
+.job-form-step {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -389,7 +390,7 @@
   max-width: 200px;
 }
 
-.step:not(:last-child)::after {
+.job-form-step:not(:last-child)::after {
   content: '';
   position: absolute;
   top: 16px;
@@ -400,11 +401,11 @@
   z-index: 1;
 }
 
-.step.completed:not(:last-child)::after {
+.job-form-step.completed:not(:last-child)::after {
   background: #10b981;
 }
 
-.step-number {
+.job-form-step-number {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -418,17 +419,17 @@
   transition: all 0.3s ease;
 }
 
-.step.active .step-number {
+.job-form-step.active .job-form-step-number {
   background: #3b82f6;
   color: white;
 }
 
-.step.completed .step-number {
+.job-form-step.completed .job-form-step-number {
   background: #10b981;
   color: white;
 }
 
-.step-label {
+.job-form-step-label {
   font-size: 13px;
   font-weight: 500;
   color: #6b7280;
@@ -436,13 +437,13 @@
   transition: all 0.3s ease;
 }
 
-.step.active .step-label {
-  color: #3b82f6;
+.job-form-step.active .job-form-step-label {
+  color: #1f2937;
   font-weight: 600;
 }
 
-.step.completed .step-label {
-  color: #10b981;
+.job-form-step.completed .job-form-step-label {
+  color: #059669;
 }
 
 /* Totals Sidebar */
@@ -654,24 +655,24 @@
 
 @media (max-width: 768px) {
   /* Mobile Step Navigation */
-  .step-navigation {
+  .job-form-step-navigation {
     padding: 16px 20px;
     gap: 12px;
   }
 
-  .step {
+  .job-form-step {
     max-width: none;
   }
 
-  .step:not(:last-child)::after {
+  .job-form-step:not(:last-child)::after {
     display: none;
   }
 
-  .step-label {
+  .job-form-step-label {
     font-size: 11px;
   }
 
-  .step-number {
+  .job-form-step-number {
     width: 28px;
     height: 28px;
     font-size: 12px;

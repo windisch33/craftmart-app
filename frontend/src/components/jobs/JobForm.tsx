@@ -221,6 +221,12 @@ const JobFormInner: React.FC<JobFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Only allow submission on step 3 (Review & Submit)
+    if (currentStep !== 3) {
+      console.log('JobForm: Form submission attempted but not on step 3, currentStep:', currentStep);
+      return;
+    }
+    
     if (!validateForm()) {
       return;
     }
@@ -246,6 +252,34 @@ const JobFormInner: React.FC<JobFormProps> = ({
       
     } catch (error) {
       console.error('Error submitting form:', error);
+    }
+  };
+
+  // Handle Enter key press to prevent unwanted form submissions
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent Enter from submitting the form unless we're explicitly on step 3
+    if (e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+      
+      // Allow Enter in textareas (they should create new lines)
+      if (target.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      // Always prevent default Enter behavior on forms
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Only allow form submission if we're on step 3 AND focused on the submit button
+      if (currentStep === 3 && target.type === 'submit') {
+        // Let the form submit naturally
+        return;
+      }
+      
+      // For steps 1 and 2, advance to next step if valid
+      if (currentStep < 3 && canProceedToNextStep()) {
+        handleNextStep();
+      }
     }
   };
 
@@ -309,7 +343,12 @@ const JobFormInner: React.FC<JobFormProps> = ({
   }, []);
 
   // Step navigation
-  const handleNextStep = () => {
+  const handleNextStep = (e?: React.MouseEvent) => {
+    // Prevent any potential form submission when clicking Next button
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     console.log('JobForm: handleNextStep called, currentStep:', currentStep);
     try {
       const isValid = validateForm(currentStep);
@@ -369,22 +408,22 @@ const JobFormInner: React.FC<JobFormProps> = ({
           </div>
 
           {/* Step Navigation */}
-          <div className="step-navigation">
-            <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-              <div className="step-number">1</div>
-              <div className="step-label">Basic Information</div>
+          <div className="job-form-step-navigation">
+            <div className={`job-form-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
+              <div className="job-form-step-number">1</div>
+              <div className="job-form-step-label">Basic Information</div>
             </div>
-            <div className={`step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-              <div className="step-number">2</div>
-              <div className="step-label">Sections & Products</div>
+            <div className={`job-form-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
+              <div className="job-form-step-number">2</div>
+              <div className="job-form-step-label">Sections & Products</div>
             </div>
-            <div className={`step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
-              <div className="step-number">3</div>
-              <div className="step-label">Review & Submit</div>
+            <div className={`job-form-step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
+              <div className="job-form-step-number">3</div>
+              <div className="job-form-step-label">Review & Submit</div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="job-form">
+          <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="job-form">
             {/* Step 1: Basic Information */}
             {currentStep === 1 && (
               <>
