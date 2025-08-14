@@ -573,10 +573,8 @@ const QuickPricer: React.FC = () => {
 
   // Clear error when form data changes
   useEffect(() => {
-    if (error) {
-      setError(null);
-    }
-  }, [stairFormData, linearProductFormData, railPartsFormData, boxTreadCount, openTreadCount, doubleOpenCount, boxTreadWidth, openTreadWidth, doubleOpenWidth, leftStringerMaterial, rightStringerMaterial, centerStringerMaterial, leftStringerWidth, rightStringerWidth, centerStringerWidth, leftStringerThickness, rightStringerThickness, centerStringerThickness, hasCenter]);
+    setError(null);
+  }, [stairFormData, linearProductFormData, railPartsFormData, productType]);
 
   // Validate tread configuration when bulk inputs change
   useEffect(() => {
@@ -1050,12 +1048,13 @@ const QuickPricer: React.FC = () => {
   );
 
   const renderLinearProductForm = () => {
-    const products = productType === 'handrail' ? handrailProducts : landingTreadProducts;
-    const formData = linearProductFormData;
-    const setFormData = setLinearProductFormData;
-    const productName = productType === 'handrail' ? 'Handrail' : 'Landing Tread';
+    try {
+      const products = productType === 'handrail' ? handrailProducts : landingTreadProducts;
+      const formData = linearProductFormData;
+      const setFormData = setLinearProductFormData;
+      const productName = productType === 'handrail' ? 'Handrail' : 'Landing Tread';
 
-    return (
+      return (
       <div className="linear-product-form-section">
         <h3>{productName} Configuration</h3>
         <div className="form-row">
@@ -1079,7 +1078,8 @@ const QuickPricer: React.FC = () => {
               value={formData.materialId}
               onChange={(e) => setFormData(prev => ({ ...prev, materialId: Number(e.target.value) }))}
             >
-              {materials.map(material => (
+              <option value={0}>Select Material...</option>
+              {materials && materials.length > 0 && materials.map(material => (
                 <option key={material.id} value={material.id}>
                   {material.name}
                 </option>
@@ -1121,12 +1121,22 @@ const QuickPricer: React.FC = () => {
           </label>
         </div>
       </div>
-    );
+      );
+    } catch (error) {
+      console.error('Error rendering linear product form:', error);
+      return (
+        <div className="error-container">
+          <p>Error loading product form. Please refresh the page.</p>
+        </div>
+      );
+    }
   };
 
-  const renderRailPartsForm = () => (
-    <div className="rail-parts-form-section">
-      <h3>Rail Parts Configuration</h3>
+  const renderRailPartsForm = () => {
+    try {
+      return (
+        <div className="rail-parts-form-section">
+          <h3>Rail Parts Configuration</h3>
       <div className="form-row">
         <div className="form-group">
           <label>Rail Part Product</label>
@@ -1148,7 +1158,8 @@ const QuickPricer: React.FC = () => {
             value={railPartsFormData.materialId}
             onChange={(e) => setRailPartsFormData(prev => ({ ...prev, materialId: Number(e.target.value) }))}
           >
-            {materials.map(material => (
+            <option value={0}>Select Material...</option>
+            {materials && materials.length > 0 && materials.map(material => (
               <option key={material.id} value={material.id}>
                 {material.name}
               </option>
@@ -1178,9 +1189,18 @@ const QuickPricer: React.FC = () => {
           />
           Include Installation Labor
         </label>
+        </div>
       </div>
-    </div>
-  );
+      );
+    } catch (error) {
+      console.error('Error rendering rail parts form:', error);
+      return (
+        <div className="error-container">
+          <p>Error loading rail parts form. Please refresh the page.</p>
+        </div>
+      );
+    }
+  };
 
   const renderPricingDisplay = () => {
     if (!pricingResult) {
@@ -1202,31 +1222,31 @@ const QuickPricer: React.FC = () => {
         <div className="pricing-breakdown">
           <div className="price-row">
             <span>Material Subtotal:</span>
-            <span>${pricingResult.subtotal.toFixed(2)}</span>
+            <span>${(pricingResult?.subtotal || 0).toFixed(2)}</span>
           </div>
-          {pricingResult.laborCost > 0 && (
+          {(pricingResult?.laborCost || 0) > 0 && (
             <div className="price-row">
               <span>Labor Cost:</span>
-              <span>${pricingResult.laborCost.toFixed(2)}</span>
+              <span>${(pricingResult?.laborCost || 0).toFixed(2)}</span>
             </div>
           )}
           <div className="price-row total">
             <span>Total:</span>
-            <span>${pricingResult.total.toFixed(2)}</span>
+            <span>${(pricingResult?.total || 0).toFixed(2)}</span>
           </div>
         </div>
 
-        {pricingResult.details && productType !== 'stair' && (
+        {pricingResult?.details && productType !== 'stair' && (
           <div className="calculation-details">
             <h4>Calculation Details</h4>
             <small>
               Product: {pricingResult.details.product}<br/>
               Material: {pricingResult.details.material}<br/>
-              {productType !== 'rail_parts' && `Length: ${pricingResult.details.length}" (${pricingResult.details.lengthIn6InchIncrements.toFixed(2)} × 6")`}<br/>
+              {productType !== 'rail_parts' && pricingResult.details.length && `Length: ${pricingResult.details.length}" (${(pricingResult.details.lengthIn6InchIncrements || 0).toFixed(2)} × 6")`}<br/>
               Quantity: {pricingResult.details.quantity}<br/>
-              {productType !== 'rail_parts' && `Cost per 6": $${pricingResult.details.costPer6Inches}`}<br/>
-              {productType === 'rail_parts' && `Base Price: $${pricingResult.details.basePrice}`}<br/>
-              Material Multiplier: {pricingResult.details.materialMultiplier}x
+              {productType !== 'rail_parts' && pricingResult.details.costPer6Inches && `Cost per 6": $${pricingResult.details.costPer6Inches}`}<br/>
+              {productType === 'rail_parts' && pricingResult.details.basePrice && `Base Price: $${pricingResult.details.basePrice}`}<br/>
+              Material Multiplier: {pricingResult.details.materialMultiplier || 1}x
             </small>
           </div>
         )}
@@ -1234,16 +1254,50 @@ const QuickPricer: React.FC = () => {
         {stairPricingDetails && productType === 'stair' && (
           <div className="stair-calculation-details">
             <h4>Pricing Breakdown</h4>
-            
-            {/* Treads */}
+            {(() => {
+              try {
+                return (
+                  <>
+                    {/* Treads */}
             {stairPricingDetails.breakdown.treads && stairPricingDetails.breakdown.treads.length > 0 && (
               <div className="breakdown-section">
                 <h5>Treads</h5>
-                {stairPricingDetails.breakdown.treads.map((tread, index) => (
-                  <div key={index} className="component-detail">
-                    <span>#{tread.riserNumber} {tread.type} ({tread.stairWidth}"): ${tread.totalPrice.toFixed(2)}</span>
-                  </div>
-                ))}
+                {(() => {
+                  // Group treads by type and width with detailed pricing
+                  const groupedTreads = stairPricingDetails.breakdown.treads.reduce((acc, tread) => {
+                    const key = `${tread.type}-${tread.stairWidth}`;
+                    if (!acc[key]) {
+                      acc[key] = {
+                        type: tread.type,
+                        stairWidth: tread.stairWidth,
+                        count: 0,
+                        totalPrice: 0,
+                        basePrice: 0,
+                        oversizedCharge: 0,
+                        mitreCharge: 0,
+                        treads: []
+                      };
+                    }
+                    acc[key].count += 1;
+                    acc[key].totalPrice += (tread.totalPrice || 0);
+                    acc[key].basePrice += (tread.basePrice || 0);
+                    acc[key].oversizedCharge += (tread.oversizedCharge || 0);
+                    acc[key].mitreCharge += (tread.mitreCharge || 0);
+                    acc[key].treads.push(tread);
+                    return acc;
+                  }, {});
+                  
+                  return Object.values(groupedTreads).map((group, index) => (
+                    <div key={index} className="component-detail">
+                      <div>
+                        <span>{group.type} tread ({group.stairWidth}" x {group.count}): ${group.totalPrice.toFixed(2)}</span>
+                      </div>
+                      <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                        Base: ${group.basePrice.toFixed(2)} + Oversized: ${group.oversizedCharge.toFixed(2)} + Mitre: ${group.mitreCharge.toFixed(2)} = ${group.totalPrice.toFixed(2)}
+                      </div>
+                    </div>
+                  ));
+                })()}
               </div>
             )}
             
@@ -1252,7 +1306,12 @@ const QuickPricer: React.FC = () => {
               <div className="breakdown-section">
                 <h5>Landing Tread</h5>
                 <div className="component-detail">
-                  <span>#{stairPricingDetails.breakdown.landingTread.riserNumber} {stairPricingDetails.breakdown.landingTread.type} ({stairPricingDetails.breakdown.landingTread.stairWidth}"): ${stairPricingDetails.breakdown.landingTread.totalPrice.toFixed(2)}</span>
+                  <div>
+                    <span>#{stairPricingDetails.breakdown.landingTread.riserNumber} {stairPricingDetails.breakdown.landingTread.type} ({stairPricingDetails.breakdown.landingTread.stairWidth}"): ${(stairPricingDetails.breakdown.landingTread.totalPrice || 0).toFixed(2)}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                    Base: ${(stairPricingDetails.breakdown.landingTread.basePrice || 0).toFixed(2)} + Oversized: ${(stairPricingDetails.breakdown.landingTread.oversizedCharge || 0).toFixed(2)} + Mitre: ${(stairPricingDetails.breakdown.landingTread.mitreCharge || 0).toFixed(2)} = ${(stairPricingDetails.breakdown.landingTread.totalPrice || 0).toFixed(2)}
+                  </div>
                 </div>
               </div>
             )}
@@ -1263,7 +1322,12 @@ const QuickPricer: React.FC = () => {
                 <h5>Risers</h5>
                 {stairPricingDetails.breakdown.risers.map((riser, index) => (
                   <div key={index} className="component-detail">
-                    <span>{riser.type} riser ({riser.width}" x {riser.quantity}): ${riser.totalPrice.toFixed(2)}</span>
+                    <div>
+                      <span>{riser.type} riser ({riser.width}" x {riser.quantity}): ${(riser.totalPrice || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                      (Base: ${(riser.basePrice || 0).toFixed(2)} + Length: ${(riser.lengthCharge || 0).toFixed(2)} + Width: ${(riser.widthCharge || 0).toFixed(2)}) × Material: {riser.materialMultiplier || 1}x = ${(riser.unitPrice || 0).toFixed(2)} × {riser.quantity} = ${(riser.totalPrice || 0).toFixed(2)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1275,7 +1339,12 @@ const QuickPricer: React.FC = () => {
                 <h5>Stringers</h5>
                 {stairPricingDetails.breakdown.stringers.map((stringer, index) => (
                   <div key={index} className="component-detail">
-                    <span>{stringer.type} ({stringer.width}" x {stringer.thickness}" x {stringer.quantity}): ${stringer.totalPrice.toFixed(2)}</span>
+                    <div>
+                      <span>{stringer.type} ({stringer.width}" x {stringer.thickness}" x {stringer.quantity}): ${(stringer.totalPrice || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                      (Base: ${(stringer.basePrice || 0).toFixed(2)} + Width: ${(stringer.widthCharge || 0).toFixed(2)} + Thickness: ${(stringer.thicknessCharge || 0).toFixed(2)}) × Material: {stringer.materialMultiplier || 1}x = ${(stringer.unitPricePerRiser || 0).toFixed(2)}/riser × {stringer.risers} risers × {stringer.quantity} = ${(stringer.totalPrice || 0).toFixed(2)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1287,7 +1356,12 @@ const QuickPricer: React.FC = () => {
                 <h5>Special Parts</h5>
                 {stairPricingDetails.breakdown.specialParts.map((part, index) => (
                   <div key={index} className="component-detail">
-                    <span>{part.description} x{part.quantity}: ${part.totalPrice.toFixed(2)}</span>
+                    <div>
+                      <span>{part.description} x{part.quantity}: ${(part.totalPrice || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                      Unit: ${(part.unitPrice || 0).toFixed(2)} + Labor: ${(part.laborCost || 0).toFixed(2)} = ${((part.unitPrice || 0) + (part.laborCost || 0)).toFixed(2)} × {part.quantity} = ${(part.totalPrice || 0).toFixed(2)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1320,6 +1394,17 @@ const QuickPricer: React.FC = () => {
                 <span><strong>Total: ${stairPricingDetails.total}</strong></span>
               </div>
             </div>
+                  </>
+                );
+              } catch (error) {
+                console.error('Error rendering stair pricing breakdown:', error);
+                return (
+                  <div style={{ color: '#dc2626', padding: '1rem' }}>
+                    Error displaying pricing breakdown. Please try again.
+                  </div>
+                );
+              }
+            })()}
           </div>
         )}
       </div>

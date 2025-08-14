@@ -47,6 +47,7 @@ export const getStairBoardTypes = async (req: Request, res: Response) => {
         sp.base_length,
         sp.base_width,
         sp.length_increment_size,
+        sp.width_increment_size,
         bt.is_active
        FROM stair_board_types bt
        LEFT JOIN stair_pricing_simple sp ON bt.brd_typ_id = sp.board_type_id
@@ -805,6 +806,7 @@ export const createBoardType = async (req: Request, res: Response) => {
       base_length = 36,
       base_width = 9,
       length_increment_size = 6,
+      width_increment_size = 1,
       is_active = true 
     } = req.body;
     
@@ -822,8 +824,8 @@ export const createBoardType = async (req: Request, res: Response) => {
       await client.query(
         `INSERT INTO stair_pricing_simple (
           board_type_id, base_price, length_increment_price, width_increment_price,
-          mitre_price, base_length, base_width, length_increment_size, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          mitre_price, base_length, base_width, length_increment_size, width_increment_size, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (board_type_id) 
         DO UPDATE SET 
           base_price = EXCLUDED.base_price,
@@ -833,10 +835,11 @@ export const createBoardType = async (req: Request, res: Response) => {
           base_length = EXCLUDED.base_length,
           base_width = EXCLUDED.base_width,
           length_increment_size = EXCLUDED.length_increment_size,
+          width_increment_size = EXCLUDED.width_increment_size,
           is_active = EXCLUDED.is_active,
           updated_at = CURRENT_TIMESTAMP`,
         [brd_typ_id, base_price, length_increment_price || 0, width_increment_price || 0,
-         mitre_price || 0, base_length, base_width, length_increment_size, is_active]
+         mitre_price || 0, base_length, base_width, length_increment_size, width_increment_size, is_active]
       );
     }
     
@@ -852,7 +855,8 @@ export const createBoardType = async (req: Request, res: Response) => {
         sp.mitre_price,
         sp.base_length,
         sp.base_width,
-        sp.length_increment_size
+        sp.length_increment_size,
+        sp.width_increment_size
        FROM stair_board_types bt
        LEFT JOIN stair_pricing_simple sp ON bt.brd_typ_id = sp.board_type_id
        WHERE bt.id = $1`,
@@ -886,6 +890,7 @@ export const updateBoardType = async (req: Request, res: Response) => {
       base_length,
       base_width,
       length_increment_size,
+      width_increment_size,
       is_active 
     } = req.body;
     
@@ -915,8 +920,8 @@ export const updateBoardType = async (req: Request, res: Response) => {
       await client.query(
         `INSERT INTO stair_pricing_simple (
           board_type_id, base_price, length_increment_price, width_increment_price,
-          mitre_price, base_length, base_width, length_increment_size, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          mitre_price, base_length, base_width, length_increment_size, width_increment_size, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (board_type_id) 
         DO UPDATE SET 
           base_price = COALESCE($2, stair_pricing_simple.base_price),
@@ -926,10 +931,11 @@ export const updateBoardType = async (req: Request, res: Response) => {
           base_length = COALESCE($6, stair_pricing_simple.base_length),
           base_width = COALESCE($7, stair_pricing_simple.base_width),
           length_increment_size = COALESCE($8, stair_pricing_simple.length_increment_size),
-          is_active = COALESCE($9, stair_pricing_simple.is_active),
+          width_increment_size = COALESCE($9, stair_pricing_simple.width_increment_size),
+          is_active = COALESCE($10, stair_pricing_simple.is_active),
           updated_at = CURRENT_TIMESTAMP`,
         [boardType.brd_typ_id, base_price, length_increment_price, width_increment_price,
-         mitre_price, base_length, base_width, length_increment_size, is_active]
+         mitre_price, base_length, base_width, length_increment_size, width_increment_size, is_active]
       );
     }
     
@@ -945,7 +951,8 @@ export const updateBoardType = async (req: Request, res: Response) => {
         sp.mitre_price,
         sp.base_length,
         sp.base_width,
-        sp.length_increment_size
+        sp.length_increment_size,
+        sp.width_increment_size
        FROM stair_board_types bt
        LEFT JOIN stair_pricing_simple sp ON bt.brd_typ_id = sp.board_type_id
        WHERE bt.id = $1`,

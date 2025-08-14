@@ -22,6 +22,7 @@ interface FormData {
   base_length: number;
   base_width: number;
   length_increment_size: number;
+  width_increment_size: number;
   is_active: boolean;
 }
 
@@ -41,6 +42,7 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
     base_length: boardType?.base_length || 36,
     base_width: boardType?.base_width || 9,
     length_increment_size: boardType?.length_increment_size || 6,
+    width_increment_size: boardType?.width_increment_size || 1,
     is_active: boardType?.is_active ?? true
   });
 
@@ -100,6 +102,7 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
         base_length: formData.base_length,
         base_width: formData.base_width,
         length_increment_size: formData.length_increment_size,
+        width_increment_size: formData.width_increment_size,
         is_active: formData.is_active
       };
 
@@ -248,8 +251,9 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
                   type="number"
                   id="base_length"
                   value={formData.base_length}
-                  onChange={(e) => handleChange('base_length', parseInt(e.target.value) || 36)}
+                  onChange={(e) => handleChange('base_length', parseFloat(e.target.value) || 36)}
                   min="1"
+                  step="0.25"
                   placeholder="36"
                 />
                 <small>Standard length</small>
@@ -261,8 +265,9 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
                   type="number"
                   id="length_increment_size"
                   value={formData.length_increment_size}
-                  onChange={(e) => handleChange('length_increment_size', parseInt(e.target.value) || 6)}
-                  min="1"
+                  onChange={(e) => handleChange('length_increment_size', parseFloat(e.target.value) || 6)}
+                  min="0.25"
+                  step="0.25"
                   placeholder="6"
                 />
                 <small>Increment size in inches</small>
@@ -291,15 +296,30 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
                   type="number"
                   id="base_width"
                   value={formData.base_width}
-                  onChange={(e) => handleChange('base_width', parseInt(e.target.value) || 9)}
+                  onChange={(e) => handleChange('base_width', parseFloat(e.target.value) || 9)}
                   min="1"
+                  step="0.25"
                   placeholder="9"
                 />
                 <small>Standard width</small>
               </div>
 
               <div className="form-group">
-                <label htmlFor="width_increment_price">Width Increment Charge ($/inch)</label>
+                <label htmlFor="width_increment_size">Width Increment</label>
+                <input
+                  type="number"
+                  id="width_increment_size"
+                  value={formData.width_increment_size}
+                  onChange={(e) => handleChange('width_increment_size', parseFloat(e.target.value) || 1)}
+                  min="0.25"
+                  step="0.25"
+                  placeholder="1"
+                />
+                <small>Increment size in inches</small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="width_increment_price">Width Charge ($/increment)</label>
                 <input
                   type="number"
                   id="width_increment_price"
@@ -309,7 +329,7 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
                   step="0.01"
                   placeholder="2.00"
                 />
-                <small>Price per inch over base width (width increment is always 1")</small>
+                <small>Price per increment over base width</small>
               </div>
             </div>
           </div>
