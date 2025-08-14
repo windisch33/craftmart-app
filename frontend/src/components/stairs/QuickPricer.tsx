@@ -59,6 +59,7 @@ const QuickPricer: React.FC = () => {
   const [productType, setProductType] = useState<ProductType>('stair');
   const [loading, setLoading] = useState(false);
   const [calculating, setCalculating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Product data
   const [handrailProducts, setHandrailProducts] = useState<Product[]>([]);
@@ -165,7 +166,6 @@ const QuickPricer: React.FC = () => {
       setRailPartsProducts(railPartsRes);
       setMaterials(materialsRes);
       setStairMaterials(stairMaterialsRes);
-      setSpecialParts(specialPartsRes);
       setAvailableSpecialParts(specialPartsRes);
       
       // Debug logging to check data
@@ -228,8 +228,185 @@ const QuickPricer: React.FC = () => {
     }
   };
 
+  // Validation functions for each product type
+  const validateStairForm = (): string | null => {
+    // Check if data is loaded
+    if (stairMaterials.length === 0) {
+      return 'Stair materials are still loading. Please wait and try again.';
+    }
+
+    // Check basic stair data
+    if (!stairFormData.floorToFloor || stairFormData.floorToFloor <= 0) {
+      return 'Floor to floor height must be greater than 0';
+    }
+    if (!stairFormData.numRisers || stairFormData.numRisers <= 0) {
+      return 'Number of risers must be greater than 0';
+    }
+    if (!stairFormData.treadMaterialId) {
+      return 'Please select a tread material';
+    }
+    if (!stairFormData.riserMaterialId) {
+      return 'Please select a riser material';
+    }
+
+    // Check tread configuration
+    const totalTreads = boxTreadCount + openTreadCount + doubleOpenCount;
+    if (totalTreads === 0) {
+      return 'Please specify at least one tread type with count greater than 0';
+    }
+    if (totalTreads > stairFormData.numRisers) {
+      return 'Total treads cannot exceed number of risers';
+    }
+    if (totalTreads < stairFormData.numRisers - 1) {
+      return 'Total treads must be either equal to risers or one less than risers';
+    }
+
+    // Check tread widths
+    if (boxTreadCount > 0 && (!boxTreadWidth || boxTreadWidth <= 0)) {
+      return 'Box tread width must be specified and greater than 0';
+    }
+    if (openTreadCount > 0 && (!openTreadWidth || openTreadWidth <= 0)) {
+      return 'Open tread width must be specified and greater than 0';
+    }
+    if (doubleOpenCount > 0 && (!doubleOpenWidth || doubleOpenWidth <= 0)) {
+      return 'Double open tread width must be specified and greater than 0';
+    }
+
+    // Check stringer materials
+    if (!leftStringerMaterial) {
+      return 'Please select left stringer material';
+    }
+    if (!rightStringerMaterial) {
+      return 'Please select right stringer material';
+    }
+    if (hasCenter && !centerStringerMaterial) {
+      return 'Please select center stringer material';
+    }
+
+    // Check stringer dimensions
+    if (!leftStringerWidth || leftStringerWidth <= 0 || !leftStringerThickness || leftStringerThickness <= 0) {
+      return 'Left stringer dimensions must be greater than 0';
+    }
+    if (!rightStringerWidth || rightStringerWidth <= 0 || !rightStringerThickness || rightStringerThickness <= 0) {
+      return 'Right stringer dimensions must be greater than 0';
+    }
+    if (hasCenter && (!centerStringerWidth || centerStringerWidth <= 0 || !centerStringerThickness || centerStringerThickness <= 0)) {
+      return 'Center stringer dimensions must be greater than 0';
+    }
+
+    return null;
+  };
+
+  const validateLinearProductForm = (type: 'handrail' | 'landing_tread'): string | null => {
+    if (!linearProductFormData.productId || linearProductFormData.productId === 0) {
+      return `Please select a ${type === 'handrail' ? 'handrail' : 'landing tread'} product`;
+    }
+    if (!linearProductFormData.materialId || linearProductFormData.materialId === 0) {
+      return 'Please select a material';
+    }
+    if (!linearProductFormData.length || linearProductFormData.length <= 0) {
+      return 'Length must be greater than 0';
+    }
+    if (!linearProductFormData.quantity || linearProductFormData.quantity <= 0) {
+      return 'Quantity must be greater than 0';
+    }
+
+    // Check if materials are loaded
+    if (materials.length === 0) {
+      return 'Materials are still loading. Please wait and try again.';
+    }
+
+    const products = type === 'handrail' ? handrailProducts : landingTreadProducts;
+    if (products.length === 0) {
+      return 'Products are still loading. Please wait and try again.';
+    }
+
+    return null;
+  };
+
+  const validateRailPartsForm = (): string | null => {
+    if (!railPartsFormData.productId || railPartsFormData.productId === 0) {
+      return 'Please select a rail part product';
+    }
+    if (!railPartsFormData.materialId || railPartsFormData.materialId === 0) {
+      return 'Please select a material';
+    }
+    if (!railPartsFormData.quantity || railPartsFormData.quantity <= 0) {
+      return 'Quantity must be greater than 0';
+    }
+
+    // Check if materials are loaded
+    if (materials.length === 0) {
+      return 'Materials are still loading. Please wait and try again.';
+    }
+    if (railPartsProducts.length === 0) {
+      return 'Products are still loading. Please wait and try again.';
+    }
+
+    return null;
+  };
+
+  // Generate treads from bulk configuration (copied from StairConfigurator)
+  const generateTreadsFromBulkConfig = (): TreadConfiguration[] => {
+    const generatedTreads: TreadConfiguration[] = [];
+    let riserNumber = 1;
+    
+    // Add box treads
+    for (let i = 0; i < boxTreadCount; i++) {
+      generatedTreads.push({
+        riserNumber: riserNumber++,
+        type: 'box',
+        stairWidth: boxTreadWidth
+      });
+    }
+    
+    // Add open treads
+    for (let i = 0; i < openTreadCount; i++) {
+      generatedTreads.push({
+        riserNumber: riserNumber++,
+        type: openTreadDirection === 'left' ? 'open_left' : 'open_right',
+        stairWidth: openTreadWidth
+      });
+    }
+    
+    // Add double open treads
+    for (let i = 0; i < doubleOpenCount; i++) {
+      generatedTreads.push({
+        riserNumber: riserNumber++,
+        type: 'double_open',
+        stairWidth: doubleOpenWidth
+      });
+    }
+    
+    return generatedTreads;
+  };
+
   // Calculate pricing based on product type
   const calculatePrice = async () => {
+    setError(null);
+    
+    // Validate form based on product type
+    let validationError: string | null = null;
+    switch (productType) {
+      case 'stair':
+        validationError = validateStairForm();
+        break;
+      case 'handrail':
+        validationError = validateLinearProductForm('handrail');
+        break;
+      case 'landing_tread':
+        validationError = validateLinearProductForm('landing_tread');
+        break;
+      case 'rail_parts':
+        validationError = validateRailPartsForm();
+        break;
+    }
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setCalculating(true);
     try {
       switch (productType) {
@@ -248,64 +425,27 @@ const QuickPricer: React.FC = () => {
       }
     } catch (error) {
       console.error('Error calculating price:', error);
+      if (error instanceof Error) {
+        setError(`Calculation failed: ${error.message}`);
+      } else {
+        setError('An unexpected error occurred while calculating the price. Please try again.');
+      }
     } finally {
       setCalculating(false);
     }
   };
 
   const calculateStairPrice = async () => {
-    // Use existing stair calculation logic
-    const stairData = {
-      ...stairFormData,
-      treads: [] as TreadConfiguration[],
-      specialParts: [] as SpecialPartConfiguration[]
-    };
-
-    // Add bulk treads
-    if (boxTreadCount > 0) {
-      stairData.treads.push({
-        boardTypeId: 1, // Box Tread
-        materialId: stairFormData.treadMaterialId,
-        count: boxTreadCount,
-        length: 42,
-        width: boxTreadWidth,
-        thickness: 1
-      });
-    }
-
-    if (openTreadCount > 0) {
-      stairData.treads.push({
-        boardTypeId: 2, // Open Tread
-        materialId: stairFormData.treadMaterialId,
-        count: openTreadCount,
-        length: 42,
-        width: openTreadWidth,
-        thickness: 1
-      });
-    }
-
-    if (doubleOpenCount > 0) {
-      stairData.treads.push({
-        boardTypeId: 3, // Double Open
-        materialId: stairFormData.treadMaterialId,
-        count: doubleOpenCount,
-        length: 42,
-        width: doubleOpenWidth,
-        thickness: 1
-      });
-    }
-
-    // Add landing tread if selected
-    if (hasLandingTread) {
-      stairData.treads.push({
-        boardTypeId: 2, // Open Tread for landing
-        materialId: stairFormData.treadMaterialId,
-        count: 1,
-        length: 42,
-        width: 3.5, // Landing tread is always 3.5" wide
-        thickness: 1
-      });
-    }
+    // Validate and update landing tread status
+    validateTreadConfiguration();
+    
+    // Generate treads from bulk configuration
+    const generatedTreads = generateTreadsFromBulkConfig();
+    
+    // Calculate equivalent stringerType from individual configurations for backward compatibility
+    const avgWidth = (leftStringerWidth + rightStringerWidth + (hasCenter ? centerStringerWidth : 0)) / (hasCenter ? 3 : 2);
+    const avgThickness = (leftStringerThickness + rightStringerThickness + (hasCenter ? centerStringerThickness : 0)) / (hasCenter ? 3 : 2);
+    const equivalentStringerType = `${avgThickness}x${avgWidth}`;
 
     // Add special parts configurations
     const specialPartsConfig = specialParts.map(part => ({
@@ -313,17 +453,37 @@ const QuickPricer: React.FC = () => {
       quantity: part.quantity
     }));
 
-    const stairDataWithSpecialParts = {
-      ...stairData,
-      specialParts: specialPartsConfig
+    const request = {
+      floorToFloor: stairFormData.floorToFloor,
+      numRisers: stairFormData.numRisers,
+      treads: generatedTreads,
+      treadMaterialId: stairFormData.treadMaterialId,
+      riserMaterialId: stairFormData.riserMaterialId,
+      roughCutWidth: stairFormData.roughCutWidth,
+      noseSize: stairFormData.noseSize,
+      stringerType: equivalentStringerType, // Use calculated equivalent
+      stringerMaterialId: leftStringerMaterial, // Use left stringer material as primary
+      numStringers: hasCenter ? 3 : 2, // 2 for left/right, 3 if center included
+      centerHorses: hasCenter ? 1 : 0, // 1 if center exists, 0 if not
+      fullMitre: (openTreadCount > 0 && openTreadFullMitre) || (doubleOpenCount > 0 && doubleOpenFullMitre) || stairFormData.fullMitre,
+      bracketType: openTreadCount > 0 ? openTreadBracket : doubleOpenCount > 0 ? doubleOpenBracket : stairFormData.bracketType,
+      specialParts: specialPartsConfig,
+      // Landing tread based on tread/riser count validation
+      includeLandingTread: hasLandingTread,
+      // New individual stringer configuration for future use
+      individualStringers: {
+        left: { width: leftStringerWidth, thickness: leftStringerThickness, materialId: leftStringerMaterial },
+        right: { width: rightStringerWidth, thickness: rightStringerThickness, materialId: rightStringerMaterial },
+        center: hasCenter ? { width: centerStringerWidth, thickness: centerStringerThickness, materialId: centerStringerMaterial } : null
+      }
     };
 
-    const response = await stairService.calculatePrice(stairDataWithSpecialParts);
+    const response = await stairService.calculatePrice(request);
     setStairPricingDetails(response);
     setPricingResult({
-      subtotal: response.totalPrice,
-      laborCost: 0, // Stairs don't have separate labor cost
-      total: response.totalPrice,
+      subtotal: parseFloat(response.subtotal),
+      laborCost: parseFloat(response.laborTotal),
+      total: parseFloat(response.total),
       details: response
     });
   };
@@ -333,12 +493,14 @@ const QuickPricer: React.FC = () => {
     const product = products.find(p => p.id === linearProductFormData.productId);
     
     if (!product) {
-      console.error('Product not found');
-      return;
+      throw new Error(`Selected ${type} product not found. Please refresh the page and try again.`);
     }
 
     const material = materials.find(m => m.id === linearProductFormData.materialId);
-    const materialMultiplier = material?.price_multiplier || 1;
+    if (!material) {
+      throw new Error('Selected material not found. Please refresh the page and try again.');
+    }
+    const materialMultiplier = material?.multiplier || 1;
     
     // Calculate: (length / 6) * cost_per_6_inches * material_multiplier * quantity
     const lengthIn6InchIncrements = linearProductFormData.length / 6;
@@ -371,12 +533,14 @@ const QuickPricer: React.FC = () => {
     const product = railPartsProducts.find(p => p.id === railPartsFormData.productId);
     
     if (!product) {
-      console.error('Product not found');
-      return;
+      throw new Error('Selected rail part product not found. Please refresh the page and try again.');
     }
 
     const material = materials.find(m => m.id === railPartsFormData.materialId);
-    const materialMultiplier = material?.price_multiplier || 1;
+    if (!material) {
+      throw new Error('Selected material not found. Please refresh the page and try again.');
+    }
+    const materialMultiplier = material?.multiplier || 1;
     
     // Calculate: base_price * material_multiplier * quantity
     const subtotal = (product.base_price || 0) * materialMultiplier * railPartsFormData.quantity;
@@ -404,7 +568,15 @@ const QuickPricer: React.FC = () => {
   useEffect(() => {
     setPricingResult(null);
     setStairPricingDetails(null);
+    setError(null);
   }, [productType]);
+
+  // Clear error when form data changes
+  useEffect(() => {
+    if (error) {
+      setError(null);
+    }
+  }, [stairFormData, linearProductFormData, railPartsFormData, boxTreadCount, openTreadCount, doubleOpenCount, boxTreadWidth, openTreadWidth, doubleOpenWidth, leftStringerMaterial, rightStringerMaterial, centerStringerMaterial, leftStringerWidth, rightStringerWidth, centerStringerWidth, leftStringerThickness, rightStringerThickness, centerStringerThickness, hasCenter]);
 
   // Validate tread configuration when bulk inputs change
   useEffect(() => {
@@ -1061,12 +1233,93 @@ const QuickPricer: React.FC = () => {
 
         {stairPricingDetails && productType === 'stair' && (
           <div className="stair-calculation-details">
-            <h4>Stair Components</h4>
-            {stairPricingDetails.components.map((component, index) => (
-              <div key={index} className="component-detail">
-                <span>{component.description}: ${component.price.toFixed(2)}</span>
+            <h4>Pricing Breakdown</h4>
+            
+            {/* Treads */}
+            {stairPricingDetails.breakdown.treads && stairPricingDetails.breakdown.treads.length > 0 && (
+              <div className="breakdown-section">
+                <h5>Treads</h5>
+                {stairPricingDetails.breakdown.treads.map((tread, index) => (
+                  <div key={index} className="component-detail">
+                    <span>#{tread.riserNumber} {tread.type} ({tread.stairWidth}"): ${tread.totalPrice.toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+            
+            {/* Landing Tread */}
+            {stairPricingDetails.breakdown.landingTread && (
+              <div className="breakdown-section">
+                <h5>Landing Tread</h5>
+                <div className="component-detail">
+                  <span>#{stairPricingDetails.breakdown.landingTread.riserNumber} {stairPricingDetails.breakdown.landingTread.type} ({stairPricingDetails.breakdown.landingTread.stairWidth}"): ${stairPricingDetails.breakdown.landingTread.totalPrice.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Risers */}
+            {stairPricingDetails.breakdown.risers && stairPricingDetails.breakdown.risers.length > 0 && (
+              <div className="breakdown-section">
+                <h5>Risers</h5>
+                {stairPricingDetails.breakdown.risers.map((riser, index) => (
+                  <div key={index} className="component-detail">
+                    <span>{riser.type} riser ({riser.width}" x {riser.quantity}): ${riser.totalPrice.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Stringers */}
+            {stairPricingDetails.breakdown.stringers && stairPricingDetails.breakdown.stringers.length > 0 && (
+              <div className="breakdown-section">
+                <h5>Stringers</h5>
+                {stairPricingDetails.breakdown.stringers.map((stringer, index) => (
+                  <div key={index} className="component-detail">
+                    <span>{stringer.type} ({stringer.width}" x {stringer.thickness}" x {stringer.quantity}): ${stringer.totalPrice.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Special Parts */}
+            {stairPricingDetails.breakdown.specialParts && stairPricingDetails.breakdown.specialParts.length > 0 && (
+              <div className="breakdown-section">
+                <h5>Special Parts</h5>
+                {stairPricingDetails.breakdown.specialParts.map((part, index) => (
+                  <div key={index} className="component-detail">
+                    <span>{part.description} x{part.quantity}: ${part.totalPrice.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Labor */}
+            {stairPricingDetails.breakdown.labor && stairPricingDetails.breakdown.labor.length > 0 && (
+              <div className="breakdown-section">
+                <h5>Labor</h5>
+                {stairPricingDetails.breakdown.labor.map((labor, index) => (
+                  <div key={index} className="component-detail">
+                    <span>{labor.description}: ${labor.totalPrice.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Summary */}
+            <div className="breakdown-summary">
+              <div className="summary-line">
+                <span>Subtotal: ${stairPricingDetails.subtotal}</span>
+              </div>
+              <div className="summary-line">
+                <span>Labor: ${stairPricingDetails.laborTotal}</span>
+              </div>
+              <div className="summary-line">
+                <span>Tax: ${stairPricingDetails.taxAmount}</span>
+              </div>
+              <div className="summary-line total">
+                <span><strong>Total: ${stairPricingDetails.total}</strong></span>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1096,10 +1349,24 @@ const QuickPricer: React.FC = () => {
           {(productType === 'handrail' || productType === 'landing_tread') && renderLinearProductForm()}
           {productType === 'rail_parts' && renderRailPartsForm()}
 
+          {error && (
+            <div className="error-message" style={{
+              backgroundColor: '#fee2e2',
+              border: '1px solid #fecaca',
+              borderRadius: '0.375rem',
+              padding: '0.75rem',
+              marginBottom: '1rem',
+              color: '#dc2626',
+              fontSize: '0.875rem'
+            }}>
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
           <div className="quick-pricer-actions">
             <button 
               onClick={calculatePrice}
-              disabled={calculating}
+              disabled={calculating || loading}
               className="btn btn-primary"
             >
               {calculating ? 'Calculating...' : 'Calculate Price'}
