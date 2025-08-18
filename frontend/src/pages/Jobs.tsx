@@ -8,6 +8,7 @@ import JobForm from '../components/jobs/JobForm';
 import JobPDFPreview from '../components/jobs/JobPDFPreview';
 import JobDetail from '../components/jobs/JobDetail';
 import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
+import { StairConfigurationProvider } from '../contexts/StairConfigurationContext';
 import '../styles/common.css';
 import './Jobs.css';
 
@@ -156,10 +157,7 @@ const Jobs: React.FC = () => {
             // Create the section
             const newSection = await jobService.createJobSection(newJob.id, {
               name: section.name,
-              description: section.description,
-              display_order: section.display_order || 1,
-              is_labor_section: section.is_labor_section || false,
-              is_misc_section: section.is_misc_section || false
+              display_order: section.display_order || 1
             });
             
             // Add items to the section if they exist
@@ -486,11 +484,13 @@ const Jobs: React.FC = () => {
 
       {/* Job Detail Modal */}
       {jobDetail && (
-        <JobDetail
-          jobId={jobDetail.jobId}
-          isOpen={true}
-          onClose={() => setJobDetail(null)}
-        />
+        <StairConfigurationProvider>
+          <JobDetail
+            jobId={jobDetail.jobId}
+            isOpen={true}
+            onClose={() => setJobDetail(null)}
+          />
+        </StairConfigurationProvider>
       )}
 
       {/* Next Stage Confirmation Modal */}

@@ -305,6 +305,9 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
 
       const response = await stairService.calculatePrice(request);
       setPriceResponse(response);
+      
+      // Update treads state with the generated treads so they're available for saving
+      setTreads(generatedTreads);
     } catch (error) {
       console.error('Error calculating price:', error);
     } finally {
@@ -387,6 +390,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
     setLoading(true);
     try {
       // Transform treads into items for database storage
+      console.log('Transforming treads for save:', treads);
       const treadItems = treads.map((tread) => {
         // Determine board type ID based on tread type
         let boardTypeId = 1; // Default to box tread
@@ -398,7 +402,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
           t => t.riserNumber === tread.riserNumber
         );
         
-        return {
+        const treadItem = {
           itemType: 'tread',
           riserNumber: tread.riserNumber,
           treadType: tread.type,
@@ -411,6 +415,8 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
           totalPrice: treadPriceInfo?.totalPrice || 0,
           notes: null
         };
+        console.log(`Created tread item for riser ${tread.riserNumber}:`, treadItem);
+        return treadItem;
       });
       
       // Add special parts as items if any
@@ -455,8 +461,21 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
         taxAmount: Number(priceResponse.taxAmount) || 0,
         totalAmount: Number(priceResponse.total) || 0,
         specialNotes: formData.specialNotes,
-        items: [...treadItems, ...specialPartItems] // Include all items
+        items: [...treadItems, ...specialPartItems], // Include all items
+        // Individual stringer configurations
+        individualStringers: {
+          left: { width: leftStringerWidth, thickness: leftStringerThickness, materialId: leftStringerMaterial },
+          right: { width: rightStringerWidth, thickness: rightStringerThickness, materialId: rightStringerMaterial },
+          center: hasCenter ? { width: centerStringerWidth, thickness: centerStringerThickness, materialId: centerStringerMaterial } : null
+        }
       };
+      
+      // Log individual stringer data for debugging
+      console.log('🚀 StairConfigurator: baseConfig individualStringers:', JSON.stringify(baseConfig.individualStringers, null, 2));
+      console.log('🚀 StairConfigurator: Individual stringer values:');
+      console.log('🚀   Left - width:', leftStringerWidth, 'thickness:', leftStringerThickness, 'materialId:', leftStringerMaterial);
+      console.log('🚀   Right - width:', rightStringerWidth, 'thickness:', rightStringerThickness, 'materialId:', rightStringerMaterial);
+      console.log('🚀   Center - width:', centerStringerWidth, 'thickness:', centerStringerThickness, 'materialId:', centerStringerMaterial, 'hasCenter:', hasCenter);
 
       // Check if we're in draft mode (job creation) or normal mode (job editing)
       const isDraftMode = !jobId || jobId <= 0 || !sectionId || sectionId <= 0;

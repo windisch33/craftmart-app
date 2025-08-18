@@ -72,6 +72,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
 
     let query = `
       SELECT j.*, 
+             CAST(j.subtotal AS FLOAT) as subtotal,
+             CAST(j.labor_total AS FLOAT) as labor_total,
+             CAST(j.tax_amount AS FLOAT) as tax_amount,
+             CAST(j.total_amount AS FLOAT) as total_amount,
+             CAST(j.tax_rate AS FLOAT) as tax_rate,
              c.name as customer_name, c.state as customer_state,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              (s.first_name || ' ' || s.last_name) as salesman_name
@@ -267,6 +272,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     if (recent === 'true') {
       query = `
         SELECT j.*, 
+               CAST(j.subtotal AS FLOAT) as subtotal,
+               CAST(j.labor_total AS FLOAT) as labor_total,
+               CAST(j.tax_amount AS FLOAT) as tax_amount,
+               CAST(j.total_amount AS FLOAT) as total_amount,
+               CAST(j.tax_rate AS FLOAT) as tax_rate,
                c.name as customer_name, c.state as customer_state,
                s.first_name as salesman_first_name, s.last_name as salesman_last_name,
                (s.first_name || ' ' || s.last_name) as salesman_name
@@ -320,6 +330,11 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
     // Get job with customer and salesman info
     const jobResult = await pool.query(`
       SELECT j.*, 
+             CAST(j.subtotal AS FLOAT) as subtotal,
+             CAST(j.labor_total AS FLOAT) as labor_total,
+             CAST(j.tax_amount AS FLOAT) as tax_amount,
+             CAST(j.total_amount AS FLOAT) as total_amount,
+             CAST(j.tax_rate AS FLOAT) as tax_rate,
              c.name as customer_name, c.address, c.city, c.state, c.zip_code,
              c.phone, c.mobile, c.email, c.accounting_email,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
@@ -342,9 +357,9 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
                  'id', qi.id,
                  'part_number', qi.part_number,
                  'description', qi.description,
-                 'quantity', qi.quantity,
-                 'unit_price', qi.unit_price,
-                 'line_total', qi.line_total,
+                 'quantity', CAST(qi.quantity AS FLOAT),
+                 'unit_price', CAST(qi.unit_price AS FLOAT),
+                 'line_total', CAST(qi.line_total AS FLOAT),
                  'is_taxable', qi.is_taxable
                ) ORDER BY qi.created_at
              ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
@@ -493,15 +508,15 @@ export const getJobSections = async (req: Request, res: Response, next: NextFunc
 export const createJobSection = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId } = req.params;
-    const { name, description, display_order = 0, is_labor_section = false, is_misc_section = false } = req.body;
+    const { name, display_order = 0 } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'Section name is required' });
     }
     
     const result = await pool.query(
-      'INSERT INTO job_sections (job_id, name, description, display_order, is_labor_section, is_misc_section) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [jobId, name, description, display_order, is_labor_section, is_misc_section]
+      'INSERT INTO job_sections (job_id, name, display_order) VALUES ($1, $2, $3) RETURNING *',
+      [jobId, name, display_order]
     );
     
     res.status(201).json(result.rows[0]);
@@ -513,18 +528,15 @@ export const createJobSection = async (req: Request, res: Response, next: NextFu
 export const updateJobSection = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { sectionId } = req.params;
-    const { name, description, display_order, is_labor_section, is_misc_section } = req.body;
+    const { name, display_order } = req.body;
     
     const result = await pool.query(
       `UPDATE job_sections SET 
         name = COALESCE($1, name), 
-        description = COALESCE($2, description),
-        display_order = COALESCE($3, display_order),
-        is_labor_section = COALESCE($4, is_labor_section),
-        is_misc_section = COALESCE($5, is_misc_section),
+        display_order = COALESCE($2, display_order),
         updated_at = NOW()
-       WHERE id = $6 RETURNING *`,
-      [name, description, display_order, is_labor_section, is_misc_section, sectionId]
+       WHERE id = $3 RETURNING *`,
+      [name, display_order, sectionId]
     );
     
     if (result.rows.length === 0) {
@@ -568,14 +580,32 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
     
     // Check if this is a stair configuration item
     if (part_number === 'STAIR-CONFIG' && stair_configuration) {
+      // Log received stair configuration data for debugging
+      console.log('🔧 jobController: Creating stair configuration via addQuoteItem');
+      console.log('🔧 jobController: Full stair_configuration object:', JSON.stringify(stair_configuration, null, 2));
+      console.log('🔧 jobController: Has individualStringers?', !!stair_configuration.individualStringers);
+      console.log('🔧 jobController: individualStringers data:', JSON.stringify(stair_configuration.individualStringers, null, 2));
+      
+      // Extract individual stringer data
+      const leftStringer = stair_configuration.individualStringers?.left;
+      const rightStringer = stair_configuration.individualStringers?.right;
+      const centerStringer = stair_configuration.individualStringers?.center;
+      
+      console.log('🔧 jobController: Extracted left stringer:', JSON.stringify(leftStringer, null, 2));
+      console.log('🔧 jobController: Extracted right stringer:', JSON.stringify(rightStringer, null, 2));
+      console.log('🔧 jobController: Extracted center stringer:', JSON.stringify(centerStringer, null, 2));
+      
       // Create the stair configuration first (riser_height is computed, don't insert it)
       const stairResult = await pool.query(
         `INSERT INTO stair_configurations (
           job_id, config_name, floor_to_floor, num_risers,
           tread_material_id, riser_material_id, tread_size, rough_cut_width, nose_size,
           stringer_type, stringer_material_id, num_stringers, center_horses, full_mitre,
-          bracket_type, special_notes, subtotal, labor_total, tax_amount, total_amount
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
+          bracket_type, special_notes, subtotal, labor_total, tax_amount, total_amount,
+          left_stringer_width, left_stringer_thickness, left_stringer_material_id,
+          right_stringer_width, right_stringer_thickness, right_stringer_material_id,
+          center_stringer_width, center_stringer_thickness, center_stringer_material_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29) 
         RETURNING id`,
         [
           jobId,
@@ -597,9 +627,23 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
           stair_configuration.subtotal || unit_price,
           stair_configuration.laborTotal || 0,
           stair_configuration.taxAmount || 0,
-          stair_configuration.totalAmount || unit_price
+          stair_configuration.totalAmount || unit_price,
+          leftStringer?.width,
+          leftStringer?.thickness,
+          leftStringer?.materialId,
+          rightStringer?.width,
+          rightStringer?.thickness,
+          rightStringer?.materialId,
+          centerStringer?.width,
+          centerStringer?.thickness,
+          centerStringer?.materialId
         ]
       );
+      
+      console.log('🔧 jobController: SQL INSERT values for individual stringers:');
+      console.log('🔧   Left - width:', leftStringer?.width, 'thickness:', leftStringer?.thickness, 'materialId:', leftStringer?.materialId);
+      console.log('🔧   Right - width:', rightStringer?.width, 'thickness:', rightStringer?.thickness, 'materialId:', rightStringer?.materialId);
+      console.log('🔧   Center - width:', centerStringer?.width, 'thickness:', centerStringer?.thickness, 'materialId:', centerStringer?.materialId);
       
       stairConfigId = stairResult.rows[0].id;
       finalPartNumber = `STAIR-${stairConfigId}`;
@@ -655,12 +699,148 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
 export const updateQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { itemId } = req.params;
-    const { part_number, description, quantity, unit_price, is_taxable } = req.body;
+    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration } = req.body;
     
     // Calculate new line total if quantity or unit_price changed
     let lineTotal: number | undefined;
     if (quantity !== undefined && unit_price !== undefined) {
       lineTotal = quantity * unit_price;
+    }
+    
+    let stairConfigId = null;
+    let finalPartNumber = part_number;
+    
+    // Check if this is a stair configuration update
+    if ((part_number === 'STAIR-CONFIG' || (part_number && part_number.startsWith('STAIR-'))) && stair_configuration) {
+      // Get the job_id for this item
+      const itemResult = await pool.query('SELECT job_id, stair_config_id FROM quote_items WHERE id = $1', [itemId]);
+      if (itemResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Quote item not found' });
+      }
+      
+      const jobId = itemResult.rows[0].job_id;
+      const existingConfigId = itemResult.rows[0].stair_config_id;
+      
+      if (existingConfigId) {
+        // Update existing stair configuration
+        await pool.query(
+          `UPDATE stair_configurations SET 
+            config_name = $1, floor_to_floor = $2, num_risers = $3,
+            tread_material_id = $4, riser_material_id = $5, tread_size = $6, rough_cut_width = $7, nose_size = $8,
+            stringer_type = $9, stringer_material_id = $10, num_stringers = $11, center_horses = $12, full_mitre = $13,
+            bracket_type = $14, special_notes = $15, subtotal = $16, labor_total = $17, tax_amount = $18, total_amount = $19
+           WHERE id = $20`,
+          [
+            stair_configuration.configName || description,
+            stair_configuration.floorToFloor || 108,
+            stair_configuration.numRisers || 14,
+            stair_configuration.treadMaterialId || 5,
+            stair_configuration.riserMaterialId || 4,
+            stair_configuration.treadSize || '10x1.25',
+            stair_configuration.roughCutWidth || 10,
+            stair_configuration.noseSize || 1.25,
+            stair_configuration.stringerType || '1x9.25_Poplar',
+            stair_configuration.stringerMaterialId || 7,
+            stair_configuration.numStringers || 2,
+            stair_configuration.centerHorses || 0,
+            stair_configuration.fullMitre || false,
+            stair_configuration.bracketType || null,
+            stair_configuration.specialNotes || null,
+            stair_configuration.subtotal || unit_price,
+            stair_configuration.laborTotal || 0,
+            stair_configuration.taxAmount || 0,
+            stair_configuration.totalAmount || unit_price,
+            existingConfigId
+          ]
+        );
+        
+        stairConfigId = existingConfigId;
+        finalPartNumber = `STAIR-${stairConfigId}`;
+        
+        // Update stair configuration items (delete old ones and insert new ones)
+        await pool.query('DELETE FROM stair_config_items WHERE config_id = $1', [existingConfigId]);
+        
+        if (stair_configuration.items && Array.isArray(stair_configuration.items)) {
+          for (const item of stair_configuration.items) {
+            await pool.query(
+              `INSERT INTO stair_config_items (
+                config_id, item_type, riser_number, tread_type, width, 
+                material_id, quantity, unit_price, total_price
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+              [
+                stairConfigId,
+                item.itemType || 'tread',
+                item.riserNumber || null,
+                item.treadType || 'box',
+                item.stairWidth || item.width || 0,
+                item.materialId || 5,
+                item.quantity || 1,
+                item.unitPrice || 0,
+                item.totalPrice || 0
+              ]
+            );
+          }
+        }
+      } else {
+        // Create new stair configuration (this shouldn't normally happen in update, but handle it)
+        const stairResult = await pool.query(
+          `INSERT INTO stair_configurations (
+            job_id, config_name, floor_to_floor, num_risers,
+            tread_material_id, riser_material_id, tread_size, rough_cut_width, nose_size,
+            stringer_type, stringer_material_id, num_stringers, center_horses, full_mitre,
+            bracket_type, special_notes, subtotal, labor_total, tax_amount, total_amount
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) 
+          RETURNING id`,
+          [
+            jobId,
+            stair_configuration.configName || description,
+            stair_configuration.floorToFloor || 108,
+            stair_configuration.numRisers || 14,
+            stair_configuration.treadMaterialId || 5,
+            stair_configuration.riserMaterialId || 4,
+            stair_configuration.treadSize || '10x1.25',
+            stair_configuration.roughCutWidth || 10,
+            stair_configuration.noseSize || 1.25,
+            stair_configuration.stringerType || '1x9.25_Poplar',
+            stair_configuration.stringerMaterialId || 7,
+            stair_configuration.numStringers || 2,
+            stair_configuration.centerHorses || 0,
+            stair_configuration.fullMitre || false,
+            stair_configuration.bracketType || null,
+            stair_configuration.specialNotes || null,
+            stair_configuration.subtotal || unit_price,
+            stair_configuration.laborTotal || 0,
+            stair_configuration.taxAmount || 0,
+            stair_configuration.totalAmount || unit_price
+          ]
+        );
+        
+        stairConfigId = stairResult.rows[0].id;
+        finalPartNumber = `STAIR-${stairConfigId}`;
+        
+        // Insert stair configuration items
+        if (stair_configuration.items && Array.isArray(stair_configuration.items)) {
+          for (const item of stair_configuration.items) {
+            await pool.query(
+              `INSERT INTO stair_config_items (
+                config_id, item_type, riser_number, tread_type, width, 
+                material_id, quantity, unit_price, total_price
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+              [
+                stairConfigId,
+                item.itemType || 'tread',
+                item.riserNumber || null,
+                item.treadType || 'box',
+                item.stairWidth || item.width || 0,
+                item.materialId || 5,
+                item.quantity || 1,
+                item.unitPrice || 0,
+                item.totalPrice || 0
+              ]
+            );
+          }
+        }
+      }
     }
     
     const result = await pool.query(
@@ -670,9 +850,10 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
         quantity = COALESCE($3, quantity),
         unit_price = COALESCE($4, unit_price),
         line_total = COALESCE($5, line_total),
-        is_taxable = COALESCE($6, is_taxable)
-       WHERE id = $7 RETURNING *`,
-      [part_number, description, quantity, unit_price, lineTotal, is_taxable, itemId]
+        is_taxable = COALESCE($6, is_taxable),
+        stair_config_id = COALESCE($7, stair_config_id)
+       WHERE id = $8 RETURNING *`,
+      [finalPartNumber, description, quantity, unit_price, lineTotal, is_taxable, stairConfigId, itemId]
     );
     
     if (result.rows.length === 0) {

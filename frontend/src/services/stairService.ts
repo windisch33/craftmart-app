@@ -220,6 +220,11 @@ export interface StairConfiguration {
   totalAmount: number;
   specialNotes?: string;
   items?: any[];
+  individualStringers?: {
+    left?: { width: number; thickness: number; materialId: number };
+    right?: { width: number; thickness: number; materialId: number };
+    center?: { width: number; thickness: number; materialId: number } | null;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

@@ -563,25 +563,42 @@ export const createStairConfiguration = async (req: Request, res: Response) => {
       taxAmount,
       totalAmount,
       specialNotes,
-      items = []
+      items = [],
+      // Individual stringer configurations
+      individualStringers
     } = req.body;
 
     // Insert main configuration
+    // Log received data for debugging
+    console.log('Creating stair configuration with items:', JSON.stringify(items, null, 2));
+    console.log('Individual stringers:', JSON.stringify(individualStringers, null, 2));
+
+    // Extract individual stringer data
+    const leftStringer = individualStringers?.left;
+    const rightStringer = individualStringers?.right;
+    const centerStringer = individualStringers?.center;
+
     const configResult = await client.query(
       `INSERT INTO stair_configurations (
         job_id, config_name, floor_to_floor, num_risers,
         tread_material_id, riser_material_id, tread_size, rough_cut_width, nose_size,
         stringer_type, stringer_material_id, num_stringers, center_horses,
         full_mitre, bracket_type, subtotal, labor_total,
-        tax_amount, total_amount, special_notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        tax_amount, total_amount, special_notes,
+        left_stringer_width, left_stringer_thickness, left_stringer_material_id,
+        right_stringer_width, right_stringer_thickness, right_stringer_material_id,
+        center_stringer_width, center_stringer_thickness, center_stringer_material_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
       RETURNING *`,
       [
         jobId, configName, floorToFloor, numRisers,
         treadMaterialId, riserMaterialId, treadSize, roughCutWidth, noseSize,
         stringerType, stringerMaterialId, numStringers, centerHorses,
         fullMitre, bracketType, subtotal, laborTotal,
-        taxAmount, totalAmount, specialNotes
+        taxAmount, totalAmount, specialNotes,
+        leftStringer?.width, leftStringer?.thickness, leftStringer?.materialId,
+        rightStringer?.width, rightStringer?.thickness, rightStringer?.materialId,
+        centerStringer?.width, centerStringer?.thickness, centerStringer?.materialId
       ]
     );
 
@@ -589,6 +606,7 @@ export const createStairConfiguration = async (req: Request, res: Response) => {
 
     // Insert configuration items
     for (const item of items) {
+      console.log(`Inserting item: type=${item.itemType}, riser=${item.riserNumber}, treadType=${item.treadType}, width=${item.stairWidth}`);
       await client.query(
         `INSERT INTO stair_config_items (
           config_id, item_type, riser_number, tread_type,
@@ -629,11 +647,17 @@ export const getStairConfiguration = async (req: Request, res: Response) => {
       `SELECT c.*, 
         tm.material_name as tread_material_name,
         rm.material_name as riser_material_name,
-        sm.material_name as stringer_material_name
+        sm.material_name as stringer_material_name,
+        lsm.material_name as left_stringer_material_name,
+        rsm.material_name as right_stringer_material_name,
+        csm.material_name as center_stringer_material_name
        FROM stair_configurations c
        LEFT JOIN material_multipliers tm ON c.tread_material_id = tm.material_id
        LEFT JOIN material_multipliers rm ON c.riser_material_id = rm.material_id
        LEFT JOIN material_multipliers sm ON c.stringer_material_id = sm.material_id
+       LEFT JOIN material_multipliers lsm ON c.left_stringer_material_id = lsm.material_id
+       LEFT JOIN material_multipliers rsm ON c.right_stringer_material_id = rsm.material_id
+       LEFT JOIN material_multipliers csm ON c.center_stringer_material_id = csm.material_id
        WHERE c.id = $1`,
       [id]
     );

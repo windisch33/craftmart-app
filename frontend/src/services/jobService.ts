@@ -38,9 +38,6 @@ export interface JobSection {
   job_id: number;
   name: string;
   display_order: number;
-  description?: string;
-  is_labor_section: boolean;
-  is_misc_section: boolean;
   created_at: string;
   updated_at: string;
   items?: QuoteItem[];
@@ -81,10 +78,7 @@ export interface UpdateJobData extends Partial<CreateJobData> {}
 
 export interface CreateJobSectionData {
   name: string;
-  description?: string;
   display_order?: number;
-  is_labor_section?: boolean;
-  is_misc_section?: boolean;
 }
 
 export interface CreateQuoteItemData {

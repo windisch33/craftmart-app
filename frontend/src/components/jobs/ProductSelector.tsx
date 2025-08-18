@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import axios from 'axios';
 import productService from '../../services/productService';
 import materialService from '../../services/materialService';
 import jobService from '../../services/jobService';
@@ -97,6 +98,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [addingItem, setAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<QuoteItem | null>(null);
+  const [editingStairItem, setEditingStairItem] = useState<QuoteItem | null>(null);
   const [showStairConfigurator, setShowStairConfigurator] = useState(false);
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -230,79 +232,171 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   const handleAddItem = async () => {
     if (!validateForm()) return;
 
-    if (!selectedProduct) {
-      console.error('No product selected');
+    if (!selectedProduct && !formData.customDescription.trim()) {
+      console.error('No product selected and no custom description');
       return;
     }
 
     const unitPrice = getCalculatedUnitPrice();
     
-    let description = formData.customDescription || selectedProduct.name;
-    if (selectedMaterial && requiresMaterial) {
-      description += ` - ${selectedMaterial.name}`;
-      if (isHandrailProduct && formData.lengthInches > 0) {
-        description += ` (${formData.lengthInches}")`;
+    // Build description based on whether we have a selected product or are using custom description
+    let description;
+    if (selectedProduct) {
+      // Product-based item: build description from product and material
+      description = selectedProduct.name;
+      if (selectedMaterial && requiresMaterial) {
+        description += ` - ${selectedMaterial.name}`;
+        if (isHandrailProduct && formData.lengthInches > 0) {
+          description += ` (${formData.lengthInches}")`;
+        }
       }
+      // If there's a custom description override for product items, use it
+      if (formData.customDescription && formData.customDescription !== editingItem?.description) {
+        description = formData.customDescription;
+      }
+    } else {
+      // Custom item: use custom description
+      description = formData.customDescription;
     }
-
-    const itemData: CreateQuoteItemData = {
-      part_number: `${selectedProduct.id}-${selectedMaterial?.id || 0}`,
-      description,
-      quantity: formData.quantity,
-      unit_price: unitPrice,
-      is_taxable: formData.isTaxable
-    };
 
     try {
       setAddingItem(true);
       
-      if (jobId && section.id > 0) {
-        // Add to backend if we have real job and section IDs
-        const newItem = await jobService.addQuoteItem(jobId, section.id, itemData);
-        const updatedItems = [...items, newItem];
+      if (editingItem) {
+        // Update existing item
+        const updatedItems = items.map(item => 
+          item.id === editingItem.id 
+            ? {
+                ...item,
+                part_number: selectedProduct ? `${selectedProduct.id}-${selectedMaterial?.id || 0}` : item.part_number,
+                description,
+                quantity: formData.quantity,
+                unit_price: unitPrice,
+                line_total: formData.quantity * unitPrice,
+                is_taxable: formData.isTaxable
+              }
+            : item
+        );
         setItems(updatedItems);
         onItemsChange(section.id, updatedItems);
       } else {
-        // Create temporary item for new jobs
-        const tempItem: QuoteItem = {
-          id: -(items.length + 1), // Negative ID for temp items
-          job_id: jobId || 0,
-          section_id: section.id,
-          part_number: itemData.part_number,
-          description: itemData.description,
-          quantity: itemData.quantity,
-          unit_price: itemData.unit_price,
-          line_total: itemData.quantity * itemData.unit_price,
-          is_taxable: itemData.is_taxable || true,
-          created_at: new Date().toISOString()
+        // Add new item
+        const itemData: CreateQuoteItemData = {
+          part_number: selectedProduct ? `${selectedProduct.id}-${selectedMaterial?.id || 0}` : '',
+          description,
+          quantity: formData.quantity,
+          unit_price: unitPrice,
+          is_taxable: formData.isTaxable
         };
-        const updatedItems = [...items, tempItem];
-        setItems(updatedItems);
-        onItemsChange(section.id, updatedItems);
+
+        if (!isDraftMode && jobId && section.id > 0) {
+          // Add to backend if not in draft mode and we have real job and section IDs
+          const newItem = await jobService.addQuoteItem(jobId, section.id, itemData);
+          const updatedItems = [...items, newItem];
+          setItems(updatedItems);
+          onItemsChange(section.id, updatedItems);
+        } else {
+          // Create temporary item for draft mode or new jobs
+          const tempItem: QuoteItem = {
+            id: -(items.length + 1), // Negative ID for temp items
+            job_id: jobId || 0,
+            section_id: section.id,
+            part_number: itemData.part_number,
+            description: itemData.description,
+            quantity: itemData.quantity,
+            unit_price: itemData.unit_price,
+            line_total: itemData.quantity * itemData.unit_price,
+            is_taxable: itemData.is_taxable || true,
+            created_at: new Date().toISOString()
+          };
+          const updatedItems = [...items, tempItem];
+          setItems(updatedItems);
+          onItemsChange(section.id, updatedItems);
+        }
       }
 
       resetForm();
       setShowAddForm(false);
+      setEditingItem(null);
       calculateSectionTotal();
     } catch (error) {
-      console.error('Error adding item:', error);
-      alert('Failed to add item');
+      console.error('Error adding/updating item:', error);
+      alert(editingItem ? 'Failed to update item' : 'Failed to add item');
     } finally {
       setAddingItem(false);
     }
   };
 
-  const handleEditItem = (item: QuoteItem) => {
+  const handleEditItem = async (item: QuoteItem) => {
+    // Check if this is a stair configuration item
+    if (item.part_number && item.part_number.startsWith('STAIR-')) {
+      // Handle stair configuration editing - fetch the configuration data
+      try {
+        // Extract config ID from part_number (e.g., "STAIR-37" -> 37)
+        const match = item.part_number.match(/STAIR-([0-9]+)/);
+        if (match) {
+          const configId = parseInt(match[1]);
+          console.log('Fetching stair configuration for editing:', configId);
+          
+          // Fetch the stair configuration data
+          const response = await axios.get(`/api/stairs/configurations/${configId}`);
+          const stairConfig = response.data;
+          
+          // Attach the configuration data to the item
+          const itemWithConfig = {
+            ...item,
+            stair_configuration: stairConfig
+          };
+          
+          setEditingStairItem(itemWithConfig);
+          setShowStairConfigurator(true);
+        } else {
+          console.warn('Could not extract config ID from part_number:', item.part_number);
+          setEditingStairItem(item);
+          setShowStairConfigurator(true);
+        }
+      } catch (error) {
+        console.error('Error fetching stair configuration for editing:', error);
+        // Fall back to editing without configuration data
+        setEditingStairItem(item);
+        setShowStairConfigurator(true);
+      }
+      return;
+    }
+    
+    // Handle regular item editing
     setEditingItem(item);
+    
+    // Parse product and material IDs from part_number (format: "productId-materialId")
+    let productId = 0;
+    let materialId = 0;
+    let useCustomPrice = true;
+    
+    if (item.part_number && item.part_number.includes('-')) {
+      const parts = item.part_number.split('-');
+      if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+        productId = Number(parts[0]);
+        materialId = Number(parts[1]);
+        useCustomPrice = false; // This is a product-based item, not custom
+      }
+    }
+    
+    // Extract length from description (format: "... (XXX")")
+    let lengthInches = 0;
+    const lengthMatch = item.description.match(/\((\d+(?:\.\d+)?)"?\)/);
+    if (lengthMatch) {
+      lengthInches = Number(lengthMatch[1]);
+    }
+    
     // Populate form with item data
     setFormData({
-      productId: 0, // We'd need to derive this from part_number
-      materialId: 0, // We'd need to derive this from part_number
+      productId,
+      materialId,
       customDescription: item.description,
       quantity: item.quantity,
-      lengthInches: 0, // Extract from description if available
+      lengthInches,
       customUnitPrice: item.unit_price,
-      useCustomPrice: true, // Assume custom when editing
+      useCustomPrice, // Only use custom price if it's actually a custom item
       isTaxable: item.is_taxable,
       includeLabor: false // Would need to derive from stored data
     });
@@ -315,8 +409,9 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     }
 
     try {
-      if (jobId && item.id > 0) {
-        // Delete from backend if it's a real item
+      // Only delete immediately from backend if NOT in draft mode and we have a real job/section
+      if (!isDraftMode && jobId && item.id > 0) {
+        // Delete from backend if it's a real item and not in draft mode
         await jobService.deleteQuoteItem(item.id);
       }
       
@@ -348,6 +443,10 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     if (formData.useCustomPrice && formData.customUnitPrice < 0) {
       return false;
     }
+    // For custom descriptions, require custom pricing
+    if (!selectedProduct && !formData.useCustomPrice) {
+      return false;
+    }
     return true;
   };
 
@@ -363,6 +462,11 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     }
     if (formData.useCustomPrice && formData.customUnitPrice < 0) {
       alert('Unit price cannot be negative');
+      return false;
+    }
+    // For custom descriptions, require custom pricing
+    if (!selectedProduct && !formData.useCustomPrice) {
+      alert('Custom items require custom pricing. Please check "Use custom pricing"');
       return false;
     }
     return true;
@@ -399,8 +503,9 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         // Draft mode: just add the configuration as a local item for display
         // The actual stair configuration will be saved when the job is created
         const stairItem: QuoteItem & { stair_configuration?: any } = {
-          id: 0, // Temporary ID for display
-          job_section_id: section.id,
+          id: -(items.length + 1), // Negative ID for temp items
+          job_id: jobId || 0,
+          section_id: section.id,
           part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
           description: stairConfig.configName || 'Straight Staircase',
           quantity: 1,
@@ -431,16 +536,28 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
             laborTotal: stairConfig.laborTotal,
             taxAmount: stairConfig.taxAmount,
             totalAmount: stairConfig.totalAmount,
-            items: stairConfig.items
+            items: stairConfig.items,
+            individualStringers: stairConfig.individualStringers
           }
         };
 
-        const updatedItems = [...items, stairItem];
+        let updatedItems;
+        if (editingStairItem) {
+          // Update existing stair item
+          updatedItems = items.map(item => 
+            item.id === editingStairItem.id ? stairItem : item
+          );
+        } else {
+          // Add new stair item
+          updatedItems = [...items, stairItem];
+        }
+        
         setItems(updatedItems);
         onItemsChange(section.id, updatedItems);
         
         setShowStairConfigurator(false);
-        alert('Stair configuration added! It will be saved when you save the job.');
+        setEditingStairItem(null);
+        alert(editingStairItem ? 'Stair configuration updated! Changes will be saved when you save the job.' : 'Stair configuration added! It will be saved when you save the job.');
       } else {
         // Normal mode: validate that we have a real job and section
         if (!jobId || jobId <= 0 || !section.id || section.id <= 0) {
@@ -480,7 +597,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
             laborTotal: stairConfig.laborTotal,
             taxAmount: stairConfig.taxAmount,
             totalAmount: stairConfig.totalAmount,
-            items: stairConfig.items
+            items: stairConfig.items,
+            individualStringers: stairConfig.individualStringers
           }
         } as any;
         console.log('Quote item part_number:', stairItem.part_number);
@@ -503,6 +621,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
 
   const handleStairCancel = () => {
     setShowStairConfigurator(false);
+    setEditingStairItem(null);
   };
 
   // Memoize selected product to prevent unnecessary lookups
@@ -955,11 +1074,12 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
       {/* Stair Configurator Modal */}
       {showStairConfigurator && (
         <StairConfigurator
-          jobId={jobId}
-          sectionId={section.id > 0 ? section.id : undefined}
-          sectionTempId={section.id <= 0 ? section.id : undefined}
+          jobId={isDraftMode ? undefined : jobId}
+          sectionId={isDraftMode ? undefined : (section.id > 0 ? section.id : undefined)}
+          sectionTempId={isDraftMode ? section.id : undefined}
           onSave={handleStairSave}
           onCancel={handleStairCancel}
+          initialConfig={(editingStairItem as any)?.stair_configuration || undefined}
         />
       )}
     </div>

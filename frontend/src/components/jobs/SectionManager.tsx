@@ -21,7 +21,6 @@ const SectionManager: React.FC<SectionManagerProps> = ({
   isLoading = false
 }) => {
   const [newSectionName, setNewSectionName] = useState('');
-  const [newSectionDescription, setNewSectionDescription] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingSection, setDeletingSection] = useState<number | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
@@ -49,10 +48,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
 
     const sectionData: CreateJobSectionData = {
       name: newSectionName.trim(),
-      description: newSectionDescription.trim() || undefined,
-      display_order: sections.length,
-      is_labor_section: false,
-      is_misc_section: newSectionName.toLowerCase().includes('misc')
+      display_order: sections.length
     };
 
     try {
@@ -66,10 +62,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
           id: -(sections.length + 1), // Negative ID for temp sections
           job_id: 0,
           name: sectionData.name,
-          description: sectionData.description || '',
           display_order: sectionData.display_order || 0,
-          is_labor_section: false,
-          is_misc_section: sectionData.is_misc_section || false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           items: []
@@ -79,7 +72,6 @@ const SectionManager: React.FC<SectionManagerProps> = ({
 
       // Reset form
       setNewSectionName('');
-      setNewSectionDescription('');
       setShowAddForm(false);
     } catch (error) {
       console.error('Error creating section:', error);
@@ -133,18 +125,13 @@ const SectionManager: React.FC<SectionManagerProps> = ({
   };
 
   const getSectionIcon = (section: JobSection): string => {
-    if (section.is_misc_section) return '📦';
     if (section.name.toLowerCase().includes('basement')) return '🏠';
     if (section.name.toLowerCase().includes('floor')) return '🏢';
     if (section.name.toLowerCase().includes('attic')) return '🏠';
     if (section.name.toLowerCase().includes('garage')) return '🚗';
     if (section.name.toLowerCase().includes('exterior')) return '🌳';
+    if (section.name.toLowerCase().includes('misc')) return '📦';
     return '📋';
-  };
-
-  const getSectionTypeLabel = (section: JobSection): string => {
-    if (section.is_misc_section) return 'Miscellaneous';
-    return 'Section';
   };
 
   return (
@@ -211,17 +198,6 @@ const SectionManager: React.FC<SectionManagerProps> = ({
                 onKeyDown={(e) => e.key === 'Enter' && handleAddSection()}
               />
             </div>
-            <div className="form-field">
-              <label htmlFor="section-description">Description</label>
-              <input
-                type="text"
-                id="section-description"
-                value={newSectionDescription}
-                onChange={(e) => setNewSectionDescription(e.target.value)}
-                placeholder="Optional description"
-                disabled={isLoading}
-              />
-            </div>
           </div>
 
           <div className="form-actions">
@@ -268,11 +244,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
                   <div className="section-title">
                     <span className="section-icon">{getSectionIcon(section)}</span>
                     <h4>{section.name}</h4>
-                    <span className="section-type">{getSectionTypeLabel(section)}</span>
                   </div>
-                  {section.description && (
-                    <p className="section-description">{section.description}</p>
-                  )}
                 </div>
                 
                 <div className="section-actions">
