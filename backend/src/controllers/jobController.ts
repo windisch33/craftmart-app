@@ -699,7 +699,7 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
 export const updateQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { itemId } = req.params;
-    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration } = req.body;
+    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration, stair_config_id } = req.body;
     
     // Calculate new line total if quantity or unit_price changed
     let lineTotal: number | undefined;
@@ -719,17 +719,47 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
       }
       
       const jobId = itemResult.rows[0].job_id;
-      const existingConfigId = itemResult.rows[0].stair_config_id;
+      let existingConfigId = stair_config_id || itemResult.rows[0].stair_config_id;
+      
+      // If stair_config_id is NULL, try to find existing configuration for this job
+      if (!existingConfigId) {
+        console.log(`UPDATE: No stair_config_id found for item ${itemId}, searching for existing config for job ${jobId}`);
+        const existingConfigResult = await pool.query(
+          'SELECT id FROM stair_configurations WHERE job_id = $1 ORDER BY created_at DESC LIMIT 1',
+          [jobId]
+        );
+        if (existingConfigResult.rows.length > 0) {
+          existingConfigId = existingConfigResult.rows[0].id;
+          console.log(`UPDATE: Found existing config ${existingConfigId} for job ${jobId}, will update it`);
+          // Update the quote item to reference this configuration
+          await pool.query('UPDATE quote_items SET stair_config_id = $1, part_number = $2 WHERE id = $3', 
+            [existingConfigId, `STAIR-${existingConfigId}`, itemId]);
+        }
+      }
       
       if (existingConfigId) {
         // Update existing stair configuration
+        console.log(`UPDATE: Updating stair configuration ${existingConfigId} with data:`, {
+          floorToFloor: stair_configuration.floorToFloor,
+          numRisers: stair_configuration.numRisers,
+          itemCount: stair_configuration.items?.length || 0
+        });
+        
+        // Extract individual stringer data for update
+        const leftStringer = stair_configuration.individualStringers?.left;
+        const rightStringer = stair_configuration.individualStringers?.right;
+        const centerStringer = stair_configuration.individualStringers?.center;
+        console.log(`UPDATE: Individual stringers - Left: ${JSON.stringify(leftStringer)}, Right: ${JSON.stringify(rightStringer)}, Center: ${JSON.stringify(centerStringer)}`);
         await pool.query(
           `UPDATE stair_configurations SET 
             config_name = $1, floor_to_floor = $2, num_risers = $3,
             tread_material_id = $4, riser_material_id = $5, tread_size = $6, rough_cut_width = $7, nose_size = $8,
             stringer_type = $9, stringer_material_id = $10, num_stringers = $11, center_horses = $12, full_mitre = $13,
-            bracket_type = $14, special_notes = $15, subtotal = $16, labor_total = $17, tax_amount = $18, total_amount = $19
-           WHERE id = $20`,
+            bracket_type = $14, special_notes = $15, subtotal = $16, labor_total = $17, tax_amount = $18, total_amount = $19,
+            left_stringer_width = $20, left_stringer_thickness = $21, left_stringer_material_id = $22,
+            right_stringer_width = $23, right_stringer_thickness = $24, right_stringer_material_id = $25,
+            center_stringer_width = $26, center_stringer_thickness = $27, center_stringer_material_id = $28
+           WHERE id = $29`,
           [
             stair_configuration.configName || description,
             stair_configuration.floorToFloor || 108,
@@ -750,6 +780,15 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
             stair_configuration.laborTotal || 0,
             stair_configuration.taxAmount || 0,
             stair_configuration.totalAmount || unit_price,
+            leftStringer?.width,
+            leftStringer?.thickness,
+            leftStringer?.materialId,
+            rightStringer?.width,
+            rightStringer?.thickness,
+            rightStringer?.materialId,
+            centerStringer?.width,
+            centerStringer?.thickness,
+            centerStringer?.materialId,
             existingConfigId
           ]
         );
@@ -758,9 +797,11 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
         finalPartNumber = `STAIR-${stairConfigId}`;
         
         // Update stair configuration items (delete old ones and insert new ones)
+        console.log(`UPDATE: Deleting existing config items for config ${existingConfigId}`);
         await pool.query('DELETE FROM stair_config_items WHERE config_id = $1', [existingConfigId]);
         
         if (stair_configuration.items && Array.isArray(stair_configuration.items)) {
+          console.log(`UPDATE: Inserting ${stair_configuration.items.length} new config items`);
           for (const item of stair_configuration.items) {
             await pool.query(
               `INSERT INTO stair_config_items (
@@ -871,7 +912,9 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
       );
       
       // Invalidate PDF cache for this job
+      console.log(`UPDATE: Invalidating PDF cache for job ${jobId} after stair config update`);
       await pdfCache.invalidateJob(jobId);
+      console.log(`UPDATE: PDF cache invalidated successfully for job ${jobId}`);
     }
     
     res.json(result.rows[0]);
@@ -949,5 +992,27 @@ export const generateJobPDFEndpoint = async (req: Request, res: Response, next: 
   } catch (error) {
     console.error('PDF Generation Error:', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
+  }
+};
+
+// Clear PDF Cache
+export const clearPDFCacheEndpoint = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { jobId } = req.params;
+    
+    if (jobId) {
+      // Clear cache for specific job
+      await pdfCache.invalidateJob(parseInt(jobId));
+      console.log(`Manual cache clear for job ${jobId}`);
+      res.json({ message: `PDF cache cleared for job ${jobId}` });
+    } else {
+      // Clear entire cache
+      await pdfCache.clearAll();
+      console.log('Manual cache clear for all jobs');
+      res.json({ message: 'All PDF cache cleared' });
+    }
+  } catch (error) {
+    console.error('Error clearing PDF cache:', error);
+    res.status(500).json({ error: 'Failed to clear PDF cache' });
   }
 };

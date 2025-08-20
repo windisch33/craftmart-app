@@ -253,6 +253,37 @@ const Jobs: React.FC = () => {
     });
   };
 
+  const handleRefresh = async () => {
+    if (!isSearching && !showAdvancedFilters) {
+      await loadRecentJobs();
+    } else if (isSearching) {
+      await handleSearch(searchTerm);
+    } else {
+      await handleAdvancedFilter();
+    }
+  };
+
+  const handleClearPDFCache = async () => {
+    try {
+      const response = await fetch('/api/jobs/cache/pdf', { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || 'PDF cache cleared successfully');
+      } else {
+        alert('Failed to clear PDF cache');
+      }
+    } catch (error) {
+      console.error('Error clearing PDF cache:', error);
+      alert('Failed to clear PDF cache');
+    }
+  };
+
   if (loading && jobs.length === 0) {
     return (
       <div className="container">
@@ -272,13 +303,31 @@ const Jobs: React.FC = () => {
           <h1 className="gradient-title">Jobs</h1>
           <p className="page-subtitle">Search and manage quotes, orders, and invoices</p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowJobForm(true)}
-        >
-          <span>📋</span>
-          Create Job
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="btn btn-secondary"
+            onClick={handleRefresh}
+            title="Refresh jobs list"
+          >
+            <span>🔄</span>
+            Refresh
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={handleClearPDFCache}
+            title="Clear PDF cache"
+          >
+            <span>🗑️</span>
+            Clear Cache
+          </button>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowJobForm(true)}
+          >
+            <span>📋</span>
+            Create Job
+          </button>
+        </div>
       </div>
 
       {/* Large Search Bar */}

@@ -332,12 +332,24 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     if (item.part_number && item.part_number.startsWith('STAIR-')) {
       // Handle stair configuration editing - fetch the configuration data
       try {
+        let configId: number | null = null;
+        
         // Extract config ID from part_number (e.g., "STAIR-37" -> 37)
         const match = item.part_number.match(/STAIR-([0-9]+)/);
         if (match) {
-          const configId = parseInt(match[1]);
-          console.log('Fetching stair configuration for editing:', configId);
-          
+          configId = parseInt(match[1]);
+          console.log('Found config ID from part_number:', configId);
+        } else if (item.part_number === 'STAIR-CONFIG') {
+          // Handle generic STAIR-CONFIG format - find config by job_id
+          console.log('Part number is STAIR-CONFIG, searching for config by job_id:', jobId);
+          const response = await axios.get(`/api/stairs/configurations?jobId=${jobId}`);
+          if (response.data && response.data.length > 0) {
+            configId = response.data[0].id; // Get the latest config for this job
+            console.log('Found config ID by job search:', configId);
+          }
+        }
+        
+        if (configId) {
           // Fetch the stair configuration data
           const response = await axios.get(`/api/stairs/configurations/${configId}`);
           const stairConfig = response.data;
@@ -345,13 +357,14 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           // Attach the configuration data to the item
           const itemWithConfig = {
             ...item,
-            stair_configuration: stairConfig
+            stair_configuration: stairConfig,
+            stair_config_id: configId // Ensure we know the config ID
           };
           
           setEditingStairItem(itemWithConfig);
           setShowStairConfigurator(true);
         } else {
-          console.warn('Could not extract config ID from part_number:', item.part_number);
+          console.warn('Could not find stair configuration for item:', item);
           setEditingStairItem(item);
           setShowStairConfigurator(true);
         }
@@ -571,45 +584,64 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         console.log('Creating quote item with ID:', stairConfig.id);
         const stairItem: CreateQuoteItemData = {
           part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
-          description: stairConfig.configName || 'Straight Staircase',
+          description: stairConfig.config_name || stairConfig.configName || 'Straight Staircase',
           quantity: 1,
-          unit_price: stairConfig.totalAmount,
+          unit_price: stairConfig.total_amount || stairConfig.totalAmount || 0,
           is_taxable: true,
           // Include the full stair configuration data
           stair_configuration: {
-            configName: stairConfig.configName,
-            floorToFloor: stairConfig.floorToFloor,
-            numRisers: stairConfig.numRisers,
-            riserHeight: stairConfig.riserHeight,
-            treadMaterialId: stairConfig.treadMaterialId,
-            riserMaterialId: stairConfig.riserMaterialId,
-            treadSize: stairConfig.treadSize,
-            roughCutWidth: stairConfig.roughCutWidth,
-            noseSize: stairConfig.noseSize,
-            stringerType: stairConfig.stringerType,
-            stringerMaterialId: stairConfig.stringerMaterialId,
-            numStringers: stairConfig.numStringers,
-            centerHorses: stairConfig.centerHorses,
-            fullMitre: stairConfig.fullMitre,
-            bracketType: stairConfig.bracketType,
-            specialNotes: stairConfig.specialNotes,
+            configName: stairConfig.config_name || stairConfig.configName,
+            floorToFloor: stairConfig.floor_to_floor || stairConfig.floorToFloor,
+            numRisers: stairConfig.num_risers || stairConfig.numRisers,
+            riserHeight: stairConfig.riser_height || stairConfig.riserHeight,
+            treadMaterialId: stairConfig.tread_material_id || stairConfig.treadMaterialId,
+            riserMaterialId: stairConfig.riser_material_id || stairConfig.riserMaterialId,
+            treadSize: stairConfig.tread_size || stairConfig.treadSize,
+            roughCutWidth: stairConfig.rough_cut_width || stairConfig.roughCutWidth,
+            noseSize: stairConfig.nose_size || stairConfig.noseSize,
+            stringerType: stairConfig.stringer_type || stairConfig.stringerType,
+            stringerMaterialId: stairConfig.stringer_material_id || stairConfig.stringerMaterialId,
+            numStringers: stairConfig.num_stringers || stairConfig.numStringers,
+            centerHorses: stairConfig.center_horses || stairConfig.centerHorses,
+            fullMitre: stairConfig.full_mitre || stairConfig.fullMitre,
+            bracketType: stairConfig.bracket_type || stairConfig.bracketType,
+            specialNotes: stairConfig.special_notes || stairConfig.specialNotes,
             subtotal: stairConfig.subtotal,
-            laborTotal: stairConfig.laborTotal,
-            taxAmount: stairConfig.taxAmount,
-            totalAmount: stairConfig.totalAmount,
+            laborTotal: stairConfig.labor_total || stairConfig.laborTotal,
+            taxAmount: stairConfig.tax_amount || stairConfig.taxAmount,
+            totalAmount: stairConfig.total_amount || stairConfig.totalAmount,
             items: stairConfig.items,
             individualStringers: stairConfig.individualStringers
           }
         } as any;
         console.log('Quote item part_number:', stairItem.part_number);
 
-        const newItem = await jobService.addQuoteItem(jobId || 0, section.id, stairItem);
-        const updatedItems = [...items, newItem];
-        setItems(updatedItems);
-        onItemsChange(section.id, updatedItems);
+        if (editingStairItem) {
+          // Delete old item and create new one (simpler than complex update logic)
+          console.log('Replacing existing stair item with ID:', editingStairItem.id);
+          
+          // Delete the old item
+          await jobService.deleteQuoteItem(editingStairItem.id);
+          
+          // Create new item with the updated configuration
+          const newItem = await jobService.addQuoteItem(jobId || 0, section.id, stairItem);
+          
+          // Update the items list: remove old, add new
+          const updatedItems = items.filter(i => i.id !== editingStairItem.id).concat(newItem);
+          setItems(updatedItems);
+          onItemsChange(section.id, updatedItems);
+          setEditingStairItem(null);
+          alert('Stair configuration updated successfully!');
+        } else {
+          // Create new stair configuration
+          const newItem = await jobService.addQuoteItem(jobId || 0, section.id, stairItem);
+          const updatedItems = [...items, newItem];
+          setItems(updatedItems);
+          onItemsChange(section.id, updatedItems);
+          alert('Stair configuration added successfully!');
+        }
         
         setShowStairConfigurator(false);
-        alert('Stair configuration added successfully!');
       }
     } catch (error) {
       console.error('Error adding stair configuration:', error);
@@ -1002,16 +1034,6 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           <div className="no-items">
             <span className="no-items-icon">📦</span>
             <p>No items in this section yet</p>
-            {!isReadOnly && (
-              <button
-                type="button"
-                className="add-first-item-btn"
-                onClick={() => setShowAddForm(true)}
-                disabled={isLoading}
-              >
-                Add First Item
-              </button>
-            )}
           </div>
         ) : (
           <div className="items-table">
@@ -1033,8 +1055,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                   )}
                   <div className="description">{item.description}</div>
                 </div>
-                <div className="col-unit-price">${item.unit_price.toFixed(2)}</div>
-                <div className="col-total">${item.line_total.toFixed(2)}</div>
+                <div className="col-unit-price">${Number(item.unit_price).toFixed(2)}</div>
+                <div className="col-total">${Number(item.line_total).toFixed(2)}</div>
                 <div className={`col-tax ${item.is_taxable ? 'taxable' : 'non-taxable'}`}>
                   {item.is_taxable ? '✓' : '✗'}
                 </div>
@@ -1064,7 +1086,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
             <div className="table-footer">
               <div className="section-total">
                 <span>Section Total: </span>
-                <strong>${items.reduce((sum, item) => sum + item.line_total, 0).toFixed(2)}</strong>
+                <strong>${items.reduce((sum, item) => sum + Number(item.line_total), 0).toFixed(2)}</strong>
               </div>
             </div>
           </div>

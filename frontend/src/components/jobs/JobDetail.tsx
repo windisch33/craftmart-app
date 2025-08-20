@@ -736,7 +736,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                               onItemsChange={handleProductSelectorItemsChange}
                               isReadOnly={isSaving}
                               isLoading={isSaving}
-                              isDraftMode={true}
+                              isDraftMode={false}
                             />
                           </div>
                         </div>

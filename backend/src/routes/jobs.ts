@@ -25,4 +25,8 @@ router.delete('/items/:itemId', jobController.deleteQuoteItem);
 // PDF generation route
 router.get('/:id/pdf', jobController.generateJobPDFEndpoint);
 
+// PDF cache management routes
+router.delete('/cache/pdf', jobController.clearPDFCacheEndpoint); // Clear all cache
+router.delete('/:jobId/cache/pdf', jobController.clearPDFCacheEndpoint); // Clear specific job cache
+
 export default router;
