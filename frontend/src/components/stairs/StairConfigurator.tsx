@@ -547,7 +547,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="floorToFloor">Floor to Floor Height (inches) *</label>
+                    <label htmlFor="floorToFloor">Floor to Floor Height (inches)&nbsp;*</label>
                     <input
                       type="number"
                       id="floorToFloor"
