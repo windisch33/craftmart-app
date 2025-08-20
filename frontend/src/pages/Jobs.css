@@ -2,14 +2,14 @@
 
 /* Search Section */
 .search-section {
-  margin-bottom: 32px;
+  margin-bottom: var(--space-8);
   text-align: center;
 }
 
 .search-container-large {
   position: relative;
-  max-width: 700px;
-  margin: 0 auto 16px;
+  max-width: 43.75rem;
+  margin: 0 auto var(--space-4);
 }
 
 .search-icon-large {
@@ -23,19 +23,19 @@
 
 .search-input-large {
   width: 100%;
-  padding: 20px 20px 20px 60px;
-  font-size: 18px;
-  border: 2px solid #e5e7eb;
-  border-radius: 12px;
-  background-color: white;
+  padding: var(--space-5) var(--space-5) var(--space-5) 3.75rem;
+  font-size: var(--text-lg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-background);
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .search-input-large:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus-primary), var(--shadow-xs);
 }
 
 .search-input-large::placeholder {
@@ -72,9 +72,9 @@
 /* Jobs Grid */
 .jobs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
+  grid-template-columns: repeat(auto-fill, minmax(25rem, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 
 /* Job Card */

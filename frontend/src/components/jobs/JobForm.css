@@ -14,33 +14,23 @@
 }
 
 .job-form-modal {
-  background: white;
-  border-radius: 20px;
+  background: var(--color-background);
+  border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 1200px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-2xl);
+  animation: slideInScale var(--transition-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes slideInScale {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
 .job-form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 32px 32px 0 32px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
   margin-bottom: 32px;
 }
 
@@ -306,14 +296,10 @@
   border: 4px solid #f3f4f6;
   border-top: 4px solid #3b82f6;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: var(--animation-spin);
   margin-bottom: 16px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
@@ -420,13 +406,13 @@
 }
 
 .job-form-step.active .job-form-step-number {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 
 .job-form-step.completed .job-form-step-number {
-  background: #10b981;
-  color: white;
+  background: var(--color-success);
+  color: var(--color-white);
 }
 
 .job-form-step-label {
@@ -438,12 +424,12 @@
 }
 
 .job-form-step.active .job-form-step-label {
-  color: #1f2937;
-  font-weight: 600;
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
 }
 
 .job-form-step.completed .job-form-step-label {
-  color: #059669;
+  color: var(--color-success-600);
 }
 
 /* Totals Sidebar */

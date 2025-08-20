@@ -385,8 +385,10 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         if (configId) {
           // Get detailed stair configuration data
+          console.log(`PDF: Fetching stair configuration ${configId} for item ${item.id}`);
           const stairConfig = await getStairConfigurationDetails(configId);
           if (stairConfig) {
+            console.log(`PDF: Found stair config ${configId} - Floor to Floor: ${stairConfig.floor_to_floor}, Risers: ${stairConfig.num_risers}`);
             processedItems.push({
               ...item,
               isStairConfig: true,
