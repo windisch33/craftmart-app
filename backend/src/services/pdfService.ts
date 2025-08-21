@@ -392,6 +392,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             processedItems.push({
               ...item,
               isStairConfig: true,
+              stairConfigName: stairConfig.config_name,
               stairDetails: formatStairConfigurationForPDF(stairConfig)
             });
           } else {
@@ -421,6 +422,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
                 processedItems.push({
                   ...item,
                   isStairConfig: true,
+                  stairConfigName: stairConfig.config_name,
                   stairDetails: formatStairConfigurationForPDF(stairConfig)
                 });
               } else {
@@ -620,7 +622,6 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         }
         
         .qty-col { width: 40px; text-align: center; }
-        .part-col { width: 120px; }
         .desc-col { flex: 1; }
         .price-col { width: 80px; text-align: right; }
         
@@ -774,7 +775,6 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             <thead>
                 <tr>
                     <th class="qty-col">Qty</th>
-                    <th class="part-col">Part Number</th>
                     <th class="desc-col">Description</th>
                     ${showLinePricing ? '<th class="price-col">Price</th>' : ''}
                 </tr>
@@ -783,10 +783,9 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
                 ${section.items.map(item => `
                 <tr ${item.isStairConfig ? 'class="stair-config-row"' : ''}>
                     <td class="qty-col">${item.quantity}</td>
-                    <td class="part-col">${item.part_number || ''}</td>
                     <td class="desc-col">
                         ${item.isStairConfig ? 
-                          `<div class="stair-details">${item.stairDetails}</div>` : 
+                          `<div class="stair-details"><strong>${item.stairConfigName || 'Stair Configuration'}</strong><br>${item.stairDetails}</div>` : 
                           item.description
                         }
                     </td>
