@@ -591,12 +591,14 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             font-weight: bold;
             font-size: 14px;
             color: #1f2937;
+            page-break-after: avoid;
         }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
+            page-break-inside: avoid;
         }
         
         .items-table th, .items-table td {
@@ -610,6 +612,11 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         .items-table th {
             background-color: #f9fafb;
             font-weight: bold;
+        }
+        
+        .items-table tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
         }
         
         .qty-col { width: 40px; text-align: center; }
@@ -676,10 +683,12 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             font-size: 12px;
             line-height: 1.4;
             padding: 5px 0;
+            page-break-inside: avoid;
         }
         
         .stair-config-row {
             background-color: #fafafa;
+            page-break-inside: avoid;
         }
         
         @media print {
