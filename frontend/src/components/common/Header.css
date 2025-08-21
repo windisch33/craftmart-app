@@ -1,11 +1,11 @@
 .header {
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .header-container {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
 }
 
 .header-content {
@@ -57,7 +57,7 @@
 .user-name {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-primary);
 }
 
 .admin-badge {
@@ -68,7 +68,7 @@
 
 .logout-btn {
   background-color: #f3f4f6;
-  color: #374151;
+  color: var(--color-text-primary);
   padding: 8px 16px;
   border-radius: 8px;
   border: none;
@@ -88,8 +88,8 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 44px;
-  height: 44px;
+  width: var(--form-control-height);
+  height: var(--form-control-height);
   background: none;
   border: none;
   cursor: pointer;

@@ -101,9 +101,6 @@ CREATE TABLE IF NOT EXISTS job_sections (
     job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     display_order INTEGER DEFAULT 0,
-    description TEXT,
-    is_labor_section BOOLEAN DEFAULT false,
-    is_misc_section BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -324,9 +321,6 @@ CREATE TABLE IF NOT EXISTS job_sections (
     job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     display_order INTEGER DEFAULT 0,
-    description TEXT,
-    is_labor_section BOOLEAN DEFAULT false,
-    is_misc_section BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

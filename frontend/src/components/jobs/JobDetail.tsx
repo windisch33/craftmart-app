@@ -23,10 +23,7 @@ interface EditableJobData {
 interface EditableSection {
   id?: number;
   name: string;
-  description?: string;
   display_order: number;
-  is_labor_section: boolean;
-  is_misc_section: boolean;
   items: EditableItem[];
   isNew?: boolean;
 }
@@ -115,6 +112,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
   // Edit form state
   const [editJobData, setEditJobData] = useState<EditableJobData | null>(null);
   const [editSections, setEditSections] = useState<EditableSection[]>([]);
+  const [originalSections, setOriginalSections] = useState<EditableSection[]>([]); // Track original state for deletions
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
@@ -167,10 +165,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     const sectionsForEdit: EditableSection[] = (job.sections || []).map((section, index) => ({
       id: section.id,
       name: section.name,
-      description: section.description || '',
       display_order: index + 1,
-      is_labor_section: section.is_labor_section || false,
-      is_misc_section: section.is_misc_section || false,
       items: (section.items || []).map(item => ({
         id: item.id,
         part_number: item.part_number || '',
@@ -183,6 +178,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     }));
 
     setEditSections(sectionsForEdit);
+    setOriginalSections(JSON.parse(JSON.stringify(sectionsForEdit))); // Deep copy for comparison
     setValidationErrors({});
   };
 
@@ -196,6 +192,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
       setIsEditing(false);
       setEditJobData(null);
       setEditSections([]);
+      setOriginalSections([]);
       setValidationErrors({});
     }
   };
@@ -272,6 +269,25 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
       // Update job basic info
       await jobService.updateJob(jobId, jobDataForUpdate);
 
+      // First, identify and delete removed items
+      for (const originalSection of originalSections) {
+        const currentSection = editSections.find(s => s.id === originalSection.id);
+        if (currentSection) {
+          // Section still exists, check for deleted items
+          for (const originalItem of originalSection.items) {
+            const currentItem = currentSection.items.find(i => i.id === originalItem.id);
+            if (!currentItem && originalItem.id && originalItem.id > 0) {
+              // Item was deleted and has a real ID
+              try {
+                await jobService.deleteQuoteItem(originalItem.id);
+              } catch (err) {
+                console.warn('Failed to delete item:', originalItem.id, err);
+              }
+            }
+          }
+        }
+      }
+
       // Handle sections and items
       for (const section of editSections) {
         let sectionId = section.id;
@@ -280,43 +296,51 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
           // Create new section
           const newSection = await jobService.createJobSection(jobId, {
             name: section.name,
-            description: section.description,
-            display_order: section.display_order,
-            is_labor_section: section.is_labor_section,
-            is_misc_section: section.is_misc_section
+            display_order: section.display_order
           });
           sectionId = newSection.id;
         } else {
           // Update existing section
           await jobService.updateJobSection(sectionId, {
             name: section.name,
-            description: section.description,
-            display_order: section.display_order,
-            is_labor_section: section.is_labor_section,
-            is_misc_section: section.is_misc_section
+            display_order: section.display_order
           });
         }
 
-        // Handle items in this section
+        // Handle items in this section - only create/update, deletions handled above
         for (const item of section.items) {
-          if (item.isNew || !item.id) {
+          if (item.isNew || !item.id || item.id <= 0) {
             // Create new item
-            await jobService.addQuoteItem(jobId, sectionId!, {
+            const itemData: any = {
               part_number: item.part_number,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
               is_taxable: item.is_taxable
-            });
+            };
+            
+            // If this is a stair configuration item, pass the configuration data
+            if ((item as any).stair_configuration) {
+              itemData.stair_configuration = (item as any).stair_configuration;
+            }
+            
+            await jobService.addQuoteItem(jobId, sectionId!, itemData);
           } else {
             // Update existing item
-            await jobService.updateQuoteItem(item.id, {
+            const itemData: any = {
               part_number: item.part_number,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
               is_taxable: item.is_taxable
-            });
+            };
+            
+            // If this is a stair configuration item, pass the configuration data
+            if ((item as any).stair_configuration) {
+              itemData.stair_configuration = (item as any).stair_configuration;
+            }
+            
+            await jobService.updateQuoteItem(item.id, itemData);
           }
         }
       }
@@ -328,6 +352,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
       setIsEditing(false);
       setEditJobData(null);
       setEditSections([]);
+      setOriginalSections([]);
       setValidationErrors({});
       
     } catch (err) {
@@ -342,6 +367,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     setIsEditing(false);
     setEditJobData(null);
     setEditSections([]);
+    setOriginalSections([]);
     setValidationErrors({});
   };
 
@@ -349,10 +375,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
   const addNewSection = () => {
     const newSection: EditableSection = {
       name: '',
-      description: '',
       display_order: editSections.length + 1,
-      is_labor_section: false,
-      is_misc_section: false,
       items: [],
       isNew: true
     };
@@ -370,40 +393,6 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     setEditSections(updatedSections);
   };
 
-  const addNewItem = (sectionIndex: number) => {
-    const newItem: EditableItem = {
-      part_number: '',
-      description: '',
-      quantity: 1,
-      unit_price: 0,
-      line_total: 0,
-      is_taxable: true,
-      isNew: true
-    };
-    
-    const updatedSections = [...editSections];
-    updatedSections[sectionIndex].items.push(newItem);
-    setEditSections(updatedSections);
-  };
-
-  const updateItem = (sectionIndex: number, itemIndex: number, updates: Partial<EditableItem>) => {
-    const updatedSections = [...editSections];
-    const updatedItem = { ...updatedSections[sectionIndex].items[itemIndex], ...updates };
-    
-    // Recalculate line total if quantity or unit_price changed
-    if ('quantity' in updates || 'unit_price' in updates) {
-      updatedItem.line_total = updatedItem.quantity * updatedItem.unit_price;
-    }
-    
-    updatedSections[sectionIndex].items[itemIndex] = updatedItem;
-    setEditSections(updatedSections);
-  };
-
-  const removeItem = (sectionIndex: number, itemIndex: number) => {
-    const updatedSections = [...editSections];
-    updatedSections[sectionIndex].items = updatedSections[sectionIndex].items.filter((_, index) => index !== itemIndex);
-    setEditSections(updatedSections);
-  };
 
   // Handler for ProductSelector items changes during job editing
   const handleProductSelectorItemsChange = (sectionId: number, items: QuoteItem[]) => {
@@ -720,124 +709,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                             </div>
                           </div>
 
-                          <div className="section-description-field">
-                            <textarea
-                              value={section.description || ''}
-                              onChange={(e) => updateSection(sectionIndex, { description: e.target.value })}
-                              placeholder="Section description (optional)"
-                              rows={2}
-                            />
-                          </div>
 
-                          <div className="section-options">
-                            <label>
-                              <input
-                                type="checkbox"
-                                checked={section.is_labor_section}
-                                onChange={(e) => updateSection(sectionIndex, { is_labor_section: e.target.checked })}
-                              />
-                              Labor Section
-                            </label>
-                            <label>
-                              <input
-                                type="checkbox"
-                                checked={section.is_misc_section}
-                                onChange={(e) => updateSection(sectionIndex, { is_misc_section: e.target.checked })}
-                              />
-                              Misc Section
-                            </label>
-                          </div>
-
-                          {/* Edit Items */}
-                          <div className="edit-items-section">
-                            {section.items.length > 0 ? (
-                              <div className="edit-items-table">
-                                <div className="edit-table-header">
-                                  <div className="col-part">Part #</div>
-                                  <div className="col-desc">Description</div>
-                                  <div className="col-qty">Qty</div>
-                                  <div className="col-price">Price</div>
-                                  <div className="col-total">Total</div>
-                                  <div className="col-tax">Tax</div>
-                                  <div className="col-actions">Actions</div>
-                                </div>
-                                {section.items.map((item, itemIndex) => (
-                                  <div key={item.id || `new-item-${itemIndex}`} className="edit-table-row">
-                                    <div className="col-part">
-                                      <input
-                                        type="text"
-                                        value={item.part_number || ''}
-                                        onChange={(e) => updateItem(sectionIndex, itemIndex, { part_number: e.target.value })}
-                                        placeholder="Part #"
-                                      />
-                                    </div>
-                                    <div className="col-desc">
-                                      <input
-                                        type="text"
-                                        value={item.description}
-                                        onChange={(e) => updateItem(sectionIndex, itemIndex, { description: e.target.value })}
-                                        placeholder="Description"
-                                        className={validationErrors.sections?.[sectionIndex]?.items?.[itemIndex]?.description ? 'error' : ''}
-                                      />
-                                      {validationErrors.sections?.[sectionIndex]?.items?.[itemIndex]?.description && (
-                                        <span className="error-message">{validationErrors.sections[sectionIndex].items![itemIndex].description}</span>
-                                      )}
-                                    </div>
-                                    <div className="col-qty">
-                                      <input
-                                        type="number"
-                                        value={item.quantity}
-                                        onChange={(e) => updateItem(sectionIndex, itemIndex, { quantity: parseFloat(e.target.value) || 0 })}
-                                        min="0"
-                                        step="0.01"
-                                        className={validationErrors.sections?.[sectionIndex]?.items?.[itemIndex]?.quantity ? 'error' : ''}
-                                      />
-                                      {validationErrors.sections?.[sectionIndex]?.items?.[itemIndex]?.quantity && (
-                                        <span className="error-message">{validationErrors.sections[sectionIndex].items![itemIndex].quantity}</span>
-                                      )}
-                                    </div>
-                                    <div className="col-price">
-                                      <input
-                                        type="number"
-                                        value={item.unit_price}
-                                        onChange={(e) => updateItem(sectionIndex, itemIndex, { unit_price: parseFloat(e.target.value) || 0 })}
-                                        min="0"
-                                        step="0.01"
-                                        className={validationErrors.sections?.[sectionIndex]?.items?.[itemIndex]?.unit_price ? 'error' : ''}
-                                      />
-                                      {validationErrors.sections?.[sectionIndex]?.items?.[itemIndex]?.unit_price && (
-                                        <span className="error-message">{validationErrors.sections[sectionIndex].items![itemIndex].unit_price}</span>
-                                      )}
-                                    </div>
-                                    <div className="col-total">
-                                      {formatCurrency(item.line_total)}
-                                    </div>
-                                    <div className="col-tax">
-                                      <input
-                                        type="checkbox"
-                                        checked={item.is_taxable}
-                                        onChange={(e) => updateItem(sectionIndex, itemIndex, { is_taxable: e.target.checked })}
-                                      />
-                                    </div>
-                                    <div className="col-actions">
-                                      <button 
-                                        className="remove-item-btn"
-                                        onClick={() => removeItem(sectionIndex, itemIndex)}
-                                        title="Remove Item"
-                                      >
-                                        🗑️
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="no-items-edit">
-                                <span>No items in this section</span>
-                                <button onClick={() => addNewItem(sectionIndex)}>Add First Item</button>
-                              </div>
-                            )}
-                          </div>
 
                           {/* Product Selector for Adding New Items */}
                           <div className="product-selector-section job-edit-product-selector">
@@ -846,10 +718,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                               section={{
                                 id: section.id || -1,
                                 name: section.name,
-                                description: section.description,
                                 display_order: section.display_order,
-                                is_labor_section: section.is_labor_section,
-                                is_misc_section: section.is_misc_section,
                                 items: section.items.map(item => ({
                                   id: item.id || -1,
                                   job_id: jobId,
@@ -860,7 +729,8 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                                   unit_price: item.unit_price,
                                   line_total: item.line_total,
                                   is_taxable: item.is_taxable,
-                                  created_at: new Date().toISOString()
+                                  created_at: new Date().toISOString(),
+                                  updated_at: new Date().toISOString()
                                 }))
                               }}
                               onItemsChange={handleProductSelectorItemsChange}
@@ -890,10 +760,6 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                               {section.items?.length || 0} items
                             </span>
                           </div>
-                          
-                          {section.description && (
-                            <p className="section-description">{section.description}</p>
-                          )}
 
                           {section.items && section.items.length > 0 ? (
                             <div className="items-table">

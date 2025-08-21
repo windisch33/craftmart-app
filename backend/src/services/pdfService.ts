@@ -105,11 +105,17 @@ const getStairConfigurationDetails = async (configId: number): Promise<StairConf
       SELECT c.*, 
         tm.material_name as tread_material_name,
         rm.material_name as riser_material_name,
-        sm.material_name as stringer_material_name
+        sm.material_name as stringer_material_name,
+        lsm.material_name as left_stringer_material_name,
+        rsm.material_name as right_stringer_material_name,
+        csm.material_name as center_stringer_material_name
       FROM stair_configurations c
       LEFT JOIN material_multipliers tm ON c.tread_material_id = tm.material_id
       LEFT JOIN material_multipliers rm ON c.riser_material_id = rm.material_id
       LEFT JOIN material_multipliers sm ON c.stringer_material_id = sm.material_id
+      LEFT JOIN material_multipliers lsm ON c.left_stringer_material_id = lsm.material_id
+      LEFT JOIN material_multipliers rsm ON c.right_stringer_material_id = rsm.material_id
+      LEFT JOIN material_multipliers csm ON c.center_stringer_material_id = csm.material_id
       WHERE c.id = $1
     `, [configId]);
 
@@ -154,10 +160,20 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
     items,
     rough_cut_width,
     nose_size,
-    tread_size
+    tread_size,
+    // Individual stringer configurations
+    left_stringer_width,
+    left_stringer_thickness,
+    left_stringer_material_name,
+    right_stringer_width,
+    right_stringer_thickness,
+    right_stringer_material_name,
+    center_stringer_width,
+    center_stringer_thickness,
+    center_stringer_material_name
   } = stairConfig;
 
-  // Helper function to convert decimal to fraction string
+  // Helper function to convert decimal to fraction string (rounds to nearest 32nd)
   const toFraction = (decimal: number | string): string => {
     const num = typeof decimal === 'string' ? parseFloat(decimal) : decimal;
     if (!num || num === 0) return '0';
@@ -165,81 +181,53 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
     const wholeNumber = Math.floor(num);
     const fraction = num - wholeNumber;
     
-    // Common fractions mapping
-    const fractionMap: { [key: string]: string } = {
-      '0.125': '1/8',
-      '0.25': '1/4',
-      '0.375': '3/8',
-      '0.5': '1/2',
-      '0.625': '5/8',
-      '0.75': '3/4',
-      '0.875': '7/8',
-      '1.125': '1 1/8',
-      '1.25': '1 1/4',
-      '1.375': '1 3/8',
-      '1.5': '1 1/2',
-      '1.625': '1 5/8',
-      '1.75': '1 3/4',
-      '1.875': '1 7/8'
-    };
-    
-    // Try to convert decimal to fraction
-    const convertToFraction = (value: number): string => {
-      // Try direct mapping first
-      const mapped = fractionMap[value.toFixed(3)] || fractionMap[value.toFixed(2)];
-      if (mapped) return mapped;
-      
-      // Convert to fraction for common denominators
-      const tolerance = 0.003; // Tolerance for floating point comparison
-      const denominators = [2, 4, 8, 16, 32];
-      
-      for (const denom of denominators) {
-        const numerator = Math.round(value * denom);
-        if (Math.abs(value - numerator / denom) < tolerance) {
-          // Simplify fraction
-          let n = numerator;
-          let d = denom;
-          const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
-          const g = gcd(n, d);
-          n = n / g;
-          d = d / g;
-          
-          if (d === 1) return n.toString();
-          return `${n}/${d}`;
-        }
-      }
-      
-      // If no good fraction found, return decimal
-      return value.toFixed(3).replace(/\.?0+$/, '');
-    };
-    
-    // For values with whole number and fraction
-    if (wholeNumber > 0 && fraction > 0) {
-      const fractionStr = convertToFraction(fraction);
-      return fractionStr.includes('/') ? `${wholeNumber} ${fractionStr}` : `${wholeNumber} ${fractionStr}`;
-    }
-    
-    // For just fractions or whole numbers
     if (fraction === 0) {
       return wholeNumber.toString();
     }
     
-    return convertToFraction(num);
+    // Round to nearest 32nd
+    const numerator = Math.round(fraction * 32);
+    
+    if (numerator === 0) {
+      return wholeNumber.toString();
+    }
+    
+    if (numerator === 32) {
+      return (wholeNumber + 1).toString();
+    }
+    
+    // Simplify fraction
+    let n = numerator;
+    let d = 32;
+    const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+    const g = gcd(n, d);
+    n = n / g;
+    d = d / g;
+    
+    const fractionStr = `${n}/${d}`;
+    
+    if (wholeNumber > 0) {
+      return `${wholeNumber} ${fractionStr}`;
+    }
+    
+    return fractionStr;
   };
 
   // Group items by type
   const treadItems = items.filter(item => item.item_type === 'tread');
   const specialItems = items.filter(item => item.item_type === 'special_part');
   
-  // Count different tread types
-  const boxTreads = treadItems.filter(t => t.tread_type === 'box').length;
-  const openRightTreads = treadItems.filter(t => t.tread_type === 'open_right').length;
-  const openLeftTreads = treadItems.filter(t => t.tread_type === 'open_left').length;
-  const doubleOpenTreads = treadItems.filter(t => t.tread_type === 'double_open').length;
+  // Count different tread types and get their specific widths
+  const boxTreads = treadItems.filter(t => t.tread_type === 'box');
+  const openRightTreads = treadItems.filter(t => t.tread_type === 'open_right');
+  const openLeftTreads = treadItems.filter(t => t.tread_type === 'open_left');
+  const doubleOpenTreads = treadItems.filter(t => t.tread_type === 'double_open');
   
-  // Get typical width (most common width from treads)
-  const widths = treadItems.map(t => t.width).filter(w => w > 0);
-  const typicalWidth = widths.length > 0 ? Math.round(widths[0]) : 42;
+  // Get specific widths for each tread type
+  const boxWidth = boxTreads.length > 0 ? Math.round(boxTreads[0].width) : 42;
+  const openRightWidth = openRightTreads.length > 0 ? Math.round(openRightTreads[0].width) : 42;
+  const openLeftWidth = openLeftTreads.length > 0 ? Math.round(openLeftTreads[0].width) : 42;
+  const doubleOpenWidth = doubleOpenTreads.length > 0 ? Math.round(doubleOpenTreads[0].width) : 42;
 
   let output = `Floor to Floor: ${Math.round(floor_to_floor)}\"<br>`;
   
@@ -262,21 +250,21 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   // Add tread details - use actual tread count (risers - 1)
   const actualTreadCount = num_risers - 1;
   
-  if (boxTreads > 0) {
-    const boxCount = Math.min(boxTreads, actualTreadCount);
-    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${boxCount} Box Treads @ ${typicalWidth}\"<br>`;
+  if (boxTreads.length > 0) {
+    const boxCount = Math.min(boxTreads.length, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${boxCount} Box Treads @ ${boxWidth}\"<br>`;
   }
-  if (openRightTreads > 0) {
-    const rightCount = Math.min(openRightTreads, actualTreadCount);
-    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${rightCount} Right-Open Treads @ ${typicalWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
+  if (openRightTreads.length > 0) {
+    const rightCount = Math.min(openRightTreads.length, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${rightCount} Right-Open Treads @ ${openRightWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
   }
-  if (openLeftTreads > 0) {
-    const leftCount = Math.min(openLeftTreads, actualTreadCount);
-    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${leftCount} Left-Open Treads @ ${typicalWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
+  if (openLeftTreads.length > 0) {
+    const leftCount = Math.min(openLeftTreads.length, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${leftCount} Left-Open Treads @ ${openLeftWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
   }
-  if (doubleOpenTreads > 0) {
-    const doubleCount = Math.min(doubleOpenTreads, actualTreadCount);
-    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${doubleCount} Double-Open Treads @ ${typicalWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
+  if (doubleOpenTreads.length > 0) {
+    const doubleCount = Math.min(doubleOpenTreads.length, actualTreadCount);
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${doubleCount} Double-Open Treads @ ${doubleOpenWidth}\" ${full_mitre ? '- Mitre' : ''}<br>`;
   }
   
   // Calculate actual riser height
@@ -301,17 +289,32 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Treads, ${riserMaterial} Risers<br>`;
   output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Landing Tread<br>`;
   
-  // Stringers
-  const stringerMaterial = stringer_material_name || 'Prime White';
-  const stringerTypeDisplay = stringer_type ? stringer_type.replace('_', ' ') : '1\" x 9 1/4\"';
-  // Check if the stringer type already contains the material name to avoid duplication
-  const stringerTypeIncludesMaterial = stringerTypeDisplay && stringerMaterial && 
-    stringerTypeDisplay.toLowerCase().includes(stringerMaterial.toLowerCase());
-  
-  if (stringerTypeIncludesMaterial) {
-    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stringers: ${stringerTypeDisplay}<br>`;
+  // Stringers - display individual configurations if available, otherwise fallback to legacy format
+  if (left_stringer_width && right_stringer_width) {
+    // Display individual stringer configurations
+    const leftStringerDisplay = `${toFraction(left_stringer_thickness || 1)}\" x ${toFraction(left_stringer_width || 9.25)}\" ${left_stringer_material_name || 'Prime White'}`;
+    const rightStringerDisplay = `${toFraction(right_stringer_thickness || 1)}\" x ${toFraction(right_stringer_width || 9.25)}\" ${right_stringer_material_name || 'Prime White'}`;
+    
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Left Stringer: ${leftStringerDisplay}<br>`;
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Right Stringer: ${rightStringerDisplay}<br>`;
+    
+    if (center_horses && center_horses > 0 && center_stringer_width) {
+      const centerStringerDisplay = `${toFraction(center_stringer_thickness || 2)}\" x ${toFraction(center_stringer_width || 9.25)}\" ${center_stringer_material_name || 'Prime White'}`;
+      output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Center Stringer: ${centerStringerDisplay}<br>`;
+    }
   } else {
-    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stringers: ${stringerTypeDisplay} ${stringerMaterial}<br>`;
+    // Fallback to legacy format
+    const stringerMaterial = stringer_material_name || 'Prime White';
+    const stringerTypeDisplay = stringer_type ? stringer_type.replace('_', ' ') : '1\" x 9 1/4\"';
+    // Check if the stringer type already contains the material name to avoid duplication
+    const stringerTypeIncludesMaterial = stringerTypeDisplay && stringerMaterial && 
+      stringerTypeDisplay.toLowerCase().includes(stringerMaterial.toLowerCase());
+    
+    if (stringerTypeIncludesMaterial) {
+      output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stringers: ${stringerTypeDisplay}<br>`;
+    } else {
+      output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stringers: ${stringerTypeDisplay} ${stringerMaterial}<br>`;
+    }
   }
   
   // Special options
@@ -382,11 +385,14 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         if (configId) {
           // Get detailed stair configuration data
+          console.log(`PDF: Fetching stair configuration ${configId} for item ${item.id}`);
           const stairConfig = await getStairConfigurationDetails(configId);
           if (stairConfig) {
+            console.log(`PDF: Found stair config ${configId} - Floor to Floor: ${stairConfig.floor_to_floor}, Risers: ${stairConfig.num_risers}`);
             processedItems.push({
               ...item,
               isStairConfig: true,
+              stairConfigName: stairConfig.config_name,
               stairDetails: formatStairConfigurationForPDF(stairConfig)
             });
           } else {
@@ -395,9 +401,40 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             processedItems.push(item);
           }
         } else {
-          // No config ID available, just use the description
+          // No config ID available, try to find stair configurations for this job as fallback
           console.warn(`No stair configuration ID found for item ${item.id} with part_number ${item.part_number}`);
-          processedItems.push(item);
+          
+          // Try to find stair configurations by job_id as fallback
+          try {
+            const fallbackResult = await pool.query(`
+              SELECT id FROM stair_configurations 
+              WHERE job_id = $1 
+              ORDER BY created_at 
+              LIMIT 1
+            `, [jobData.id]);
+            
+            if (fallbackResult.rows.length > 0) {
+              const fallbackConfigId = fallbackResult.rows[0].id;
+              console.log(`Using fallback stair configuration ${fallbackConfigId} for item ${item.id}`);
+              
+              const stairConfig = await getStairConfigurationDetails(fallbackConfigId);
+              if (stairConfig) {
+                processedItems.push({
+                  ...item,
+                  isStairConfig: true,
+                  stairConfigName: stairConfig.config_name,
+                  stairDetails: formatStairConfigurationForPDF(stairConfig)
+                });
+              } else {
+                processedItems.push(item);
+              }
+            } else {
+              processedItems.push(item);
+            }
+          } catch (error) {
+            console.error(`Error finding fallback stair configuration for item ${item.id}:`, error);
+            processedItems.push(item);
+          }
         }
       } else {
         processedItems.push(item);
@@ -429,7 +466,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         body {
             font-family: 'Arial', sans-serif;
-            font-size: 11px;
+            font-size: 13px;
             line-height: 1.2;
             color: #333;
         }
@@ -448,7 +485,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         }
         
         .company-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             color: #1f2937;
             margin-bottom: 8px;
@@ -467,14 +504,14 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         }
         
         .status-label {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             color: #3b82f6;
             margin-bottom: 4px;
         }
         
         .order-number {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
             margin-bottom: 2px;
         }
@@ -496,7 +533,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         .section-title {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
             color: #1f2937;
             margin-bottom: 8px;
             border-bottom: 1px solid #e5e7eb;
@@ -530,7 +567,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             border: 1px solid #d1d5db;
             padding: 6px 8px;
             text-align: left;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .metadata-table th {
@@ -554,14 +591,16 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             margin-bottom: 5px;
             border-left: 4px solid #3b82f6;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
             color: #1f2937;
+            page-break-after: avoid;
         }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
+            page-break-inside: avoid;
         }
         
         .items-table th, .items-table td {
@@ -569,7 +608,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             padding: 4px 6px;
             text-align: left;
             vertical-align: top;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .items-table th {
@@ -577,8 +616,12 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             font-weight: bold;
         }
         
+        .items-table tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+        
         .qty-col { width: 40px; text-align: center; }
-        .part-col { width: 120px; }
         .desc-col { flex: 1; }
         .price-col { width: 80px; text-align: right; }
         
@@ -598,7 +641,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         .totals-table td {
             padding: 6px 12px;
             border: 1px solid #e5e7eb;
-            font-size: 11px;
+            font-size: 13px;
         }
         
         .totals-label {
@@ -620,7 +663,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         .total-row td {
             border-top: 2px solid #3b82f6;
-            font-size: 12px;
+            font-size: 14px;
         }
         
         .page-break {
@@ -633,18 +676,20 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             border-top: 1px solid #e5e7eb;
             text-align: center;
             color: #6b7280;
-            font-size: 9px;
+            font-size: 11px;
         }
         
         .stair-details {
             font-family: 'Arial', sans-serif;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.4;
             padding: 5px 0;
+            page-break-inside: avoid;
         }
         
         .stair-config-row {
             background-color: #fafafa;
+            page-break-inside: avoid;
         }
         
         @media print {
@@ -702,13 +747,21 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         </tr>
         <tr>
             <th>Delivery Date</th>
-            <th>Oak Delivery Date</th>
+            <th>Installer's Name</th>
             <th>Order Designation</th>
         </tr>
         <tr>
             <td>${jobData.delivery_date ? formatDate(jobData.delivery_date) : ''}</td>
-            <td>/ /</td>
+            <td>${jobData.installer || ''}</td>
             <td>${jobData.order_designation || 'INSTALL'}</td>
+        </tr>
+        <tr>
+            <th>Payment Terms</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td colspan="3">${jobData.terms || 'Net 30'}</td>
         </tr>
     </table>
 
@@ -722,7 +775,6 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             <thead>
                 <tr>
                     <th class="qty-col">Qty</th>
-                    <th class="part-col">Part Number</th>
                     <th class="desc-col">Description</th>
                     ${showLinePricing ? '<th class="price-col">Price</th>' : ''}
                 </tr>
@@ -731,10 +783,9 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
                 ${section.items.map(item => `
                 <tr ${item.isStairConfig ? 'class="stair-config-row"' : ''}>
                     <td class="qty-col">${item.quantity}</td>
-                    <td class="part-col">${item.part_number || ''}</td>
                     <td class="desc-col">
                         ${item.isStairConfig ? 
-                          `<div class="stair-details">${item.stairDetails}</div>` : 
+                          `<div class="stair-details"><strong>${item.stairConfigName || 'Stair Configuration'}</strong><br>${item.stairDetails}</div>` : 
                           item.description
                         }
                     </td>
@@ -828,7 +879,7 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
       FROM job_sections js
       LEFT JOIN quote_items qi ON js.id = qi.section_id
       WHERE js.job_id = $1
-      GROUP BY js.id, js.job_id, js.name, js.description, js.display_order, js.is_labor_section, js.is_misc_section, js.created_at, js.updated_at
+      GROUP BY js.id, js.job_id, js.name, js.display_order, js.created_at, js.updated_at
       ORDER BY js.display_order, js.id
     `, [jobId]);
 

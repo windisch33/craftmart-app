@@ -1,44 +1,64 @@
 import { Router } from 'express';
 import * as authController from '../controllers/authController';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { loginRateLimiter } from '../middleware/rateLimiter';
+import { validateBody, validateParams, idParamSchema } from '../middleware/validation';
+import { 
+  loginSchema, 
+  registerSchema, 
+  createUserSchema, 
+  updateUserSchema, 
+  resetPasswordSchema 
+} from '../validation/schemas';
 
 const router = Router();
 
-router.post('/register', authenticateToken, requireAdmin, authController.register);
-router.post('/login', authController.login);
+// Authentication routes with validation
+router.post('/register', 
+  validateBody(registerSchema), 
+  authenticateToken, 
+  requireAdmin, 
+  authController.register
+);
+
+router.post('/login', 
+  validateBody(loginSchema), 
+  loginRateLimiter, 
+  authController.login
+);
+
 router.get('/profile', authenticateToken, authController.getProfile);
+
+// User management routes with validation
 router.get('/users', authenticateToken, requireAdmin, authController.getAllUsers);
-router.post('/users', authenticateToken, requireAdmin, authController.createUser);
-router.put('/users/:id', authenticateToken, authController.updateUser);
-router.delete('/users/:id', authenticateToken, requireAdmin, authController.deleteUser);
-router.post('/users/:id/reset-password', authenticateToken, requireAdmin, authController.resetUserPassword);
 
-// Simple test endpoint
-router.get('/test', (req, res) => {
-  res.json({ message: 'Auth routes working', timestamp: new Date().toISOString() });
-});
+router.post('/users', 
+  validateBody(createUserSchema), 
+  authenticateToken, 
+  requireAdmin, 
+  authController.createUser
+);
 
-// Test bcryptjs endpoint
-router.get('/test-bcrypt', async (req, res) => {
-  try {
-    const bcrypt = require('bcryptjs');
-    const testPassword = 'password123';
-    const testHash = '$2b$12$4ozcyf3gWf4VpkdmtfUYKubx8WTcDM/.bXlSKzpcDNT9n3BCWtQcC';
-    
-    console.log('Testing bcryptjs with:', { testPassword, testHash });
-    const result = await bcrypt.compare(testPassword, testHash);
-    console.log('Bcryptjs test result:', result);
-    
-    res.json({ 
-      message: 'Bcryptjs test completed', 
-      password: testPassword,
-      hash: testHash,
-      result 
-    });
-  } catch (error) {
-    console.error('Bcryptjs test error:', error);
-    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-  }
-});
+router.put('/users/:id', 
+  validateParams(idParamSchema),
+  validateBody(updateUserSchema),
+  authenticateToken, 
+  authController.updateUser
+);
+
+router.delete('/users/:id', 
+  validateParams(idParamSchema),
+  authenticateToken, 
+  requireAdmin, 
+  authController.deleteUser
+);
+
+router.post('/users/:id/reset-password', 
+  validateParams(idParamSchema),
+  validateBody(resetPasswordSchema),
+  authenticateToken, 
+  requireAdmin, 
+  authController.resetUserPassword
+);
 
 export default router;

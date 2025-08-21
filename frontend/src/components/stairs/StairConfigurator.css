@@ -1,9 +1,13 @@
 /* StairConfigurator.css */
 .stair-configurator {
-  max-width: 900px;
-  width: 90vw;
-  max-height: 90vh;
+  background: white;
+  border-radius: 16px;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 95vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25);
 }
 
 .stair-configurator .modal-header {
@@ -570,6 +574,136 @@
   box-shadow: none;
 }
 
+/* Bulk Tread Configuration Styles */
+.tread-configuration-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tread-type-section {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  flex: 1 1 calc(33.333% - 1rem);
+  min-width: 250px;
+}
+
+.tread-type-section h4 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1.125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tread-inputs {
+  display: grid;
+  gap: 1rem;
+  align-items: end;
+}
+
+.tread-inputs.two-column {
+  grid-template-columns: 2fr 3fr;
+}
+
+.tread-inputs.three-column {
+  grid-template-columns: 2fr 3fr 2fr;
+}
+
+.tread-validation {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1.5rem 0;
+}
+
+.tread-validation p {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.info-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
+.info-message.success {
+  color: #059669;
+}
+
+.info-message.error {
+  color: #dc2626;
+}
+
+/* Stringer Configuration Styles */
+.stringer-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stringer-section {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.stringer-section h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.stringer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stringer-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stringer-field-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.stringer-fields input,
+.stringer-fields select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.stringer-checkbox {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stringer-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .stair-configurator {
@@ -610,6 +744,17 @@
   .tread-sizing-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+  }
+  
+  /* Mobile styles for new tread configuration */
+  .tread-inputs {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  /* Mobile styles for stringer configuration */
+  .stringer-inputs {
+    grid-template-columns: 1fr;
   }
   
   .tread-total-display {
@@ -662,5 +807,286 @@
   
   .treads-list {
     max-height: 300px;
+  }
+}
+
+/* Consolidated Layout Styles */
+.consolidated-config {
+  display: grid;
+  gap: 1rem;
+  padding: 0.25rem;
+}
+
+/* Top section: Basic config in horizontal layout */
+.basic-config-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.basic-config-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 3fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Tread configuration in horizontal cards */
+.tread-configuration-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+/* Materials and stringers side by side */
+.materials-stringer-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.materials-stringer-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Stringer inputs in horizontal layout */
+.stringer-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.stringer-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.stringer-section h5 {
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.stringer-fields {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.stringer-fields .form-group {
+  margin-bottom: 0;
+}
+
+.stringer-fields label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.stringer-fields input,
+.stringer-fields select {
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.stringer-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.stringer-checkbox input[type="checkbox"] {
+  margin: 0;
+  width: auto;
+}
+
+/* Bottom section: Special parts and notes */
+.bottom-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.bottom-section-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* Section headers */
+.config-section-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+/* Combined tread dimensions and calculations */
+.tread-calc-combined {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.5fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Compact calculation display */
+.calc-display-inline {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.calc-item-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calc-item-compact .calc-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.calc-item-compact .calc-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Compact form styling for consolidated layout */
+.consolidated-config .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.consolidated-config .form-group label {
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.consolidated-config input,
+.consolidated-config select,
+.consolidated-config textarea {
+  padding: 0.6rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+}
+
+/* Responsive adjustments for consolidated layout */
+@media (max-width: 1400px) {
+  .tread-configuration-sections {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .materials-stringer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .basic-config-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  
+  .tread-configuration-sections {
+    grid-template-columns: 1fr;
+  }
+  
+  .stringer-inputs {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .stair-configurator {
+    width: 95vw;
+  }
+  
+  .basic-config-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .tread-calc-combined {
+    grid-template-columns: 1fr;
+  }
+  
+  .stringer-inputs {
+    grid-template-columns: 1fr;
+  }
+  
+  .bottom-section-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .basic-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Compact tread sizing grid */
+.tread-sizing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+/* Responsive adjustments for consolidated layout */
+@media (max-width: 1600px) {
+  .basic-config-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .materials-stringer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .stair-configurator {
+    max-width: 1200px;
+    width: 90vw;
+  }
+  
+  .tread-configuration-sections {
+    grid-template-columns: 1fr;
+  }
+  
+  .basic-config-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stringer-inputs {
+    grid-template-columns: 1fr;
+  }
+  
+  .bottom-section-grid {
+    grid-template-columns: 1fr;
   }
 }

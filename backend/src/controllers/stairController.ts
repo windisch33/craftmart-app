@@ -47,6 +47,7 @@ export const getStairBoardTypes = async (req: Request, res: Response) => {
         sp.base_length,
         sp.base_width,
         sp.length_increment_size,
+        sp.width_increment_size,
         bt.is_active
        FROM stair_board_types bt
        LEFT JOIN stair_pricing_simple sp ON bt.brd_typ_id = sp.board_type_id
@@ -143,8 +144,17 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
       numStringers = 2,
       centerHorses = 0,
       fullMitre = false,
-      specialParts = []
+      specialParts = [],
+      includeLandingTread = false,
+      individualStringers
     } = req.body;
+
+    console.log('=== BACKEND CALCULATE PRICE START ===');
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('Received individualStringers:', JSON.stringify(individualStringers, null, 2));
+    console.log('individualStringers type:', typeof individualStringers);
+    console.log('individualStringers truthy?', !!individualStringers);
+    console.log('Number of treads received:', treads?.length || 0);
 
     // Calculate riser height
     const riserHeight = floorToFloor / numRisers;
@@ -233,27 +243,172 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
       console.error('Failed to calculate landing tread price - no matching price rule found');
     }
 
-    // Calculate riser prices using simplified function
-    const riserResult = await pool.query(
-      `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-      [4, riserMaterialId, treads[0]?.stairWidth || 38, 8, numRisers, false]
-    );
+    // Calculate riser prices by type - each tread type requires a corresponding riser
+    const riserGroups = new Map<string, { type: string, width: number, count: number }>();
 
-    if (riserResult.rows.length > 0) {
-      const price = riserResult.rows[0];
-      breakdown.risers.push({
-        quantity: numRisers,
-        unitPrice: parseFloat(price.unit_price || 0),
-        totalPrice: parseFloat(price.total_price || 0)
-      });
-      subtotal += parseFloat(price.total_price || 0);
+    console.log('Processing treads for riser calculation:', treads);
+
+    // Group risers by tread type and width
+    for (const tread of treads) {
+      let riserType = 'standard';
+      if (tread.type === 'open_left' || tread.type === 'open_right') {
+        riserType = 'open';
+      } else if (tread.type === 'double_open') {
+        riserType = 'double_open';
+      }
+
+      const key = `${riserType}_${tread.stairWidth}`;
+      if (riserGroups.has(key)) {
+        riserGroups.get(key)!.count++;
+      } else {
+        riserGroups.set(key, {
+          type: riserType,
+          width: tread.stairWidth,
+          count: 1
+        });
+      }
     }
 
-    // Calculate stringer prices using simplified function
-    if (stringerType && stringerMaterialId) {
-      console.log('Calculating stringer price for material:', stringerMaterialId);
+    console.log('Riser groups created:', Array.from(riserGroups.entries()));
+
+    // Add landing tread riser if applicable (standard type, uses first tread width or default)
+    if (includeLandingTread) {
+      const landingRiserWidth = treads[0]?.stairWidth || 38;
+      const key = `standard_${landingRiserWidth}`;
+      if (riserGroups.has(key)) {
+        riserGroups.get(key)!.count++;
+      } else {
+        riserGroups.set(key, {
+          type: 'standard',
+          width: landingRiserWidth,
+          count: 1
+        });
+      }
+    }
+
+    // Calculate pricing for each riser group
+    for (const [key, group] of riserGroups) {
+      console.log(`Calculating ${group.type} risers: ${group.count} @ ${group.width}" width`);
       
-      // Parse stringer dimensions from type (e.g., "1x9.25" -> thickness=1, width=9.25)
+      const riserResult = await pool.query(
+        `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
+        [4, riserMaterialId, group.width, 8, group.count, false]
+      );
+
+      if (riserResult.rows.length > 0) {
+        const price = riserResult.rows[0];
+        breakdown.risers.push({
+          type: group.type,
+          width: group.width,
+          quantity: group.count,
+          basePrice: parseFloat(price.base_price || 0),
+          lengthCharge: parseFloat(price.length_charge || 0),
+          widthCharge: parseFloat(price.width_charge || 0),
+          materialMultiplier: parseFloat(price.material_multiplier || 1),
+          unitPrice: parseFloat(price.unit_price || 0),
+          totalPrice: parseFloat(price.total_price || 0)
+        });
+        subtotal += parseFloat(price.total_price || 0);
+      } else {
+        console.error(`Failed to calculate ${group.type} riser pricing for width ${group.width}"`);
+      }
+    }
+
+    // Calculate stringer prices - handle individual stringers if provided
+    console.log('Checking individualStringers condition...');
+    console.log('individualStringers exists?', !!individualStringers);
+    console.log('individualStringers has left?', !!individualStringers?.left);
+    console.log('individualStringers has right?', !!individualStringers?.right);
+    
+    if (individualStringers && (individualStringers.left || individualStringers.right)) {
+      console.log('✅ Using INDIVIDUAL stringers logic');
+      console.log('Calculating individual stringers:', individualStringers);
+
+      // Process left stringer
+      if (individualStringers.left) {
+        const left = individualStringers.left;
+        const stringerResult = await pool.query(
+          `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
+          [5, left.materialId, left.thickness, left.width, numRisers, false]
+        );
+
+        if (stringerResult.rows.length > 0) {
+          const price = stringerResult.rows[0];
+          breakdown.stringers.push({
+            type: `Left: ${left.thickness}"×${left.width}"`,
+            quantity: 1,
+            risers: numRisers,
+            width: left.width,
+            thickness: left.thickness,
+            basePrice: parseFloat(price.base_price || 0),
+            widthCharge: parseFloat(price.width_charge || 0),
+            thicknessCharge: parseFloat(price.length_charge || 0),
+            materialMultiplier: parseFloat(price.material_multiplier || 1),
+            unitPricePerRiser: parseFloat(price.unit_price || 0),
+            totalPrice: parseFloat(price.total_price || 0)
+          });
+          subtotal += parseFloat(price.total_price || 0);
+        }
+      }
+
+      // Process right stringer
+      if (individualStringers.right) {
+        const right = individualStringers.right;
+        const stringerResult = await pool.query(
+          `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
+          [5, right.materialId, right.thickness, right.width, numRisers, false]
+        );
+
+        if (stringerResult.rows.length > 0) {
+          const price = stringerResult.rows[0];
+          breakdown.stringers.push({
+            type: `Right: ${right.thickness}"×${right.width}"`,
+            quantity: 1,
+            risers: numRisers,
+            width: right.width,
+            thickness: right.thickness,
+            basePrice: parseFloat(price.base_price || 0),
+            widthCharge: parseFloat(price.width_charge || 0),
+            thicknessCharge: parseFloat(price.length_charge || 0),
+            materialMultiplier: parseFloat(price.material_multiplier || 1),
+            unitPricePerRiser: parseFloat(price.unit_price || 0),
+            totalPrice: parseFloat(price.total_price || 0)
+          });
+          subtotal += parseFloat(price.total_price || 0);
+        }
+      }
+
+      // Process center stringer/horse if exists
+      if (individualStringers.center) {
+        const center = individualStringers.center;
+        const stringerResult = await pool.query(
+          `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
+          [6, center.materialId, center.thickness, center.width, numRisers, false] // Board type 6 for center horse
+        );
+
+        if (stringerResult.rows.length > 0) {
+          const price = stringerResult.rows[0];
+          breakdown.stringers.push({
+            type: `Center: ${center.thickness}"×${center.width}"`,
+            quantity: 1,
+            risers: numRisers,
+            width: center.width,
+            thickness: center.thickness,
+            basePrice: parseFloat(price.base_price || 0),
+            widthCharge: parseFloat(price.width_charge || 0),
+            thicknessCharge: parseFloat(price.length_charge || 0),
+            materialMultiplier: parseFloat(price.material_multiplier || 1),
+            unitPricePerRiser: parseFloat(price.unit_price || 0),
+            totalPrice: parseFloat(price.total_price || 0)
+          });
+          subtotal += parseFloat(price.total_price || 0);
+        }
+      }
+    } else if (stringerType && stringerMaterialId) {
+      // Fallback to legacy single stringer type
+      console.log('⚠️ Using LEGACY stringer calculation for material:', stringerMaterialId);
+      console.log('Legacy stringer type:', stringerType);
+      
       let stringerThickness = 1;
       let stringerWidth = 9.25;
       const stringerMatch = stringerType.match(/^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/);
@@ -262,26 +417,27 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
         stringerWidth = parseFloat(stringerMatch[2]);
       }
       
-      // Stringers are priced per riser with dimension-based pricing (board type 5)
-      // Using width as length parameter and thickness as width parameter for the pricing function
       const stringerResult = await pool.query(
         `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-        [5, stringerMaterialId, stringerWidth, stringerThickness, numRisers * numStringers, false]
+        [5, stringerMaterialId, stringerThickness, stringerWidth, numRisers * numStringers, false]
       );
 
       if (stringerResult.rows.length > 0) {
         const price = stringerResult.rows[0];
-        console.log('Stringer price result:', price);
         breakdown.stringers.push({
           type: stringerType,
           quantity: numStringers,
           risers: numRisers,
+          width: stringerWidth,
+          thickness: stringerThickness,
+          basePrice: parseFloat(price.base_price || 0),
+          widthCharge: parseFloat(price.width_charge || 0),
+          thicknessCharge: parseFloat(price.length_charge || 0),
+          materialMultiplier: parseFloat(price.material_multiplier || 1),
           unitPricePerRiser: parseFloat(price.unit_price || 0) / numStringers,
           totalPrice: parseFloat(price.total_price || 0)
         });
         subtotal += parseFloat(price.total_price || 0);
-      } else {
-        console.error('No stringer pricing found for material:', stringerMaterialId);
       }
     }
 
@@ -298,7 +454,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
       
       const centerHorseResult = await pool.query(
         `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-        [6, 20, horseWidth, horseThickness, numRisers * centerHorses, false] // Using Red Oak as default
+        [6, 20, horseThickness, horseWidth, numRisers * centerHorses, false] // Using Red Oak as default
       );
       
       if (centerHorseResult.rows.length > 0) {
@@ -354,6 +510,12 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
     const taxAmount = subtotal * taxRate;
     const total = subtotal + laborTotal + taxAmount;
 
+    console.log('=== BACKEND RESPONSE SUMMARY ===');
+    console.log('Stringers in response:', breakdown.stringers?.length || 0);
+    console.log('Risers in response:', breakdown.risers?.length || 0);
+    console.log('Stringer types:', breakdown.stringers?.map(s => s.type) || []);
+    console.log('Riser types:', breakdown.risers?.map(r => r.type) || []);
+
     res.json({
       configuration: {
         floorToFloor,
@@ -401,25 +563,42 @@ export const createStairConfiguration = async (req: Request, res: Response) => {
       taxAmount,
       totalAmount,
       specialNotes,
-      items = []
+      items = [],
+      // Individual stringer configurations
+      individualStringers
     } = req.body;
 
     // Insert main configuration
+    // Log received data for debugging
+    console.log('Creating stair configuration with items:', JSON.stringify(items, null, 2));
+    console.log('Individual stringers:', JSON.stringify(individualStringers, null, 2));
+
+    // Extract individual stringer data
+    const leftStringer = individualStringers?.left;
+    const rightStringer = individualStringers?.right;
+    const centerStringer = individualStringers?.center;
+
     const configResult = await client.query(
       `INSERT INTO stair_configurations (
         job_id, config_name, floor_to_floor, num_risers,
         tread_material_id, riser_material_id, tread_size, rough_cut_width, nose_size,
         stringer_type, stringer_material_id, num_stringers, center_horses,
         full_mitre, bracket_type, subtotal, labor_total,
-        tax_amount, total_amount, special_notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        tax_amount, total_amount, special_notes,
+        left_stringer_width, left_stringer_thickness, left_stringer_material_id,
+        right_stringer_width, right_stringer_thickness, right_stringer_material_id,
+        center_stringer_width, center_stringer_thickness, center_stringer_material_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
       RETURNING *`,
       [
         jobId, configName, floorToFloor, numRisers,
         treadMaterialId, riserMaterialId, treadSize, roughCutWidth, noseSize,
         stringerType, stringerMaterialId, numStringers, centerHorses,
         fullMitre, bracketType, subtotal, laborTotal,
-        taxAmount, totalAmount, specialNotes
+        taxAmount, totalAmount, specialNotes,
+        leftStringer?.width, leftStringer?.thickness, leftStringer?.materialId,
+        rightStringer?.width, rightStringer?.thickness, rightStringer?.materialId,
+        centerStringer?.width, centerStringer?.thickness, centerStringer?.materialId
       ]
     );
 
@@ -427,6 +606,7 @@ export const createStairConfiguration = async (req: Request, res: Response) => {
 
     // Insert configuration items
     for (const item of items) {
+      console.log(`Inserting item: type=${item.itemType}, riser=${item.riserNumber}, treadType=${item.treadType}, width=${item.stairWidth}`);
       await client.query(
         `INSERT INTO stair_config_items (
           config_id, item_type, riser_number, tread_type,
@@ -467,11 +647,17 @@ export const getStairConfiguration = async (req: Request, res: Response) => {
       `SELECT c.*, 
         tm.material_name as tread_material_name,
         rm.material_name as riser_material_name,
-        sm.material_name as stringer_material_name
+        sm.material_name as stringer_material_name,
+        lsm.material_name as left_stringer_material_name,
+        rsm.material_name as right_stringer_material_name,
+        csm.material_name as center_stringer_material_name
        FROM stair_configurations c
        LEFT JOIN material_multipliers tm ON c.tread_material_id = tm.material_id
        LEFT JOIN material_multipliers rm ON c.riser_material_id = rm.material_id
        LEFT JOIN material_multipliers sm ON c.stringer_material_id = sm.material_id
+       LEFT JOIN material_multipliers lsm ON c.left_stringer_material_id = lsm.material_id
+       LEFT JOIN material_multipliers rsm ON c.right_stringer_material_id = rsm.material_id
+       LEFT JOIN material_multipliers csm ON c.center_stringer_material_id = csm.material_id
        WHERE c.id = $1`,
       [id]
     );
@@ -644,6 +830,7 @@ export const createBoardType = async (req: Request, res: Response) => {
       base_length = 36,
       base_width = 9,
       length_increment_size = 6,
+      width_increment_size = 1,
       is_active = true 
     } = req.body;
     
@@ -661,8 +848,8 @@ export const createBoardType = async (req: Request, res: Response) => {
       await client.query(
         `INSERT INTO stair_pricing_simple (
           board_type_id, base_price, length_increment_price, width_increment_price,
-          mitre_price, base_length, base_width, length_increment_size, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          mitre_price, base_length, base_width, length_increment_size, width_increment_size, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (board_type_id) 
         DO UPDATE SET 
           base_price = EXCLUDED.base_price,
@@ -672,10 +859,11 @@ export const createBoardType = async (req: Request, res: Response) => {
           base_length = EXCLUDED.base_length,
           base_width = EXCLUDED.base_width,
           length_increment_size = EXCLUDED.length_increment_size,
+          width_increment_size = EXCLUDED.width_increment_size,
           is_active = EXCLUDED.is_active,
           updated_at = CURRENT_TIMESTAMP`,
         [brd_typ_id, base_price, length_increment_price || 0, width_increment_price || 0,
-         mitre_price || 0, base_length, base_width, length_increment_size, is_active]
+         mitre_price || 0, base_length, base_width, length_increment_size, width_increment_size, is_active]
       );
     }
     
@@ -691,7 +879,8 @@ export const createBoardType = async (req: Request, res: Response) => {
         sp.mitre_price,
         sp.base_length,
         sp.base_width,
-        sp.length_increment_size
+        sp.length_increment_size,
+        sp.width_increment_size
        FROM stair_board_types bt
        LEFT JOIN stair_pricing_simple sp ON bt.brd_typ_id = sp.board_type_id
        WHERE bt.id = $1`,
@@ -725,6 +914,7 @@ export const updateBoardType = async (req: Request, res: Response) => {
       base_length,
       base_width,
       length_increment_size,
+      width_increment_size,
       is_active 
     } = req.body;
     
@@ -754,8 +944,8 @@ export const updateBoardType = async (req: Request, res: Response) => {
       await client.query(
         `INSERT INTO stair_pricing_simple (
           board_type_id, base_price, length_increment_price, width_increment_price,
-          mitre_price, base_length, base_width, length_increment_size, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          mitre_price, base_length, base_width, length_increment_size, width_increment_size, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (board_type_id) 
         DO UPDATE SET 
           base_price = COALESCE($2, stair_pricing_simple.base_price),
@@ -765,10 +955,11 @@ export const updateBoardType = async (req: Request, res: Response) => {
           base_length = COALESCE($6, stair_pricing_simple.base_length),
           base_width = COALESCE($7, stair_pricing_simple.base_width),
           length_increment_size = COALESCE($8, stair_pricing_simple.length_increment_size),
-          is_active = COALESCE($9, stair_pricing_simple.is_active),
+          width_increment_size = COALESCE($9, stair_pricing_simple.width_increment_size),
+          is_active = COALESCE($10, stair_pricing_simple.is_active),
           updated_at = CURRENT_TIMESTAMP`,
         [boardType.brd_typ_id, base_price, length_increment_price, width_increment_price,
-         mitre_price, base_length, base_width, length_increment_size, is_active]
+         mitre_price, base_length, base_width, length_increment_size, width_increment_size, is_active]
       );
     }
     
@@ -784,7 +975,8 @@ export const updateBoardType = async (req: Request, res: Response) => {
         sp.mitre_price,
         sp.base_length,
         sp.base_width,
-        sp.length_increment_size
+        sp.length_increment_size,
+        sp.width_increment_size
        FROM stair_board_types bt
        LEFT JOIN stair_pricing_simple sp ON bt.brd_typ_id = sp.board_type_id
        WHERE bt.id = $1`,

@@ -109,12 +109,21 @@ export interface StairPriceRequest {
   treads: TreadConfiguration[];
   treadMaterialId: number;
   riserMaterialId: number;
+  roughCutWidth?: number;
+  noseSize?: number;
   stringerType?: string;
   stringerMaterialId?: number;
   numStringers?: number;
   centerHorses?: number;
   fullMitre?: boolean;
+  bracketType?: string;
   specialParts?: SpecialPartConfiguration[];
+  includeLandingTread?: boolean;
+  individualStringers?: {
+    left?: { width: number; thickness: number; materialId: number };
+    right?: { width: number; thickness: number; materialId: number };
+    center?: { width: number; thickness: number; materialId: number } | null;
+  };
 }
 
 export interface StairPriceBreakdown {
@@ -127,8 +136,23 @@ export interface StairPriceBreakdown {
     mitreCharge: number;
     totalPrice: number;
   }[];
+  landingTread?: {
+    riserNumber: number;
+    type: string;
+    stairWidth: number;
+    basePrice: number;
+    oversizedCharge: number;
+    mitreCharge: number;
+    totalPrice: number;
+  };
   risers: {
+    type: 'standard' | 'open' | 'double_open';
+    width: number;
     quantity: number;
+    basePrice: number;
+    lengthCharge: number;
+    widthCharge: number;
+    materialMultiplier: number;
     unitPrice: number;
     totalPrice: number;
   }[];
@@ -136,6 +160,12 @@ export interface StairPriceBreakdown {
     type: string;
     quantity: number;
     risers: number;
+    width: number;
+    thickness: number;
+    basePrice: number;
+    widthCharge: number;
+    thicknessCharge: number;
+    materialMultiplier: number;
     unitPricePerRiser: number;
     totalPrice: number;
   }[];
@@ -190,6 +220,11 @@ export interface StairConfiguration {
   totalAmount: number;
   specialNotes?: string;
   items?: any[];
+  individualStringers?: {
+    left?: { width: number; thickness: number; materialId: number };
+    right?: { width: number; thickness: number; materialId: number };
+    center?: { width: number; thickness: number; materialId: number } | null;
+  };
   createdAt?: string;
   updatedAt?: string;
 }

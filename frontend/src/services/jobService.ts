@@ -38,9 +38,6 @@ export interface JobSection {
   job_id: number;
   name: string;
   display_order: number;
-  description?: string;
-  is_labor_section: boolean;
-  is_misc_section: boolean;
   created_at: string;
   updated_at: string;
   items?: QuoteItem[];
@@ -81,10 +78,7 @@ export interface UpdateJobData extends Partial<CreateJobData> {}
 
 export interface CreateJobSectionData {
   name: string;
-  description?: string;
   display_order?: number;
-  is_labor_section?: boolean;
-  is_misc_section?: boolean;
 }
 
 export interface CreateQuoteItemData {
@@ -93,6 +87,13 @@ export interface CreateQuoteItemData {
   quantity: number;
   unit_price: number;
   is_taxable?: boolean;
+  stair_configuration?: any;
+}
+
+export interface UpdateQuoteItemData extends Partial<CreateQuoteItemData> {
+  part_number?: string;
+  stair_configuration?: any;
+  stair_config_id?: number;
 }
 
 class JobService {
@@ -311,7 +312,7 @@ class JobService {
     }
   }
 
-  async updateQuoteItem(itemId: number, data: Partial<CreateQuoteItemData>): Promise<QuoteItem> {
+  async updateQuoteItem(itemId: number, data: UpdateQuoteItemData): Promise<QuoteItem> {
     try {
       const response = await axios.put(`${API_BASE_URL}/api/jobs/items/${itemId}`, data, {
         headers: this.getAuthHeaders()

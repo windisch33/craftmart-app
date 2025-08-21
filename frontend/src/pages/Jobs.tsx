@@ -8,6 +8,7 @@ import JobForm from '../components/jobs/JobForm';
 import JobPDFPreview from '../components/jobs/JobPDFPreview';
 import JobDetail from '../components/jobs/JobDetail';
 import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
+import { StairConfigurationProvider } from '../contexts/StairConfigurationContext';
 import '../styles/common.css';
 import './Jobs.css';
 
@@ -156,10 +157,7 @@ const Jobs: React.FC = () => {
             // Create the section
             const newSection = await jobService.createJobSection(newJob.id, {
               name: section.name,
-              description: section.description,
-              display_order: section.display_order || 1,
-              is_labor_section: section.is_labor_section || false,
-              is_misc_section: section.is_misc_section || false
+              display_order: section.display_order || 1
             });
             
             // Add items to the section if they exist
@@ -255,6 +253,37 @@ const Jobs: React.FC = () => {
     });
   };
 
+  const handleRefresh = async () => {
+    if (!isSearching && !showAdvancedFilters) {
+      await loadRecentJobs();
+    } else if (isSearching) {
+      await handleSearch(searchTerm);
+    } else {
+      await handleAdvancedFilter();
+    }
+  };
+
+  const handleClearPDFCache = async () => {
+    try {
+      const response = await fetch('/api/jobs/cache/pdf', { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || 'PDF cache cleared successfully');
+      } else {
+        alert('Failed to clear PDF cache');
+      }
+    } catch (error) {
+      console.error('Error clearing PDF cache:', error);
+      alert('Failed to clear PDF cache');
+    }
+  };
+
   if (loading && jobs.length === 0) {
     return (
       <div className="container">
@@ -274,13 +303,31 @@ const Jobs: React.FC = () => {
           <h1 className="gradient-title">Jobs</h1>
           <p className="page-subtitle">Search and manage quotes, orders, and invoices</p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowJobForm(true)}
-        >
-          <span>📋</span>
-          Create Job
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            className="btn btn-secondary"
+            onClick={handleRefresh}
+            title="Refresh jobs list"
+          >
+            <span>🔄</span>
+            Refresh
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={handleClearPDFCache}
+            title="Clear PDF cache"
+          >
+            <span>🗑️</span>
+            Clear Cache
+          </button>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowJobForm(true)}
+          >
+            <span>📋</span>
+            Create Job
+          </button>
+        </div>
       </div>
 
       {/* Large Search Bar */}
@@ -486,11 +533,13 @@ const Jobs: React.FC = () => {
 
       {/* Job Detail Modal */}
       {jobDetail && (
-        <JobDetail
-          jobId={jobDetail.jobId}
-          isOpen={true}
-          onClose={() => setJobDetail(null)}
-        />
+        <StairConfigurationProvider>
+          <JobDetail
+            jobId={jobDetail.jobId}
+            isOpen={true}
+            onClose={() => setJobDetail(null)}
+          />
+        </StairConfigurationProvider>
       )}
 
       {/* Next Stage Confirmation Modal */}

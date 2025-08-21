@@ -59,11 +59,69 @@ docker-compose up -d
 ### **Environment Setup**
 ```bash
 # Copy environment template
-cp .env.example .env
+cp backend/.env.example backend/.env
 
 # Update with your configuration
 # Database credentials, JWT secrets, etc.
 ```
+
+### **Configuration Reference**
+
+The application requires environment-specific configuration for security and performance. Use this reference table to configure your environment:
+
+| Environment Variable | Development | Staging | Production | Description |
+|---------------------|-------------|---------|------------|-------------|
+| `NODE_ENV` | `development` | `staging` | `production` | Application environment |
+| `CORS_ORIGIN` | `http://localhost:3000,http://127.0.0.1:3000` | `https://staging.yourdomain.com` | `https://yourdomain.com,https://www.yourdomain.com` | Comma-separated allowed origins |
+| `JWT_SECRET` | `dev-secret-key-min-16-chars` | `staging-32char-random-string...` | `production-secure-32char+...` | Secure random string (32+ chars in prod) |
+| `RATE_LIMIT_MAX` | `10` | `5` | `5` | Max login attempts per window |
+| `RATE_LIMIT_WINDOW_MS` | `300000` (5 min) | `900000` (15 min) | `900000` (15 min) | Rate limit window duration |
+| `PDF_CACHE_DIR` | `/tmp/craftmart-pdf-cache` | `/var/cache/craftmart-pdf` | `/var/cache/craftmart-pdf` | PDF cache directory |
+| `DB_PASSWORD` | `dev_password` | `secure_staging_password` | `very_secure_production_password` | Database password |
+
+#### **Environment-Specific Examples**
+
+**Development (.env)**:
+```bash
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000
+JWT_SECRET=development-secret-key-min-16-chars
+RATE_LIMIT_MAX=10
+RATE_LIMIT_WINDOW_MS=300000
+PDF_CACHE_DIR=/tmp/craftmart-pdf-cache
+```
+
+**Production (.env)**:
+```bash
+NODE_ENV=production
+CORS_ORIGIN=https://yourdomain.com,https://www.yourdomain.com
+JWT_SECRET=super-secure-production-jwt-secret-32-characters-minimum
+RATE_LIMIT_MAX=5
+RATE_LIMIT_WINDOW_MS=900000
+PDF_CACHE_DIR=/var/cache/craftmart-pdf
+```
+
+#### **Security Guidelines**
+
+**🔐 Authentication & Secrets**:
+- **JWT Secrets**: Must be 32+ characters in production, random and unique
+- **Database Passwords**: Use strong, unique passwords for each environment
+- **Never commit secrets**: Keep production secrets out of version control
+
+**🌐 CORS Configuration**:
+- **Development**: Include both localhost and 127.0.0.1 for flexibility
+- **Staging**: Single staging domain only
+- **Production**: Only necessary production domains (www and non-www)
+
+**⚡ Rate Limiting**:
+- **Development**: Higher limits (10 attempts) for easier testing
+- **Production**: Stricter limits (5 attempts) for security
+- **Window**: 15 minutes standard, 5 minutes acceptable for development
+
+**📁 File System**:
+- **Development**: System temp directory for easy cleanup
+- **Production**: Dedicated cache directory with proper permissions
+- **Staging**: Mirror production configuration for accurate testing
 
 ### **Local Development**
 ```bash

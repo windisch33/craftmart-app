@@ -133,6 +133,7 @@ export interface CreateBoardTypeRequest {
   base_length?: number;
   base_width?: number;
   length_increment_size?: number;
+  width_increment_size?: number;
   is_active?: boolean;
 }
 

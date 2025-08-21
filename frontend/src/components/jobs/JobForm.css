@@ -14,33 +14,23 @@
 }
 
 .job-form-modal {
-  background: white;
-  border-radius: 20px;
+  background: var(--color-background);
+  border-radius: var(--radius-2xl);
   width: 100%;
   max-width: 1200px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-2xl);
+  animation: slideInScale var(--transition-slow) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes slideInScale {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
 .job-form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 32px 32px 0 32px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
   margin-bottom: 32px;
 }
 
@@ -306,14 +296,10 @@
   border: 4px solid #f3f4f6;
   border-top: 4px solid #3b82f6;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: var(--animation-spin);
   margin-bottom: 16px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
@@ -368,18 +354,19 @@
   }
 }
 
-/* Step Navigation */
-.step-navigation {
-  display: flex;
+/* Job Form Step Navigation */
+.job-form-step-navigation {
+  display: flex !important;
   justify-content: center;
   align-items: center;
   padding: 24px 32px;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 32px;
   gap: 24px;
+  flex-direction: row !important;
 }
 
-.step {
+.job-form-step {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -389,7 +376,7 @@
   max-width: 200px;
 }
 
-.step:not(:last-child)::after {
+.job-form-step:not(:last-child)::after {
   content: '';
   position: absolute;
   top: 16px;
@@ -400,11 +387,11 @@
   z-index: 1;
 }
 
-.step.completed:not(:last-child)::after {
+.job-form-step.completed:not(:last-child)::after {
   background: #10b981;
 }
 
-.step-number {
+.job-form-step-number {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -418,17 +405,17 @@
   transition: all 0.3s ease;
 }
 
-.step.active .step-number {
-  background: #3b82f6;
-  color: white;
+.job-form-step.active .job-form-step-number {
+  background: var(--color-primary);
+  color: var(--color-white);
 }
 
-.step.completed .step-number {
-  background: #10b981;
-  color: white;
+.job-form-step.completed .job-form-step-number {
+  background: var(--color-success);
+  color: var(--color-white);
 }
 
-.step-label {
+.job-form-step-label {
   font-size: 13px;
   font-weight: 500;
   color: #6b7280;
@@ -436,13 +423,13 @@
   transition: all 0.3s ease;
 }
 
-.step.active .step-label {
-  color: #3b82f6;
-  font-weight: 600;
+.job-form-step.active .job-form-step-label {
+  color: var(--color-text-primary);
+  font-weight: var(--font-semibold);
 }
 
-.step.completed .step-label {
-  color: #10b981;
+.job-form-step.completed .job-form-step-label {
+  color: var(--color-success-600);
 }
 
 /* Totals Sidebar */
@@ -654,24 +641,24 @@
 
 @media (max-width: 768px) {
   /* Mobile Step Navigation */
-  .step-navigation {
+  .job-form-step-navigation {
     padding: 16px 20px;
     gap: 12px;
   }
 
-  .step {
+  .job-form-step {
     max-width: none;
   }
 
-  .step:not(:last-child)::after {
+  .job-form-step:not(:last-child)::after {
     display: none;
   }
 
-  .step-label {
+  .job-form-step-label {
     font-size: 11px;
   }
 
-  .step-number {
+  .job-form-step-number {
     width: 28px;
     height: 28px;
     font-size: 12px;
