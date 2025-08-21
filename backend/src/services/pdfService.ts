@@ -464,7 +464,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         body {
             font-family: 'Arial', sans-serif;
-            font-size: 11px;
+            font-size: 13px;
             line-height: 1.2;
             color: #333;
         }
@@ -483,7 +483,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         }
         
         .company-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             color: #1f2937;
             margin-bottom: 8px;
@@ -502,14 +502,14 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         }
         
         .status-label {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             color: #3b82f6;
             margin-bottom: 4px;
         }
         
         .order-number {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
             margin-bottom: 2px;
         }
@@ -531,7 +531,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         .section-title {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
             color: #1f2937;
             margin-bottom: 8px;
             border-bottom: 1px solid #e5e7eb;
@@ -565,7 +565,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             border: 1px solid #d1d5db;
             padding: 6px 8px;
             text-align: left;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .metadata-table th {
@@ -589,7 +589,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             margin-bottom: 5px;
             border-left: 4px solid #3b82f6;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
             color: #1f2937;
         }
         
@@ -604,7 +604,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             padding: 4px 6px;
             text-align: left;
             vertical-align: top;
-            font-size: 10px;
+            font-size: 12px;
         }
         
         .items-table th {
@@ -633,7 +633,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         .totals-table td {
             padding: 6px 12px;
             border: 1px solid #e5e7eb;
-            font-size: 11px;
+            font-size: 13px;
         }
         
         .totals-label {
@@ -655,7 +655,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         .total-row td {
             border-top: 2px solid #3b82f6;
-            font-size: 12px;
+            font-size: 14px;
         }
         
         .page-break {
@@ -668,12 +668,12 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             border-top: 1px solid #e5e7eb;
             text-align: center;
             color: #6b7280;
-            font-size: 9px;
+            font-size: 11px;
         }
         
         .stair-details {
             font-family: 'Arial', sans-serif;
-            font-size: 10px;
+            font-size: 12px;
             line-height: 1.4;
             padding: 5px 0;
         }
@@ -737,13 +737,21 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         </tr>
         <tr>
             <th>Delivery Date</th>
-            <th>Oak Delivery Date</th>
+            <th>Installer's Name</th>
             <th>Order Designation</th>
         </tr>
         <tr>
             <td>${jobData.delivery_date ? formatDate(jobData.delivery_date) : ''}</td>
-            <td>/ /</td>
+            <td>${jobData.installer || ''}</td>
             <td>${jobData.order_designation || 'INSTALL'}</td>
+        </tr>
+        <tr>
+            <th>Payment Terms</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td colspan="3">${jobData.terms || 'Net 30'}</td>
         </tr>
     </table>
 
