@@ -12,36 +12,14 @@ import type {
   StairConfiguration
 } from '../../services/stairService';
 
-interface StairConfiguratorProps {
-  jobId?: number;
-  sectionId?: number;
-  sectionTempId?: number; // For draft mode during job creation
-  onSave: (configuration: StairConfiguration) => void;
-  onCancel: () => void;
-  initialConfig?: Partial<StairConfiguration>;
-}
-
-interface FormData {
-  configName: string;
-  floorToFloor: number;
-  numRisers: number;
-  treadMaterialId: number;
-  riserMaterialId: number;
-  treadSize: string; // Legacy field for backward compatibility
-  roughCutWidth: number; // New field for flexible tread sizing
-  noseSize: number;
-  stringerType: string;
-  stringerMaterialId: number;
-  numStringers: number;
-  centerHorses: number;
-  fullMitre: boolean;
-  bracketType: string;
-  specialNotes: string;
-}
-
-interface FormErrors {
-  [key: string]: string;
-}
+// Import new components
+import BasicConfiguration from './configurator/BasicConfiguration';
+import TreadConfigurationComponent from './configurator/TreadConfiguration';
+import MaterialsAndStringers from './configurator/MaterialsAndStringers';
+import SpecialPartsAndNotes from './configurator/SpecialPartsAndNotes';
+import PriceSummary from './configurator/PriceSummary';
+import { generateTreadsFromBulkConfig, validateTreadConfiguration, initializeTreads } from './configurator/utils';
+import type { StairConfiguratorProps, FormData, FormErrors } from './configurator/types';
 
 const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   jobId,
@@ -115,12 +93,20 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
 
   // Initialize treads when numRisers changes
   useEffect(() => {
-    initializeTreads();
+    const newTreads = initializeTreads(formData.numRisers, treads);
+    setTreads(newTreads);
+    setHasLandingTread(true);
   }, [formData.numRisers]);
 
   // Validate tread configuration when bulk inputs change
   useEffect(() => {
-    validateTreadConfiguration();
+    const { hasLandingTread } = validateTreadConfiguration(
+      boxTreadCount,
+      openTreadCount,
+      doubleOpenCount,
+      formData.numRisers
+    );
+    setHasLandingTread(hasLandingTread);
   }, [boxTreadCount, openTreadCount, doubleOpenCount, formData.numRisers]);
 
   const loadInitialData = async () => {
@@ -140,77 +126,6 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
     }
   };
 
-  const initializeTreads = () => {
-    if (formData.numRisers > 0) {
-      const newTreads: TreadConfiguration[] = [];
-      // Preserve existing tread widths if available
-      const existingWidths = treads.map(t => t.stairWidth);
-      
-      // Initially create numRisers - 1 treads (assuming landing tread)
-      // User can modify this logic by validating tread count later
-      const numTreads = formData.numRisers - 1;
-      for (let i = 1; i <= numTreads; i++) {
-        newTreads.push({
-          riserNumber: i,
-          type: 'box',
-          // Use existing width if available, otherwise leave empty for user to enter
-          stairWidth: existingWidths[i - 1] || 0 // User must enter width
-        });
-      }
-      setTreads(newTreads);
-      
-      // Default to having landing tread (treads = risers - 1)
-      setHasLandingTread(true);
-    }
-  };
-
-  // Function to generate treads array from bulk configuration
-  const generateTreadsFromBulkConfig = (): TreadConfiguration[] => {
-    const generatedTreads: TreadConfiguration[] = [];
-    let riserNumber = 1;
-    
-    // Add box treads
-    for (let i = 0; i < boxTreadCount; i++) {
-      generatedTreads.push({
-        riserNumber: riserNumber++,
-        type: 'box',
-        stairWidth: boxTreadWidth
-      });
-    }
-    
-    // Add open treads
-    for (let i = 0; i < openTreadCount; i++) {
-      generatedTreads.push({
-        riserNumber: riserNumber++,
-        type: openTreadDirection === 'left' ? 'open_left' : 'open_right',
-        stairWidth: openTreadWidth
-      });
-    }
-    
-    // Add double open treads
-    for (let i = 0; i < doubleOpenCount; i++) {
-      generatedTreads.push({
-        riserNumber: riserNumber++,
-        type: 'double_open',
-        stairWidth: doubleOpenWidth
-      });
-    }
-    
-    return generatedTreads;
-  };
-
-  // Function to validate tread configuration from bulk inputs
-  const validateTreadConfiguration = () => {
-    const totalTreads = boxTreadCount + openTreadCount + doubleOpenCount;
-    
-    if (totalTreads === formData.numRisers) {
-      // Equal treads and risers = no landing tread, top gets full tread
-      setHasLandingTread(false);
-    } else if (totalTreads === (formData.numRisers - 1)) {
-      // One less tread than risers = has landing tread
-      setHasLandingTread(true);
-    }
-  };
 
   const handleFormChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -268,10 +183,24 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
     setCalculating(true);
     try {
       // Validate and update landing tread status
-      validateTreadConfiguration();
+      const { hasLandingTread } = validateTreadConfiguration(
+        boxTreadCount,
+        openTreadCount,
+        doubleOpenCount,
+        formData.numRisers
+      );
+      setHasLandingTread(hasLandingTread);
       
       // Generate treads from bulk configuration
-      const generatedTreads = generateTreadsFromBulkConfig();
+      const generatedTreads = generateTreadsFromBulkConfig(
+        boxTreadCount,
+        boxTreadWidth,
+        openTreadCount,
+        openTreadWidth,
+        openTreadDirection,
+        doubleOpenCount,
+        doubleOpenWidth
+      );
       
       // Calculate equivalent stringerType from individual configurations for backward compatibility
       const avgWidth = (leftStringerWidth + rightStringerWidth + (hasCenter ? centerStringerWidth : 0)) / (hasCenter ? 3 : 2);
@@ -512,9 +441,6 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
     }
   };
 
-  const riserHeight = formData.floorToFloor / formData.numRisers;
-  const selectedTreadMaterial = materials.find(m => m.mat_seq_n === formData.treadMaterialId);
-  const selectedRiserMaterial = materials.find(m => m.mat_seq_n === formData.riserMaterialId);
 
   return (
     <div className="modal-overlay">
@@ -529,663 +455,82 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
             <div className="loading">Loading stair data...</div>
           ) : !showPricing ? (
             <div className="consolidated-config">
-              {/* Basic Configuration Section */}
-              <div className="basic-config-section">
-                <h3 className="config-section-header">📏 Basic Configuration</h3>
-                <div className="basic-config-grid">
-                  <div className="form-group">
-                    <label htmlFor="configName">Configuration Name *</label>
-                    <input
-                      type="text"
-                      id="configName"
-                      value={formData.configName}
-                      onChange={(e) => handleFormChange('configName', e.target.value)}
-                      placeholder="e.g., Main Staircase - Oak"
-                      className={errors.configName ? 'error' : ''}
-                    />
-                    {errors.configName && <span className="error-message">{errors.configName}</span>}
-                  </div>
+              <BasicConfiguration
+                formData={formData}
+                errors={errors}
+                onFormChange={handleFormChange}
+              />
 
-                  <div className="form-group">
-                    <label htmlFor="floorToFloor">Floor to Floor Height (inches)&nbsp;*</label>
-                    <input
-                      type="number"
-                      id="floorToFloor"
-                      value={formData.floorToFloor}
-                      onChange={(e) => handleFormChange('floorToFloor', parseFloat(e.target.value))}
-                      min="60"
-                      max="180"
-                      step="0.25"
-                      className={errors.floorToFloor ? 'error' : ''}
-                    />
-                    {errors.floorToFloor && <span className="error-message">{errors.floorToFloor}</span>}
-                  </div>
+              <TreadConfigurationComponent
+                formData={formData}
+                errors={errors}
+                boxTreadCount={boxTreadCount}
+                boxTreadWidth={boxTreadWidth}
+                openTreadCount={openTreadCount}
+                openTreadWidth={openTreadWidth}
+                openTreadDirection={openTreadDirection}
+                openTreadFullMitre={openTreadFullMitre}
+                openTreadBracket={openTreadBracket}
+                doubleOpenCount={doubleOpenCount}
+                doubleOpenWidth={doubleOpenWidth}
+                doubleOpenFullMitre={doubleOpenFullMitre}
+                doubleOpenBracket={doubleOpenBracket}
+                hasLandingTread={hasLandingTread}
+                setBoxTreadCount={setBoxTreadCount}
+                setBoxTreadWidth={setBoxTreadWidth}
+                setOpenTreadCount={setOpenTreadCount}
+                setOpenTreadWidth={setOpenTreadWidth}
+                setOpenTreadDirection={setOpenTreadDirection}
+                setOpenTreadFullMitre={setOpenTreadFullMitre}
+                setOpenTreadBracket={setOpenTreadBracket}
+                setDoubleOpenCount={setDoubleOpenCount}
+                setDoubleOpenWidth={setDoubleOpenWidth}
+                setDoubleOpenFullMitre={setDoubleOpenFullMitre}
+                setDoubleOpenBracket={setDoubleOpenBracket}
+              />
 
-                  <div className="form-group">
-                    <label htmlFor="numRisers">Number of Risers *</label>
-                    <input
-                      type="number"
-                      id="numRisers"
-                      value={formData.numRisers}
-                      onChange={(e) => handleFormChange('numRisers', parseInt(e.target.value))}
-                      min="1"
-                      max="30"
-                      className={errors.numRisers ? 'error' : ''}
-                    />
-                    {errors.numRisers && <span className="error-message">{errors.numRisers}</span>}
-                  </div>
+              <MaterialsAndStringers
+                formData={formData}
+                errors={errors}
+                materials={materials}
+                leftStringerWidth={leftStringerWidth}
+                leftStringerThickness={leftStringerThickness}
+                leftStringerMaterial={leftStringerMaterial}
+                rightStringerWidth={rightStringerWidth}
+                rightStringerThickness={rightStringerThickness}
+                rightStringerMaterial={rightStringerMaterial}
+                hasCenter={hasCenter}
+                centerStringerWidth={centerStringerWidth}
+                centerStringerThickness={centerStringerThickness}
+                centerStringerMaterial={centerStringerMaterial}
+                onFormChange={handleFormChange}
+                setLeftStringerWidth={setLeftStringerWidth}
+                setLeftStringerThickness={setLeftStringerThickness}
+                setLeftStringerMaterial={setLeftStringerMaterial}
+                setRightStringerWidth={setRightStringerWidth}
+                setRightStringerThickness={setRightStringerThickness}
+                setRightStringerMaterial={setRightStringerMaterial}
+                setHasCenter={setHasCenter}
+                setCenterStringerWidth={setCenterStringerWidth}
+                setCenterStringerThickness={setCenterStringerThickness}
+                setCenterStringerMaterial={setCenterStringerMaterial}
+              />
 
-                  <div className="form-group">
-                    <label>Tread Dimensions & Calculations</label>
-                    <div className="tread-calc-combined">
-                      <div className="tread-input-group">
-                        <label htmlFor="roughCutWidth">Rough Cut Width (inches)</label>
-                        <input
-                          type="number"
-                          id="roughCutWidth"
-                          value={formData.roughCutWidth}
-                          onChange={(e) => {
-                            const newWidth = parseFloat(e.target.value) || 0;
-                            handleFormChange('roughCutWidth', newWidth);
-                            handleFormChange('treadSize', `${newWidth}x${formData.noseSize}`);
-                          }}
-                          min="8"
-                          max="20"
-                          step="0.25"
-                          placeholder="10.0"
-                          className={errors.roughCutWidth ? 'error' : ''}
-                        />
-                        {errors.roughCutWidth && <span className="error-message">{errors.roughCutWidth}</span>}
-                      </div>
-                      
-                      <div className="tread-input-group">
-                        <label htmlFor="noseSize">Nose Size (inches)</label>
-                        <input
-                          type="number"
-                          id="noseSize"
-                          value={formData.noseSize}
-                          onChange={(e) => {
-                            const newNose = parseFloat(e.target.value) || 0;
-                            handleFormChange('noseSize', newNose);
-                            handleFormChange('treadSize', `${formData.roughCutWidth}x${newNose}`);
-                          }}
-                          min="0.5"
-                          max="3"
-                          step="0.125"
-                          placeholder="1.25"
-                          className={errors.noseSize ? 'error' : ''}
-                        />
-                        {errors.noseSize && <span className="error-message">{errors.noseSize}</span>}
-                      </div>
-                      
-                      <div className="calc-display-inline">
-                        <div className="calc-item-compact">
-                          <span className="calc-label">Riser Height:</span>
-                          <span className="calc-value">{riserHeight.toFixed(3)}"</span>
-                        </div>
-                        <div className="calc-item-compact">
-                          <span className="calc-label">Total Tread:</span>
-                          <span className="calc-value">{(formData.roughCutWidth + formData.noseSize).toFixed(2)}"</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tread Configuration Section */}
-              <div>
-                <h3 className="config-section-header">🪜 Tread Configuration</h3>
-                <div className="tread-configuration-sections">
-                  {/* Box Treads Section */}
-                  <div className="tread-type-section">
-                    <h4>📦 Box Treads</h4>
-                    <div className="tread-inputs two-column">
-                      <div className="form-group">
-                        <label>Number of Box Treads</label>
-                        <input
-                          type="number"
-                          value={boxTreadCount || ''}
-                          onChange={(e) => setBoxTreadCount(parseInt(e.target.value) || 0)}
-                          min="0"
-                          max={formData.numRisers}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Width (inches)</label>
-                        <input
-                          type="number"
-                          value={boxTreadWidth || ''}
-                          onChange={(e) => setBoxTreadWidth(parseFloat(e.target.value) || 0)}
-                          min="30"
-                          max="120"
-                          step="0.25"
-                          placeholder="Enter width"
-                          disabled={boxTreadCount === 0}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Open Treads Section */}
-                  <div className="tread-type-section">
-                    <h4>🔓 Open Treads</h4>
-                    <div className="tread-inputs two-column">
-                      <div className="form-group">
-                        <label>Number of Open Treads</label>
-                        <input
-                          type="number"
-                          value={openTreadCount || ''}
-                          onChange={(e) => setOpenTreadCount(parseInt(e.target.value) || 0)}
-                          min="0"
-                          max={formData.numRisers}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Width (inches)</label>
-                        <input
-                          type="number"
-                          value={openTreadWidth || ''}
-                          onChange={(e) => setOpenTreadWidth(parseFloat(e.target.value) || 0)}
-                          min="30"
-                          max="120"
-                          step="0.25"
-                          placeholder="Enter width"
-                          disabled={openTreadCount === 0}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="form-group" style={{ marginTop: '1rem' }}>
-                      <label>Direction</label>
-                      <select
-                        value={openTreadDirection}
-                        onChange={(e) => setOpenTreadDirection(e.target.value as 'left' | 'right')}
-                        disabled={openTreadCount === 0}
-                      >
-                        <option value="left">⬅️ Open Left</option>
-                        <option value="right">➡️ Open Right</option>
-                      </select>
-                    </div>
-                    
-                    {openTreadCount > 0 && (
-                      <div style={{ marginTop: '1rem', padding: '1rem', background: '#f0f9ff', borderRadius: '0.5rem', border: '1px solid #bae6fd' }}>
-                        <div className="form-group">
-                          <label className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={openTreadFullMitre}
-                              onChange={(e) => setOpenTreadFullMitre(e.target.checked)}
-                            />
-                            Full Mitre (No Brackets)
-                          </label>
-                        </div>
-                        
-                        {!openTreadFullMitre && (
-                          <div className="form-group">
-                            <label>Bracket Type</label>
-                            <select
-                              value={openTreadBracket}
-                              onChange={(e) => setOpenTreadBracket(e.target.value)}
-                            >
-                              <option value="Standard Bracket">Standard Bracket</option>
-                              <option value="Ramshorn Bracket">Ramshorn Bracket</option>
-                              <option value="Custom Bracket">Custom Bracket</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Double Open Treads Section */}
-                  <div className="tread-type-section">
-                    <h4>↔️ Double Open Treads</h4>
-                    <div className="tread-inputs two-column">
-                      <div className="form-group">
-                        <label>Number of Double Open Treads</label>
-                        <input
-                          type="number"
-                          value={doubleOpenCount || ''}
-                          onChange={(e) => setDoubleOpenCount(parseInt(e.target.value) || 0)}
-                          min="0"
-                          max={formData.numRisers}
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Width (inches)</label>
-                        <input
-                          type="number"
-                          value={doubleOpenWidth || ''}
-                          onChange={(e) => setDoubleOpenWidth(parseFloat(e.target.value) || 0)}
-                          min="30"
-                          max="120"
-                          step="0.25"
-                          placeholder="Enter width"
-                          disabled={doubleOpenCount === 0}
-                        />
-                      </div>
-                    </div>
-                    
-                    {doubleOpenCount > 0 && (
-                      <div style={{ marginTop: '1rem', padding: '1rem', background: '#f0f9ff', borderRadius: '0.5rem', border: '1px solid #bae6fd' }}>
-                        <div className="form-group">
-                          <label className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={doubleOpenFullMitre}
-                              onChange={(e) => setDoubleOpenFullMitre(e.target.checked)}
-                            />
-                            Full Mitre (No Brackets)
-                          </label>
-                        </div>
-                        
-                        {!doubleOpenFullMitre && (
-                          <div className="form-group">
-                            <label>Bracket Type</label>
-                            <select
-                              value={doubleOpenBracket}
-                              onChange={(e) => setDoubleOpenBracket(e.target.value)}
-                            >
-                              <option value="Standard Bracket">Standard Bracket</option>
-                              <option value="Ramshorn Bracket">Ramshorn Bracket</option>
-                              <option value="Custom Bracket">Custom Bracket</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Validation Display */}
-                <div className="tread-validation">
-                  <p><strong>Total Treads:</strong> {boxTreadCount + openTreadCount + doubleOpenCount} / <strong>Required:</strong> {formData.numRisers - 1} or {formData.numRisers}</p>
-                  {(boxTreadCount + openTreadCount + doubleOpenCount) === formData.numRisers && (
-                    <p className="info-message success">✓ No landing tread - top gets full tread</p>
-                  )}
-                  {(boxTreadCount + openTreadCount + doubleOpenCount) === (formData.numRisers - 1) && (
-                    <p className="info-message success">✓ Includes landing tread</p>
-                  )}
-                  {(boxTreadCount + openTreadCount + doubleOpenCount) > formData.numRisers && (
-                    <p className="info-message error">⚠️ Too many treads specified</p>
-                  )}
-                </div>
-                {errors.treads && <div className="error-message">{errors.treads}</div>}
-              </div>
-
-              {/* Materials & Stringers Section */}
-              <div className="materials-stringer-section">
-                <h3 className="config-section-header">🌳 Materials & Stringers</h3>
-                <div className="materials-stringer-grid">
-                  {/* Materials */}
-                  <div>
-                    <h4>Materials</h4>
-                    <div className="form-group">
-                      <label htmlFor="treadMaterial">Tread Material *</label>
-                      <select
-                        id="treadMaterial"
-                        value={formData.treadMaterialId}
-                        onChange={(e) => handleFormChange('treadMaterialId', parseInt(e.target.value))}
-                        className={errors.treadMaterialId ? 'error' : ''}
-                      >
-                        <option value="">Select material...</option>
-                        {materials.map(material => (
-                          <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                            {material.matrl_nam}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedTreadMaterial && (
-                        <small>Multiplier: {selectedTreadMaterial.multiplier}x</small>
-                      )}
-                      {errors.treadMaterialId && <span className="error-message">{errors.treadMaterialId}</span>}
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="riserMaterial">Riser Material *</label>
-                      <select
-                        id="riserMaterial"
-                        value={formData.riserMaterialId}
-                        onChange={(e) => handleFormChange('riserMaterialId', parseInt(e.target.value))}
-                        className={errors.riserMaterialId ? 'error' : ''}
-                      >
-                        <option value="">Select material...</option>
-                        {materials.map(material => (
-                          <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                            {material.matrl_nam}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedRiserMaterial && (
-                        <small>Multiplier: {selectedRiserMaterial.multiplier}x</small>
-                      )}
-                      {errors.riserMaterialId && <span className="error-message">{errors.riserMaterialId}</span>}
-                    </div>
-                  </div>
-
-                  {/* Stringers */}
-                  <div>
-                    <h4>Stringer Configuration</h4>
-                    <small style={{ display: 'block', marginBottom: '12px', color: '#6b7280', fontSize: '13px' }}>
-                      Configure each stringer separately with dimensions and material
-                    </small>
-                    
-                    <div className="stringer-inputs">
-                      {/* Left Stringer */}
-                      <div className="stringer-section">
-                        <h5>Left Stringer</h5>
-                        <div className="stringer-fields">
-                          <div className="form-group">
-                            <label>Thickness (in)</label>
-                            <input
-                              type="number"
-                              value={leftStringerThickness || ''}
-                              onChange={(e) => setLeftStringerThickness(parseFloat(e.target.value) || 0)}
-                              min="0"
-                              step="0.25"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Width (in)</label>
-                            <input
-                              type="number"
-                              value={leftStringerWidth || ''}
-                              onChange={(e) => setLeftStringerWidth(parseFloat(e.target.value) || 0)}
-                              min="0"
-                              step="0.25"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Material</label>
-                            <select
-                              value={leftStringerMaterial}
-                              onChange={(e) => setLeftStringerMaterial(parseInt(e.target.value))}
-                            >
-                              <option value="">Select...</option>
-                              {materials.map(material => (
-                                <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                                  {material.matrl_nam}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Right Stringer */}
-                      <div className="stringer-section">
-                        <h5>Right Stringer</h5>
-                        <div className="stringer-fields">
-                          <div className="form-group">
-                            <label>Thickness (in)</label>
-                            <input
-                              type="number"
-                              value={rightStringerThickness || ''}
-                              onChange={(e) => setRightStringerThickness(parseFloat(e.target.value) || 0)}
-                              min="0"
-                              step="0.25"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Width (in)</label>
-                            <input
-                              type="number"
-                              value={rightStringerWidth || ''}
-                              onChange={(e) => setRightStringerWidth(parseFloat(e.target.value) || 0)}
-                              min="0"
-                              step="0.25"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Material</label>
-                            <select
-                              value={rightStringerMaterial}
-                              onChange={(e) => setRightStringerMaterial(parseInt(e.target.value))}
-                            >
-                              <option value="">Select...</option>
-                              {materials.map(material => (
-                                <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                                  {material.matrl_nam}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Center Stringer (Optional) */}
-                      <div className="stringer-section">
-                        <h5>Center Stringer (Optional)</h5>
-                        <div className="stringer-checkbox">
-                          <input
-                            type="checkbox"
-                            id="hasCenter"
-                            checked={hasCenter}
-                            onChange={(e) => setHasCenter(e.target.checked)}
-                          />
-                          <label htmlFor="hasCenter">Include Center Stringer</label>
-                        </div>
-                        {hasCenter && (
-                          <div className="stringer-fields">
-                            <div className="form-group">
-                              <label>Thickness (in)</label>
-                              <input
-                                type="number"
-                                value={centerStringerThickness || ''}
-                                onChange={(e) => setCenterStringerThickness(parseFloat(e.target.value) || 0)}
-                                min="0"
-                                step="0.25"
-                              />
-                            </div>
-                            <div className="form-group">
-                              <label>Width (in)</label>
-                              <input
-                                type="number"
-                                value={centerStringerWidth || ''}
-                                onChange={(e) => setCenterStringerWidth(parseFloat(e.target.value) || 0)}
-                                min="0"
-                                step="0.25"
-                              />
-                            </div>
-                            <div className="form-group">
-                              <label>Material</label>
-                              <select
-                                value={centerStringerMaterial}
-                                onChange={(e) => setCenterStringerMaterial(parseInt(e.target.value))}
-                              >
-                                <option value="">Select...</option>
-                                {materials.map(material => (
-                                  <option key={material.mat_seq_n} value={material.mat_seq_n}>
-                                    {material.matrl_nam}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Special Parts & Notes Section */}
-              <div className="bottom-section">
-                <h3 className="config-section-header">⚙️ Special Parts & Notes</h3>
-                <div className="bottom-section-grid">
-                  <div className="special-parts-section">
-                    <div className="section-header">
-                      <h4>Special Parts</h4>
-                      <button type="button" onClick={addSpecialPart} className="btn btn-secondary">
-                        Add Special Part
-                      </button>
-                    </div>
-                    
-                    {specialParts.map((part, index) => (
-                        <div key={index} className="special-part-config">
-                          <select
-                            value={part.partId}
-                            onChange={(e) => updateSpecialPart(index, 'partId', parseInt(e.target.value))}
-                          >
-                            {availableSpecialParts.map(p => (
-                              <option key={`${p.stpart_id}-${p.mat_seq_n}`} value={p.stpart_id}>
-                                {p.stpar_desc} - {p.matrl_nam} (${p.unit_cost})
-                              </option>
-                            ))}
-                          </select>
-                          
-                          <input
-                            type="number"
-                            value={part.quantity}
-                            onChange={(e) => updateSpecialPart(index, 'quantity', parseInt(e.target.value))}
-                            min="1"
-                            max="10"
-                            placeholder="Qty"
-                          />
-                          
-                          <button
-                            type="button"
-                            onClick={() => removeSpecialPart(index)}
-                            className="btn btn-danger btn-sm"
-                            style={{ minWidth: '70px', flexShrink: 0 }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="specialNotes">Special Notes</label>
-                    <textarea
-                      id="specialNotes"
-                      value={formData.specialNotes}
-                      onChange={(e) => handleFormChange('specialNotes', e.target.value)}
-                      rows={5}
-                      placeholder="Enter any special notes or requirements..."
-                    />
-                  </div>
-                </div>
-              </div>
+              <SpecialPartsAndNotes
+                formData={formData}
+                specialParts={specialParts}
+                availableSpecialParts={availableSpecialParts}
+                onFormChange={handleFormChange}
+                addSpecialPart={addSpecialPart}
+                removeSpecialPart={removeSpecialPart}
+                updateSpecialPart={updateSpecialPart}
+              />
             </div>
           ) : (
-            <div className="step-content">
-              <h3>💰 Price Summary</h3>
-              
-              {calculating ? (
-                <div className="loading">Calculating pricing...</div>
-              ) : priceResponse ? (
-                <div className="price-breakdown">
-                  <div className="config-summary">
-                    <h4>Configuration Summary</h4>
-                    <div className="summary-grid">
-                      <div className="summary-item">
-                        <span>Floor to Floor:</span>
-                        <span>{priceResponse.configuration.floorToFloor}"</span>
-                      </div>
-                      <div className="summary-item">
-                        <span>Number of Risers:</span>
-                        <span>{priceResponse.configuration.numRisers}</span>
-                      </div>
-                      <div className="summary-item">
-                        <span>Riser Height:</span>
-                        <span>{priceResponse.configuration.riserHeight}"</span>
-                      </div>
-                      <div className="summary-item">
-                        <span>Full Mitre:</span>
-                        <span>{priceResponse.configuration.fullMitre ? 'Yes' : 'No'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="price-details">
-                    {priceResponse.breakdown.treads.length > 0 && (
-                      <div className="breakdown-section">
-                        <h5>Treads</h5>
-                        {priceResponse.breakdown.treads.map((tread, index) => (
-                          <div key={index} className="breakdown-item">
-                            <span>Riser {tread.riserNumber} - {tread.type} ({tread.stairWidth}" wide)</span>
-                            <span>${tread.totalPrice.toFixed(2)}</span>
-                          </div>
-                            ))}
-                      </div>
-                    )}
-
-                    {priceResponse.breakdown.landingTread && (
-                      <div className="breakdown-section">
-                        <h5>Landing Tread</h5>
-                        <div className="breakdown-item">
-                          <span>Landing Tread - Box (3.5" width)</span>
-                          <span>${priceResponse.breakdown.landingTread.totalPrice.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {priceResponse.breakdown.risers.length > 0 && (
-                      <div className="breakdown-section">
-                        <h5>Risers</h5>
-                        {priceResponse.breakdown.risers.map((riser, index) => (
-                          <div key={index} className="breakdown-item">
-                            <span>{riser.quantity} risers @ ${riser.unitPrice.toFixed(2)}</span>
-                            <span>${riser.totalPrice.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {priceResponse.breakdown.stringers.length > 0 && (
-                      <div className="breakdown-section">
-                        <h5>Stringers</h5>
-                        {priceResponse.breakdown.stringers.map((stringer, index) => (
-                          <div key={index} className="breakdown-item">
-                            <span>{stringer.type} - {stringer.quantity} × {stringer.risers} risers</span>
-                            <span>${stringer.totalPrice.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {priceResponse.breakdown.specialParts.length > 0 && (
-                      <div className="breakdown-section">
-                        <h5>Special Parts</h5>
-                        {priceResponse.breakdown.specialParts.map((part, index) => (
-                          <div key={index} className="breakdown-item">
-                            <span>{part.description} × {part.quantity}</span>
-                            <span>${part.totalPrice.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="price-totals">
-                      <div className="total-line">
-                        <span>Subtotal:</span>
-                        <span>${priceResponse.subtotal}</span>
-                      </div>
-                      <div className="total-line">
-                        <span>Labor:</span>
-                        <span>${priceResponse.laborTotal}</span>
-                      </div>
-                      <div className="total-line">
-                        <span>Tax:</span>
-                        <span>${priceResponse.taxAmount}</span>
-                      </div>
-                      <div className="total-line total">
-                        <span><strong>Total:</strong></span>
-                        <span><strong>${priceResponse.total}</strong></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="error-message">Unable to calculate pricing. Please check your configuration.</div>
-              )}
-            </div>
+            <PriceSummary
+              calculating={calculating}
+              priceResponse={priceResponse}
+            />
           )}
         </div>
 

@@ -944,3 +944,447 @@ export const getJobPDFFilename = (jobData: { id: number; status: string; custome
   const customerName = jobData.customer_name.replace(/[^a-zA-Z0-9]/g, '_');
   return `CraftMart_${status}_${jobData.id}_${customerName}.pdf`;
 };
+
+// ============================================
+// SHOP PDF GENERATION FUNCTIONS
+// ============================================
+
+interface ShopData {
+  id: number;
+  shop_number: string;
+  cut_sheets: any[];
+  generated_date: string;
+  notes: string;
+  jobs?: any[];
+}
+
+interface CutSheetItem {
+  item_type: string;
+  tread_type?: string;
+  material: string;
+  quantity: number;
+  width: number;
+  length: number;
+  thickness?: string;
+  stair_id: string;
+  location: string;
+  notes?: string;
+}
+
+/**
+ * Generate shop paper PDF (parts list with signature section)
+ */
+export const generateShopPaper = async (shopId: number): Promise<Buffer> => {
+  const startTime = Date.now();
+  
+  try {
+    // Get shop data with associated job information
+    const shopResult = await pool.query(`
+      SELECT s.*,
+             json_agg(
+               json_build_object(
+                 'job_id', j.id,
+                 'job_title', j.title,
+                 'customer_name', c.name,
+                 'customer_address', c.address,
+                 'customer_city', c.city,
+                 'customer_state', c.state,
+                 'customer_zip', c.zip_code,
+                 'customer_phone', c.phone,
+                 'job_location', j.job_location,
+                 'delivery_date', j.delivery_date,
+                 'salesman_name', s2.first_name || ' ' || s2.last_name
+               )
+             ) as jobs
+      FROM shops s
+      LEFT JOIN jobs j ON s.cut_sheets::jsonb @> json_build_array(json_build_object('job_id', j.id))::jsonb
+      LEFT JOIN customers c ON j.customer_id = c.id
+      LEFT JOIN salesmen s2 ON j.salesman_id = s2.id
+      WHERE s.id = $1
+      GROUP BY s.id
+    `, [shopId]);
+
+    if (shopResult.rows.length === 0) {
+      throw new Error('Shop not found');
+    }
+
+    const shopData: ShopData = shopResult.rows[0];
+    const html = generateShopPaperHTML(shopData);
+
+    // Generate PDF using browser pool
+    const browser = await browserPool.getBrowser();
+    let page;
+    
+    try {
+      page = await browser.newPage();
+      await page.setViewport({ width: 1200, height: 1600 });
+      await page.setContent(html, { waitUntil: 'domcontentloaded' });
+      
+      const pdfBuffer = await page.pdf({
+        format: 'Letter',
+        margin: {
+          top: '0.5in',
+          right: '0.5in',
+          bottom: '0.5in',
+          left: '0.5in'
+        },
+        printBackground: true,
+        preferCSSPageSize: false
+      });
+
+      console.log(`Shop paper PDF generated for shop ${shopId} (${Date.now() - startTime}ms)`);
+      return Buffer.from(pdfBuffer);
+    } finally {
+      if (page) {
+        await page.close();
+      }
+      browserPool.releaseBrowser(browser);
+    }
+
+  } catch (error) {
+    console.error('Error generating shop paper PDF:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate cut list PDF (detailed dimensions for production)
+ */
+export const generateCutList = async (shopId: number): Promise<Buffer> => {
+  const startTime = Date.now();
+  
+  try {
+    const shopResult = await pool.query('SELECT * FROM shops WHERE id = $1', [shopId]);
+
+    if (shopResult.rows.length === 0) {
+      throw new Error('Shop not found');
+    }
+
+    const shopData: ShopData = shopResult.rows[0];
+    const html = generateCutListHTML(shopData);
+
+    // Generate PDF using browser pool
+    const browser = await browserPool.getBrowser();
+    let page;
+    
+    try {
+      page = await browser.newPage();
+      await page.setViewport({ width: 1200, height: 1600 });
+      await page.setContent(html, { waitUntil: 'domcontentloaded' });
+      
+      const pdfBuffer = await page.pdf({
+        format: 'Letter',
+        margin: {
+          top: '0.5in',
+          right: '0.5in',
+          bottom: '0.5in',
+          left: '0.5in'
+        },
+        printBackground: true,
+        preferCSSPageSize: false
+      });
+
+      console.log(`Cut list PDF generated for shop ${shopId} (${Date.now() - startTime}ms)`);
+      return Buffer.from(pdfBuffer);
+    } finally {
+      if (page) {
+        await page.close();
+      }
+      browserPool.releaseBrowser(browser);
+    }
+
+  } catch (error) {
+    console.error('Error generating cut list PDF:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate HTML for shop paper (parts list with signatures)
+ */
+function generateShopPaperHTML(shopData: ShopData): string {
+  const cutSheets: CutSheetItem[] = shopData.cut_sheets || [];
+  const jobs: any[] = shopData.jobs || [];
+  const printDate = new Date().toLocaleDateString();
+
+  // Group cut sheets by location and stair ID
+  const locationGroups = cutSheets.reduce((groups: any, item: CutSheetItem) => {
+    const key = `${item.location}|${item.stair_id}`;
+    if (!groups[key]) {
+      groups[key] = {
+        location: item.location,
+        stair_id: item.stair_id,
+        items: []
+      };
+    }
+    groups[key].items.push(item);
+    return groups;
+  }, {});
+
+  const locationGroupsArray = Object.values(locationGroups);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Shop Paper - ${shopData.shop_number}</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 11pt;
+                line-height: 1.2;
+                margin: 0;
+                padding: 0;
+            }
+            .header {
+                text-align: center;
+                border-bottom: 2px solid #333;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 18pt;
+                font-weight: bold;
+            }
+            .company-info {
+                font-size: 10pt;
+                margin: 5px 0;
+            }
+            .job-section {
+                margin-bottom: 30px;
+                page-break-inside: avoid;
+            }
+            .job-header {
+                background-color: #f5f5f5;
+                padding: 8px;
+                border: 1px solid #ddd;
+                font-weight: bold;
+                font-size: 12pt;
+            }
+            .parts-list {
+                margin: 10px 0;
+            }
+            .part-item {
+                margin: 2px 0;
+                font-size: 11pt;
+            }
+            .signature-section {
+                margin-top: 20px;
+                padding: 15px;
+                border: 1px solid #333;
+                page-break-inside: avoid;
+            }
+            .signature-line {
+                border-bottom: 1px solid #333;
+                display: inline-block;
+                width: 300px;
+                margin: 0 10px;
+            }
+            .warning-text {
+                margin-top: 15px;
+                font-size: 10pt;
+                text-align: center;
+                font-weight: bold;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>SHOP ORDER DELIVERY TICKET</h1>
+            <div class="company-info">
+                Craft-Mart Inc.<br>
+                5035 Allendale Lane, Taneytown MD 21787-2100<br>
+                Phone (410) 751-9467 &nbsp;&nbsp;&nbsp; Fax # (410) 751-9469
+            </div>
+            <div style="margin-top: 10px;">
+                <strong>Shop Number:</strong> ${shopData.shop_number} &nbsp;&nbsp;&nbsp;
+                <strong>Print Date:</strong> ${printDate}
+            </div>
+        </div>
+
+        ${locationGroupsArray.map((group: any, index: number) => `
+            <div class="job-section">
+                <div class="job-header">
+                    Location: ${group.location.toUpperCase()} - ${group.stair_id}
+                </div>
+                <div class="parts-list">
+                    ${group.items.map((item: CutSheetItem) => `
+                        <div class="part-item">
+                            ${item.quantity} ${item.item_type.toUpperCase()} - ${item.material.toUpperCase()}
+                            ${item.tread_type ? `(${item.tread_type.replace('_', ' ').toUpperCase()})` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <div style="margin-bottom: 20px;">
+                    <strong>SIGN HERE FOR DELIVERY</strong>
+                    <span class="signature-line"></span>
+                    <strong>DATE</strong>
+                    <span class="signature-line"></span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <strong>TIME IN:</strong>
+                    <span class="signature-line"></span>
+                    <strong>TIME OUT:</strong>
+                    <span class="signature-line"></span>
+                    <strong>O/D</strong>
+                    <span class="signature-line"></span>
+                </div>
+                <div class="warning-text">
+                    THIS PRODUCT NEEDS TO BE WEATHER PROOFED AS SOON AS POSSIBLE<br>
+                    AND MUST BE SEALED WITHIN 30 DAYS OF DELIVERY.<br>
+                    CRAFT MART ASSUMES NO RESPONSIBILITY FOR CRACKS OR SPLITS<br>
+                    AFTER 30 DAYS.
+                </div>
+            </div>
+
+            ${index < locationGroupsArray.length - 1 ? '<div class="page-break"></div>' : ''}
+        `).join('')}
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Generate HTML for cut list (detailed dimensions)
+ */
+function generateCutListHTML(shopData: ShopData): string {
+  const cutSheets: CutSheetItem[] = shopData.cut_sheets || [];
+  const printDate = new Date().toLocaleDateString();
+
+  // Group by material and location
+  const materialGroups = cutSheets.reduce((groups: any, item: CutSheetItem) => {
+    const key = `${item.material}|${item.location}`;
+    if (!groups[key]) {
+      groups[key] = {
+        material: item.material,
+        location: item.location,
+        items: []
+      };
+    }
+    groups[key].items.push(item);
+    return groups;
+  }, {});
+
+  const materialGroupsArray = Object.values(materialGroups);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Cut List - ${shopData.shop_number}</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 11pt;
+                line-height: 1.2;
+                margin: 0;
+                padding: 0;
+            }
+            .header {
+                text-align: center;
+                border-bottom: 2px solid #333;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 18pt;
+                font-weight: bold;
+            }
+            .company-info {
+                font-size: 10pt;
+                margin: 5px 0;
+            }
+            .material-section {
+                margin-bottom: 25px;
+                page-break-inside: avoid;
+            }
+            .material-header {
+                background-color: #f5f5f5;
+                padding: 8px;
+                border: 1px solid #ddd;
+                font-weight: bold;
+                font-size: 12pt;
+            }
+            .cut-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 10px 0;
+            }
+            .cut-table th,
+            .cut-table td {
+                border: 1px solid #333;
+                padding: 6px;
+                text-align: center;
+                font-size: 10pt;
+            }
+            .cut-table th {
+                background-color: #e0e0e0;
+                font-weight: bold;
+            }
+            .stair-id {
+                font-weight: bold;
+                color: #333;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>SHOP ORDER CUT LIST</h1>
+            <div class="company-info">
+                Craft-Mart Inc.<br>
+                5035 Allendale Lane, Taneytown MD 21787-2100<br>
+                Phone (410) 751-9467 &nbsp;&nbsp;&nbsp; Fax # (410) 751-9469
+            </div>
+            <div style="margin-top: 10px;">
+                <strong>Shop Number:</strong> ${shopData.shop_number} &nbsp;&nbsp;&nbsp;
+                <strong>Print Date:</strong> ${printDate}
+            </div>
+        </div>
+
+        ${materialGroupsArray.map((group: any) => `
+            <div class="material-section">
+                <div class="material-header">
+                    ${group.material.toUpperCase()} - ${group.location.toUpperCase()}
+                </div>
+                <table class="cut-table">
+                    <thead>
+                        <tr>
+                            <th>STAIR ID</th>
+                            <th>QTY</th>
+                            <th>ITEM TYPE</th>
+                            <th>WIDTH</th>
+                            <th>LENGTH</th>
+                            <th>THICKNESS</th>
+                            <th>NOTES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${group.items.map((item: CutSheetItem) => `
+                            <tr>
+                                <td class="stair-id">${item.stair_id}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.item_type.toUpperCase()}${item.tread_type ? ` (${item.tread_type.replace('_', ' ').toUpperCase()})` : ''}</td>
+                                <td>${item.width.toFixed(2)}"</td>
+                                <td>${item.length.toFixed(2)}"</td>
+                                <td>${item.thickness || '1"'}</td>
+                                <td>${item.notes || ''}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `).join('')}
+    </body>
+    </html>
+  `;
+}

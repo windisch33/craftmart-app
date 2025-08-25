@@ -1,86 +1,27 @@
-import React, { useState, useEffect, useMemo, Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import productService from '../../services/productService';
 import materialService from '../../services/materialService';
 import jobService from '../../services/jobService';
-import StairConfigurator from '../stairs/StairConfigurator';
 import type { Product } from '../../services/productService';
 import type { Material } from '../../services/materialService';
-import type { JobSection, CreateQuoteItemData, QuoteItem } from '../../services/jobService';
+import type { CreateQuoteItemData, QuoteItem } from '../../services/jobService';
 import type { StairConfiguration } from '../../services/stairService';
 import './ProductSelector.css';
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
-}
+// Import components
+import ProductSelectorErrorBoundary from './productselector/ErrorBoundary';
+import ProductSelectorForm from './productselector/ProductSelectorForm';
+import ProductItemList from './productselector/ProductItemList';
+import StairConfiguratorModal from './productselector/StairConfiguratorModal';
+import type { ProductSelectorProps, ProductFormData } from './productselector/types';
+import {
+  calculateMaterialPrice,
+  calculateLaborPrice,
+  getCalculatedUnitPrice,
+  buildItemDescription
+} from './productselector/utils';
 
-interface ErrorBoundaryProps {
-  children: ReactNode;
-}
-
-class ProductSelectorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ProductSelector Error Boundary caught an error:', error, errorInfo);
-    this.setState({ error, errorInfo });
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="product-selector error">
-          <h3>Something went wrong with the product selector</h3>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
-            <summary>Error Details (click to expand)</summary>
-            <strong>Error:</strong> {this.state.error && this.state.error.toString()}
-            <br />
-            <strong>Stack:</strong> {this.state.error && this.state.error.stack}
-            <br />
-            <strong>Component Stack:</strong> {this.state.errorInfo && this.state.errorInfo.componentStack}
-          </details>
-          <button onClick={() => this.setState({ hasError: false })}>
-            Try Again
-          </button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-interface ProductSelectorProps {
-  jobId?: number;
-  section: JobSection;
-  onItemsChange: (sectionId: number, items: QuoteItem[]) => void;
-  onItemTotalChange?: (sectionId: number, total: number) => void;
-  isReadOnly?: boolean;
-  isLoading?: boolean;
-  isDraftMode?: boolean; // Flag to indicate job creation mode
-}
-
-interface ProductFormData {
-  productId: number | string;
-  materialId: number;
-  customDescription: string;
-  quantity: number;
-  lengthInches: number;
-  customUnitPrice: number;
-  useCustomPrice: boolean;
-  isTaxable: boolean;
-  includeLabor: boolean;
-}
 
 const ProductSelector: React.FC<ProductSelectorProps> = ({
   jobId,
@@ -151,83 +92,6 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     });
   };
 
-  const calculateMaterialPrice = (product: Product | null, material: Material | null): number => {
-    try {
-      if (formData.useCustomPrice) {
-        const price = (formData.customUnitPrice || 0) * (formData.quantity || 1);
-        return isNaN(price) ? 0 : price;
-      }
-
-      if (!product) return 0;
-
-      // Handle handrail and landing tread products with length calculation
-      if ((product.product_type === 'handrail' || product.product_type === 'landing_tread') && product.cost_per_6_inches) {
-        // For handrail and landing tread products, we need a material to calculate price
-        if (!material) return 0;
-        
-        const price = productService.calculateHandrailPrice(
-          formData.lengthInches || 0,
-          Number(product.cost_per_6_inches) || 0,
-          Number(material.multiplier) || 1,
-          0, // Don't include labor in material price
-          false
-        ) * (formData.quantity || 1);
-        return isNaN(price) ? 0 : price;
-      }
-
-      // Handle rail parts products with base price calculation
-      if (product.product_type === 'rail_parts' && product.base_price) {
-        // For rail parts, we need a material to calculate price
-        if (!material) return 0;
-        
-        const price = productService.calculateRailPartsPrice(
-          Number(product.base_price) || 0,
-          Number(material.multiplier) || 1,
-          0, // Don't include labor in material price
-          false,
-          formData.quantity || 1
-        );
-        return isNaN(price) ? 0 : price;
-      }
-
-      // For other products, use base price if available
-      // This would be enhanced based on your specific product pricing structure
-      return 0;
-    } catch (error) {
-      console.error('Error in calculateMaterialPrice:', error);
-      return 0;
-    }
-  };
-
-  const calculateLaborPrice = (product: Product | null): number => {
-    try {
-      if (!formData.includeLabor) return 0;
-
-      if (!product || !product.labor_install_cost) return 0;
-
-      const laborCost = Number(product.labor_install_cost) || 0;
-      const price = laborCost * (formData.quantity || 1);
-      return isNaN(price) ? 0 : price;
-    } catch (error) {
-      console.error('Error in calculateLaborPrice:', error);
-      return 0;
-    }
-  };
-
-
-  const getCalculatedUnitPrice = (): number => {
-    try {
-      if (formData.useCustomPrice || (formData.quantity || 0) === 0) {
-        return formData.customUnitPrice || 0;
-      }
-      const quantity = formData.quantity || 1;
-      const unitPrice = totalPrice / quantity;
-      return isNaN(unitPrice) ? 0 : unitPrice;
-    } catch (error) {
-      console.error('Error in getCalculatedUnitPrice:', error);
-      return 0;
-    }
-  };
 
   const handleAddItem = async () => {
     if (!validateForm()) return;
@@ -237,27 +101,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
       return;
     }
 
-    const unitPrice = getCalculatedUnitPrice();
-    
-    // Build description based on whether we have a selected product or are using custom description
-    let description;
-    if (selectedProduct) {
-      // Product-based item: build description from product and material
-      description = selectedProduct.name;
-      if (selectedMaterial && requiresMaterial) {
-        description += ` - ${selectedMaterial.name}`;
-        if (isHandrailProduct && formData.lengthInches > 0) {
-          description += ` (${formData.lengthInches}")`;
-        }
-      }
-      // If there's a custom description override for product items, use it
-      if (formData.customDescription && formData.customDescription !== editingItem?.description) {
-        description = formData.customDescription;
-      }
-    } else {
-      // Custom item: use custom description
-      description = formData.customDescription;
-    }
+    const unitPrice = getCalculatedUnitPrice(formData, totalPrice);
+    const description = buildItemDescription(formData, selectedProduct, selectedMaterial);
 
     try {
       setAddingItem(true);
@@ -501,9 +346,6 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const getProductsByType = (type: string) => {
-    return products.filter(p => p.product_type === type && p.is_active);
-  };
 
   const handleStairSave = async (stairConfig: StairConfiguration) => {
     console.log('ProductSelector: handleStairSave called with config:', stairConfig);
@@ -674,8 +516,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     try {
       console.log('ProductSelector: Calculating prices for product:', selectedProduct?.name, 'material:', selectedMaterial?.name);
       
-      const material = calculateMaterialPrice(selectedProduct, selectedMaterial);
-      const labor = calculateLaborPrice(selectedProduct);
+      const material = calculateMaterialPrice(selectedProduct, selectedMaterial, formData);
+      const labor = calculateLaborPrice(selectedProduct, formData);
       const total = material + labor;
       
       console.log('ProductSelector: Calculated prices - material:', material, 'labor:', labor, 'total:', total);
@@ -757,353 +599,50 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         </div>
 
       {/* Add/Edit Item Form */}
-      {showAddForm && !isReadOnly && (
-        <div className="add-item-form">
-          <div className="form-header">
-            <h5>{editingItem ? 'Edit Item' : 'Add New Item'}</h5>
-            <button
-              type="button"
-              className="close-form-btn"
-              onClick={() => {
-                setShowAddForm(false);
-                setEditingItem(null);
-                resetForm();
-              }}
-            >
-              ×
-            </button>
-          </div>
-
-          <div className="form-content">
-            {/* Product Selection */}
-            <div className="form-row">
-              <div className="form-field">
-                <label htmlFor="product-select">Product</label>
-                <select
-                  id="product-select"
-                  value={formData.productId}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === 'stair-configurator') {
-                      handleFormChange('productId', value);
-                    } else {
-                      handleFormChange('productId', parseInt(value));
-                    }
-                  }}
-                  disabled={addingItem}
-                >
-                  <option value={0}>Select Product...</option>
-                  <optgroup label="🪜 Stairs">
-                    <option value="stair-configurator">Configure Straight Stair...</option>
-                  </optgroup>
-                  <optgroup label="Handrails">
-                    {getProductsByType('handrail').map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Landing Treads">
-                    {getProductsByType('landing_tread').map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Rail Parts">
-                    {getProductsByType('rail_parts').map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Newels">
-                    {getProductsByType('newel').map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Balusters">
-                    {getProductsByType('baluster').map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Other">
-                    {getProductsByType('other').map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-
-              {selectedProduct && requiresMaterial && (
-                <div className="form-field">
-                  <label htmlFor="material-select">Material</label>
-                  <select
-                    id="material-select"
-                    value={formData.materialId}
-                    onChange={(e) => handleFormChange('materialId', parseInt(e.target.value))}
-                    disabled={addingItem}
-                  >
-                    <option value={0}>Select Material...</option>
-                    {materials.filter(m => m.is_active).map(material => (
-                      <option key={material.id} value={material.id}>
-                        {material.name} ({material.multiplier}x)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            {/* Custom Description */}
-            <div className="form-field">
-              <label htmlFor="custom-description">Description</label>
-              <input
-                type="text"
-                id="custom-description"
-                value={formData.customDescription}
-                onChange={(e) => handleFormChange('customDescription', e.target.value)}
-                placeholder={selectedProduct ? "Override product name..." : "Enter custom item description..."}
-                disabled={addingItem}
-              />
-            </div>
-
-            {/* Quantity and Length */}
-            <div className="form-row">
-              <div className="form-field">
-                <label htmlFor="quantity">Quantity *</label>
-                <input
-                  type="number"
-                  id="quantity"
-                  value={formData.quantity}
-                  onChange={(e) => handleFormChange('quantity', parseFloat(e.target.value) || 0)}
-                  min="0.01"
-                  step="0.01"
-                  disabled={addingItem}
-                  required
-                />
-              </div>
-
-              {isHandrailProduct && (
-                <div className="form-field">
-                  <label htmlFor="length">Length (inches)</label>
-                  <input
-                    type="number"
-                    id="length"
-                    value={formData.lengthInches}
-                    onChange={(e) => handleFormChange('lengthInches', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.25"
-                    disabled={addingItem}
-                    placeholder="Total length"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Labor Option */}
-            {selectedProduct && selectedProduct.labor_install_cost !== undefined && (
-              <div className="labor-section">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.includeLabor}
-                    onChange={(e) => handleFormChange('includeLabor', e.target.checked)}
-                    disabled={addingItem}
-                  />
-                  Include labor/installation (${Number(selectedProduct.labor_install_cost || 0).toFixed(2)}/unit)
-                </label>
-              </div>
-            )}
-
-            {/* Pricing */}
-            <div className="pricing-section">
-              <div className="pricing-header">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.useCustomPrice}
-                    onChange={(e) => handleFormChange('useCustomPrice', e.target.checked)}
-                    disabled={addingItem}
-                  />
-                  Use custom pricing
-                </label>
-              </div>
-
-              {formData.useCustomPrice ? (
-                <div className="form-field">
-                  <label htmlFor="custom-price">Unit Price *</label>
-                  <input
-                    type="number"
-                    id="custom-price"
-                    value={formData.customUnitPrice}
-                    onChange={(e) => handleFormChange('customUnitPrice', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                    disabled={addingItem}
-                    required
-                  />
-                </div>
-              ) : (
-                <div className="calculated-pricing">
-                  {selectedProduct && (
-                    <div className="price-breakdown-detailed">
-                      <div className="price-item">
-                        <span>Material Cost: </span>
-                        <strong>${(materialPrice / Math.max(formData.quantity || 1, 1)).toFixed(2)} × {formData.quantity || 1} = ${materialPrice.toFixed(2)}</strong>
-                      </div>
-                      {formData.includeLabor && laborPrice > 0 && (
-                        <div className="price-item labor-cost">
-                          <span>Labor Cost: </span>
-                          <strong>${(laborPrice / Math.max(formData.quantity || 1, 1)).toFixed(2)} × {formData.quantity || 1} = ${laborPrice.toFixed(2)}</strong>
-                        </div>
-                      )}
-                      <div className="price-total">
-                        <span>Line Total: </span>
-                        <strong>${totalPrice.toFixed(2)}</strong>
-                      </div>
-                    </div>
-                  )}
-                  {!selectedProduct && (
-                    <div className="price-breakdown">
-                      <span>Select a product to see pricing</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Tax Options */}
-            <div className="form-options">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.isTaxable}
-                  onChange={(e) => handleFormChange('isTaxable', e.target.checked)}
-                  disabled={addingItem}
-                />
-                Material cost is taxable
-              </label>
-              <div className="tax-notes">
-                {formData.includeLabor && (
-                  <p className="tax-note">
-                    💡 Labor costs are typically non-taxable and will be tracked separately
-                  </p>
-                )}
-                <p className="tax-note">
-                  💡 Material costs are usually taxable, labor costs are not
-                </p>
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setEditingItem(null);
-                  resetForm();
-                }}
-                disabled={addingItem}
-                className="cancel-btn"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleAddItem}
-                disabled={addingItem || !isFormValid()}
-                className="add-btn"
-              >
-                {addingItem ? 'Adding...' : editingItem ? 'Update Item' : 'Add Item'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {!isReadOnly && (
+        <ProductSelectorForm
+          formData={formData}
+          products={products}
+          materials={materials}
+          showAddForm={showAddForm}
+          editingItem={editingItem}
+          addingItem={addingItem}
+          selectedProduct={selectedProduct}
+          selectedMaterial={selectedMaterial}
+          isHandrailProduct={isHandrailProduct}
+          requiresMaterial={requiresMaterial}
+          materialPrice={materialPrice}
+          laborPrice={laborPrice}
+          totalPrice={totalPrice}
+          isFormValid={isFormValid}
+          onFormChange={handleFormChange}
+          onShowAddFormChange={setShowAddForm}
+          onEditingItemChange={setEditingItem}
+          onAddItem={handleAddItem}
+          onResetForm={resetForm}
+        />
       )}
 
       {/* Items List */}
-      <div className="items-list">
-        {items.length === 0 ? (
-          <div className="no-items">
-            <span className="no-items-icon">📦</span>
-            <p>No items in this section yet</p>
-          </div>
-        ) : (
-          <div className="items-table">
-            <div className="table-header">
-              <div className="col-qty">Qty</div>
-              <div className="col-description">Description</div>
-              <div className="col-unit-price">Unit Price</div>
-              <div className="col-total">Total</div>
-              <div className="col-tax">Tax</div>
-              {!isReadOnly && <div className="col-actions">Actions</div>}
-            </div>
-            
-            {items.map((item) => (
-              <div key={item.id} className="table-row">
-                <div className="col-qty">{item.quantity}</div>
-                <div className="col-description">
-                  {item.part_number && (
-                    <div className="part-number">{item.part_number}</div>
-                  )}
-                  <div className="description">{item.description}</div>
-                </div>
-                <div className="col-unit-price">${Number(item.unit_price).toFixed(2)}</div>
-                <div className="col-total">${Number(item.line_total).toFixed(2)}</div>
-                <div className={`col-tax ${item.is_taxable ? 'taxable' : 'non-taxable'}`}>
-                  {item.is_taxable ? '✓' : '✗'}
-                </div>
-                {!isReadOnly && (
-                  <div className="col-actions">
-                    <button
-                      type="button"
-                      onClick={() => handleEditItem(item)}
-                      className="edit-btn"
-                      disabled={isLoading}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem(item)}
-                      className="delete-btn"
-                      disabled={isLoading}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-            
-            <div className="table-footer">
-              <div className="section-total">
-                <span>Section Total: </span>
-                <strong>${items.reduce((sum, item) => sum + Number(item.line_total), 0).toFixed(2)}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <ProductItemList
+        items={items}
+        isReadOnly={isReadOnly}
+        isLoading={isLoading}
+        onEditItem={handleEditItem}
+        onDeleteItem={handleDeleteItem}
+      />
 
       {/* Stair Configurator Modal */}
-      {showStairConfigurator && (
-        <StairConfigurator
-          jobId={isDraftMode ? undefined : jobId}
-          sectionId={isDraftMode ? undefined : (section.id > 0 ? section.id : undefined)}
-          sectionTempId={isDraftMode ? section.id : undefined}
-          onSave={handleStairSave}
-          onCancel={handleStairCancel}
-          initialConfig={(editingStairItem as any)?.stair_configuration || undefined}
-        />
-      )}
+      <StairConfiguratorModal
+        showStairConfigurator={showStairConfigurator}
+        jobId={jobId}
+        sectionId={section.id}
+        sectionTempId={section.id}
+        isDraftMode={isDraftMode}
+        editingStairItem={editingStairItem}
+        onStairSave={handleStairSave}
+        onStairCancel={handleStairCancel}
+      />
     </div>
     );
   } catch (error) {
