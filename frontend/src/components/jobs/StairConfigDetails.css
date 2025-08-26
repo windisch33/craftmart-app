@@ -1,0 +1,61 @@
+.stair-config-details {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #333;
+  background-color: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 4px 0;
+}
+
+.stair-config-details .config-name {
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #2c3e50;
+  font-size: 13px;
+}
+
+.stair-spec-line {
+  margin-bottom: 2px;
+  color: #444;
+}
+
+.stair-spec-line.indented {
+  padding-left: 24px;
+  position: relative;
+}
+
+.stair-spec-line.indented::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 0.6em;
+  width: 6px;
+  height: 1px;
+  background-color: #999;
+}
+
+.special-option {
+  font-weight: bold;
+  color: #d73527;
+}
+
+.special-separator {
+  color: #666;
+  font-family: monospace;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stair-config-details {
+    font-size: 11px;
+  }
+  
+  .stair-spec-line.indented {
+    padding-left: 16px;
+  }
+}

@@ -360,7 +360,8 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
                  'quantity', CAST(qi.quantity AS FLOAT),
                  'unit_price', CAST(qi.unit_price AS FLOAT),
                  'line_total', CAST(qi.line_total AS FLOAT),
-                 'is_taxable', qi.is_taxable
+                 'is_taxable', qi.is_taxable,
+                 'stair_config_id', qi.stair_config_id
                ) ORDER BY qi.created_at
              ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
       FROM job_sections js

@@ -3,6 +3,7 @@ import type { ErrorInfo, ReactNode } from 'react';
 import jobService from '../../services/jobService';
 import salesmanService from '../../services/salesmanService';
 import ProductSelector from './ProductSelector';
+import StairItemDisplay from './StairItemDisplay';
 import type { JobWithDetails, QuoteItem } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
 import { formatCurrency } from '../../utils/jobCalculations';
@@ -263,7 +264,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
       // Prepare job data - convert empty delivery_date to null for database
       const jobDataForUpdate = {
         ...editJobData,
-        delivery_date: editJobData.delivery_date === '' ? null : editJobData.delivery_date
+        delivery_date: editJobData.delivery_date === '' ? undefined : editJobData.delivery_date
       };
 
       // Update job basic info
@@ -693,13 +694,6 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                             </div>
                             <div className="section-actions">
                               <button 
-                                className="add-item-btn" 
-                                onClick={() => addNewItem(sectionIndex)}
-                                title="Add Item"
-                              >
-                                ➕ Item
-                              </button>
-                              <button 
                                 className="remove-section-btn" 
                                 onClick={() => removeSection(sectionIndex)}
                                 title="Remove Section"
@@ -719,6 +713,9 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                                 id: section.id || -1,
                                 name: section.name,
                                 display_order: section.display_order,
+                                job_id: jobId,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString(),
                                 items: section.items.map(item => ({
                                   id: item.id || -1,
                                   job_id: jobId,
@@ -773,12 +770,16 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                               {section.items.map((item) => (
                                 <div key={item.id} className="table-row">
                                   <div className="col-qty">{item.quantity}</div>
-                                  <div className="col-description">
-                                    {item.part_number && (
-                                      <div className="part-number">{item.part_number}</div>
-                                    )}
-                                    <div className="description">{item.description}</div>
-                                  </div>
+                                  {(item.stair_config_id || item.part_number?.startsWith('STAIR-')) ? (
+                                    <StairItemDisplay item={item} />
+                                  ) : (
+                                    <div className="col-description">
+                                      {item.part_number && (
+                                        <div className="part-number">{item.part_number}</div>
+                                      )}
+                                      <div className="description">{item.description}</div>
+                                    </div>
+                                  )}
                                   <div className="col-unit-price">
                                     {formatCurrency(item.unit_price)}
                                   </div>
