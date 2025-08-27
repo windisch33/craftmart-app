@@ -4,6 +4,7 @@ import jobService from '../../services/jobService';
 import type { Job } from '../../services/jobService';
 import type { Customer } from '../../services/customerService';
 import './CustomerJobs.css';
+import { AlertTriangleIcon } from '../common/icons';
 
 interface CustomerJobsProps {
   customer: Customer | null;
@@ -79,7 +80,7 @@ const CustomerJobs: React.FC<CustomerJobsProps> = ({ customer, isOpen, onClose }
 
           {error && (
             <div className="error-message">
-              <span>⚠️</span>
+              <span style={{display: 'inline-flex', marginRight: 8}}><AlertTriangleIcon /></span>
               {error}
             </div>
           )}

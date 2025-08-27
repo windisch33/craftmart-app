@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangleIcon, SaveIcon, UsersIcon } from '../common/icons';
 import type { Salesman, CreateSalesmanData } from '../../services/salesmanService';
 import './SalesmanForm.css';
 
@@ -148,7 +149,7 @@ const SalesmanForm: React.FC<SalesmanFormProps> = ({
           {/* General Error */}
           {errors.submit && (
             <div style={{marginBottom: '16px', padding: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626'}}>
-              ⚠️ {errors.submit}
+              <span style={{display:'inline-flex', marginRight:8}}><AlertTriangleIcon /></span>{errors.submit}
             </div>
           )}
           
@@ -262,7 +263,7 @@ const SalesmanForm: React.FC<SalesmanFormProps> = ({
               {isSubmitting ? (
                 salesman ? 'Updating...' : 'Creating...'
               ) : (
-                salesman ? '💾 Update Salesman' : '👥 Create Salesman'
+                salesman ? (<span style={{display:'inline-flex',alignItems:'center',gap:8}}><SaveIcon /> Update Salesman</span>) : (<span style={{display:'inline-flex',alignItems:'center',gap:8}}><UsersIcon /> Create Salesman</span>)
               )}
             </button>
           </div>

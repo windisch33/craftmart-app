@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/common.css';
 import './Reports.css';
+import { BarChartIcon, MailIcon, FileIcon, DollarIcon, ClipboardIcon, UsersIcon } from '../components/common/icons';
 
 const Reports: React.FC = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -79,7 +80,7 @@ const Reports: React.FC = () => {
             justifyContent: 'center',
             fontSize: '20px'
           }}>
-            📊
+            <BarChartIcon />
           </div>
           <div>
             <h2 style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0}}>Generate New Report</h2>
@@ -139,7 +140,7 @@ const Reports: React.FC = () => {
 
         <div style={{display: 'flex', gap: '12px', marginTop: '24px'}}>
           <button className="btn btn-primary">
-            <span style={{fontSize: '18px'}}>📊</span>
+            <span className="nav-icon"><BarChartIcon /></span>
             Generate Report
           </button>
           <button style={{
@@ -157,8 +158,8 @@ const Reports: React.FC = () => {
             e.currentTarget.style.borderColor = '#e5e7eb';
             e.currentTarget.style.backgroundColor = 'white';
           }}>
-            <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span style={{fontSize: '18px'}}>📧</span>
+              <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+              <span className="nav-icon"><MailIcon /></span>
               Email Report
             </span>
           </button>
@@ -177,28 +178,28 @@ const Reports: React.FC = () => {
             {
               title: 'Monthly Sales',
               description: 'Current month sales performance',
-              icon: '💰',
+              iconElement: <DollarIcon />,
               color: '#10b981',
               action: 'Generate Now'
             },
             {
               title: 'Quarterly Tax',
               description: 'Q1 2024 tax summary',
-              icon: '📋',
+              iconElement: <ClipboardIcon />,
               color: '#3b82f6',
               action: 'Generate Now'
             },
             {
               title: 'Customer Report',
               description: 'Top customers by revenue',
-              icon: '👥',
+              iconElement: <UsersIcon />,
               color: '#8b5cf6',
               action: 'Generate Now'
             },
             {
               title: 'Job Analysis',
               description: 'Job completion rates',
-              icon: '📈',
+              iconElement: <BarChartIcon />,
               color: '#f59e0b',
               action: 'Generate Now'
             }
@@ -229,7 +230,7 @@ const Reports: React.FC = () => {
                   justifyContent: 'center',
                   fontSize: '20px'
                 }}>
-                  {report.icon}
+                  {report.iconElement}
                 </div>
                 <div>
                   <h4 style={{fontSize: '18px', fontWeight: 'bold', color: '#1f2937', margin: 0}}>
@@ -273,7 +274,7 @@ const Reports: React.FC = () => {
               justifyContent: 'center',
               fontSize: '20px'
             }}>
-              📄
+              <FileIcon />
             </div>
             <div>
               <h3 style={{fontSize: '20px', fontWeight: 'bold', color: '#1f2937', margin: 0}}>Recent Reports</h3>
@@ -314,7 +315,7 @@ const Reports: React.FC = () => {
                   justifyContent: 'center',
                   fontSize: '16px'
                 }}>
-                  {report.type === 'Sales' ? '💰' : '📋'}
+                  {report.type === 'Sales' ? <DollarIcon /> : <ClipboardIcon />}
                 </div>
                 <div>
                   <div style={{fontWeight: '500', color: '#1f2937', fontSize: '16px'}}>

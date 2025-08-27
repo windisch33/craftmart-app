@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import productService, { type Product, type CreateLandingTreadProductRequest, type UpdateLandingTreadProductRequest } from '../../services/productService';
 import './LandingTreadForm.css';
+import { AlertTriangleIcon } from '../common/icons';
 
 interface LandingTreadFormProps {
   product?: Product | null;
@@ -107,7 +108,7 @@ const LandingTreadForm: React.FC<LandingTreadFormProps> = ({ product, onClose })
 
         {error && (
           <div className="form-error">
-            <span className="error-icon">⚠️</span>
+            <span className="error-icon"><AlertTriangleIcon /></span>
             {error}
           </div>
         )}

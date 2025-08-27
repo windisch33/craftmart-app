@@ -1,5 +1,6 @@
 import React from 'react';
 import './Dashboard.css';
+import { UsersIcon, ClipboardIcon, ClockIcon, DollarIcon, BarChartIcon, FileTextIcon } from '../components/common/icons';
 
 const Dashboard: React.FC = () => {
   return (
@@ -37,9 +38,9 @@ const Dashboard: React.FC = () => {
                 <span className="stat-change--neutral">vs last month</span>
               </div>
             </div>
-            <div className="stat-icon stat-icon--blue">
-              👥
-            </div>
+              <div className="stat-icon stat-icon--blue">
+                <UsersIcon />
+              </div>
           </div>
         </div>
 
@@ -58,7 +59,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="stat-icon stat-icon--green">
-              📋
+              <ClipboardIcon />
             </div>
           </div>
         </div>
@@ -78,7 +79,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="stat-icon stat-icon--amber">
-              ⏰
+              <ClockIcon />
             </div>
           </div>
         </div>
@@ -98,7 +99,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="stat-icon stat-icon--purple">
-              💰
+              <DollarIcon />
             </div>
           </div>
         </div>
@@ -110,7 +111,7 @@ const Dashboard: React.FC = () => {
           <div className="activity-header">
             <div className="activity-title-group">
               <div className="activity-icon">
-                📊
+                <BarChartIcon />
               </div>
               <div>
                 <h3 className="activity-title">Recent Activity</h3>
@@ -125,7 +126,7 @@ const Dashboard: React.FC = () => {
           <div className="activity-list">
             <div className="activity-item activity-item--blue">
               <div className="activity-item-icon activity-item-icon--blue">
-                👤
+                <UsersIcon />
               </div>
               <div className="activity-item-content">
                 <div className="activity-item-header">
@@ -138,7 +139,7 @@ const Dashboard: React.FC = () => {
             
             <div className="activity-item activity-item--green">
               <div className="activity-item-icon activity-item-icon--green">
-                📝
+                <FileTextIcon />
               </div>
               <div className="activity-item-content">
                 <div className="activity-item-header">
@@ -166,7 +167,7 @@ const Dashboard: React.FC = () => {
           <div className="quick-actions-list">
             <button className="quick-action-btn">
               <div className="quick-action-icon quick-action-icon--blue">
-                👤
+                <UsersIcon />
               </div>
               <div className="quick-action-text">
                 <div className="quick-action-title">Add Customer</div>
@@ -176,7 +177,7 @@ const Dashboard: React.FC = () => {
             
             <button className="quick-action-btn">
               <div className="quick-action-icon quick-action-icon--green">
-                📋
+                <ClipboardIcon />
               </div>
               <div className="quick-action-text">
                 <div className="quick-action-title">New Quote</div>
@@ -186,7 +187,7 @@ const Dashboard: React.FC = () => {
             
             <button className="quick-action-btn">
               <div className="quick-action-icon quick-action-icon--purple">
-                📊
+                <BarChartIcon />
               </div>
               <div className="quick-action-text">
                 <div className="quick-action-title">View Reports</div>

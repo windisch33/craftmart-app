@@ -390,11 +390,11 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
       };
       
       // Log individual stringer data for debugging
-      console.log('🚀 StairConfigurator: baseConfig individualStringers:', JSON.stringify(baseConfig.individualStringers, null, 2));
-      console.log('🚀 StairConfigurator: Individual stringer values:');
-      console.log('🚀   Left - width:', leftStringerWidth, 'thickness:', leftStringerThickness, 'materialId:', leftStringerMaterial);
-      console.log('🚀   Right - width:', rightStringerWidth, 'thickness:', rightStringerThickness, 'materialId:', rightStringerMaterial);
-      console.log('🚀   Center - width:', centerStringerWidth, 'thickness:', centerStringerThickness, 'materialId:', centerStringerMaterial, 'hasCenter:', hasCenter);
+      console.log('[STAIR_CONFIG] baseConfig individualStringers:', JSON.stringify(baseConfig.individualStringers, null, 2));
+      console.log('[STAIR_CONFIG] Individual stringer values:');
+      console.log('[STAIR_CONFIG]   Left - width:', leftStringerWidth, 'thickness:', leftStringerThickness, 'materialId:', leftStringerMaterial);
+      console.log('[STAIR_CONFIG]   Right - width:', rightStringerWidth, 'thickness:', rightStringerThickness, 'materialId:', rightStringerMaterial);
+      console.log('[STAIR_CONFIG]   Center - width:', centerStringerWidth, 'thickness:', centerStringerThickness, 'materialId:', centerStringerMaterial, 'hasCenter:', hasCenter);
 
       // Check if we're in draft mode (job creation) or normal mode (job editing)
       const isDraftMode = !jobId || jobId <= 0 || !sectionId || sectionId <= 0;

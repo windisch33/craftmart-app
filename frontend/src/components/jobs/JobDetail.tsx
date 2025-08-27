@@ -7,6 +7,7 @@ import StairItemDisplay from './StairItemDisplay';
 import type { JobWithDetails, QuoteItem } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
 import { formatCurrency } from '../../utils/jobCalculations';
+import { EyeIcon, PencilIcon, WarningIcon, CalendarIcon, TrashIcon, PlusIcon } from '../common/icons';
 import '../../styles/common.css';
 import './JobDetail.css';
 
@@ -449,7 +450,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                 onClick={handleEditToggle}
                 disabled={loading || isSaving}
               >
-                {isEditing ? '👁️ View' : '✏️ Edit'}
+                {isEditing ? <><EyeIcon width={16} height={16} /> View</> : <><PencilIcon width={16} height={16} /> Edit</>}
               </button>
               <button 
                 className="close-btn"
@@ -473,7 +474,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
 
           {error && (
             <div className="error-state">
-              <div className="error-icon">⚠️</div>
+              <div className="error-icon"><WarningIcon width={20} height={20} /></div>
               <h3>Error Loading Job</h3>
               <p>{error}</p>
               <button onClick={loadJobDetails} className="retry-btn">
@@ -492,7 +493,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                     <p className="customer-name">{job.customer_name}</p>
                     <div className="job-meta">
                       <span className="created-date">
-                        📅 Created {new Date(job.created_at).toLocaleDateString()}
+                        <CalendarIcon width={16} height={16} /> Created {new Date(job.created_at).toLocaleDateString()}
                       </span>
                       <div 
                         className="job-number-badge"
@@ -668,7 +669,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                   <h4>Sections & Items</h4>
                   {isEditing && (
                     <button className="add-section-btn" onClick={addNewSection}>
-                      ➕ Add Section
+                      <PlusIcon width={16} height={16} /> Add Section
                     </button>
                   )}
                 </div>
@@ -698,7 +699,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
                                 onClick={() => removeSection(sectionIndex)}
                                 title="Remove Section"
                               >
-                                🗑️
+                                <TrashIcon width={14} height={14} />
                               </button>
                             </div>
                           </div>

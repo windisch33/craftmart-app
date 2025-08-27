@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import productService, { type Product, type CreateRailPartsProductRequest, type UpdateRailPartsProductRequest } from '../../services/productService';
 import './RailPartsForm.css';
+import { AlertTriangleIcon } from '../common/icons';
 
 interface RailPartsFormProps {
   product?: Product | null;
@@ -107,7 +108,7 @@ const RailPartsForm: React.FC<RailPartsFormProps> = ({ product, onClose }) => {
 
         {error && (
           <div className="form-error">
-            <span className="error-icon">⚠️</span>
+            <span className="error-icon"><AlertTriangleIcon /></span>
             {error}
           </div>
         )}

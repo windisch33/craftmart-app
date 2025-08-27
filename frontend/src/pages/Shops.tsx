@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/common.css';
 import './Shops.css';
 import { shopService, type Shop } from '../services/shopService';
+import { FactoryIcon, SearchIcon, CalendarIcon } from '../components/common/icons';
 
 const Shops: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,7 +142,7 @@ const Shops: React.FC = () => {
           className="btn btn-primary"
           onClick={() => setShowGenerationModal(true)}
         >
-          <span style={{fontSize: '20px'}}>🏭</span>
+          <span className="nav-icon"><FactoryIcon /></span>
           Generate Shops
         </button>
       </div>
@@ -160,7 +161,7 @@ const Shops: React.FC = () => {
                 pointerEvents: 'none',
                 zIndex: 1
               }}>
-                🔍
+                <SearchIcon />
               </div>
               <input
                 type="text"
@@ -258,7 +259,7 @@ const Shops: React.FC = () => {
                     justifyContent: 'center',
                     fontSize: '20px'
                   }}>
-                    🏭
+                    <FactoryIcon />
                   </div>
                   <div>
                     <h3 style={{
@@ -326,7 +327,7 @@ const Shops: React.FC = () => {
               {/* Dates */}
               <div style={{marginBottom: '16px'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-                  <span style={{fontSize: '16px'}}>📅</span>
+                  <span style={{display: 'inline-flex'}}><CalendarIcon /></span>
                   <span style={{fontSize: '14px', color: '#6b7280'}}>Generated: {formatDate(shop.generated_date)}</span>
                 </div>
               </div>
@@ -408,7 +409,7 @@ const Shops: React.FC = () => {
             margin: '0 auto 16px',
             fontSize: '24px'
           }}>
-            🏭
+            <FactoryIcon />
           </div>
           <h3 style={{fontSize: '18px', fontWeight: 'bold', color: '#1f2937', marginBottom: '8px'}}>
             {searchTerm || statusFilter !== 'all' ? 'No shops found' : 'No shops yet'}
@@ -422,7 +423,7 @@ const Shops: React.FC = () => {
             className="btn btn-primary"
             onClick={() => setShowGenerationModal(true)}
           >
-            <span style={{fontSize: '20px'}}>🏭</span>
+            <span className="nav-icon"><FactoryIcon /></span>
             Generate Shops
           </button>
         </div>

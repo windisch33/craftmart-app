@@ -64,7 +64,15 @@
 
 .nav-icon {
   margin-right: 12px;
-  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
 }
 
 .sidebar-footer {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { CalendarIcon, RefreshIcon, DollarIcon, UserIcon, ClipboardIcon, ChevronUpIcon, ChevronDownIcon } from '../common/icons';
 import './SortControls.css';
 
 export type SortField = 'created_date' | 'total_amount' | 'customer_name' | 'title' | 'updated_at';
@@ -29,11 +30,11 @@ const SortControls: React.FC<SortControlsProps> = ({
   };
 
   const sortFieldOptions = [
-    { value: 'created_date', label: 'Created Date', icon: '📅' },
-    { value: 'updated_at', label: 'Updated Date', icon: '🔄' },
-    { value: 'total_amount', label: 'Total Amount', icon: '💰' },
-    { value: 'customer_name', label: 'Customer Name', icon: '👤' },
-    { value: 'title', label: 'Job Title', icon: '📋' }
+    { value: 'created_date', label: 'Created Date', icon: <CalendarIcon width={16} height={16} /> },
+    { value: 'updated_at', label: 'Updated Date', icon: <RefreshIcon width={16} height={16} /> },
+    { value: 'total_amount', label: 'Total Amount', icon: <DollarIcon width={16} height={16} /> },
+    { value: 'customer_name', label: 'Customer Name', icon: <UserIcon width={16} height={16} /> },
+    { value: 'title', label: 'Job Title', icon: <ClipboardIcon width={16} height={16} /> }
   ];
 
   const getCurrentFieldLabel = () => {
@@ -43,11 +44,11 @@ const SortControls: React.FC<SortControlsProps> = ({
 
   const getCurrentFieldIcon = () => {
     const currentField = sortFieldOptions.find(option => option.value === sortBy);
-    return currentField ? currentField.icon : '📅';
+    return currentField ? currentField.icon : <CalendarIcon width={16} height={16} />;
   };
 
   const getSortOrderIcon = () => {
-    return sortOrder === 'asc' ? '🔼' : '🔽';
+    return sortOrder === 'asc' ? <ChevronUpIcon width={16} height={16} /> : <ChevronDownIcon width={16} height={16} />;
   };
 
   const getSortOrderLabel = () => {
@@ -72,11 +73,11 @@ const SortControls: React.FC<SortControlsProps> = ({
           >
             {sortFieldOptions.map(option => (
               <option key={option.value} value={option.value}>
-                {option.icon} {option.label}
+                {option.label}
               </option>
             ))}
           </select>
-          <div className="sort-field-display">⌄</div>
+          <div className="sort-field-display"><ChevronDownIcon width={12} height={12} /></div>
         </div>
 
         {/* Sort Order Toggle */}

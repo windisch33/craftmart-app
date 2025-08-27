@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useMobile } from '../../hooks/useMobile';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
+import { HomeIcon, UsersIcon, ClipboardIcon, WrenchIcon, FactoryIcon, BarChartIcon, HandshakeIcon, ShieldIcon } from './icons';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -13,43 +14,43 @@ const Sidebar: React.FC = () => {
     { 
       name: 'Dashboard', 
       path: '/', 
-      icon: '🏠',
+      icon: <HomeIcon />,
       ariaLabel: 'Navigate to Dashboard'
     },
     { 
       name: 'Customers', 
       path: '/customers', 
-      icon: '👥',
+      icon: <UsersIcon />,
       ariaLabel: 'Navigate to Customers page'
     },
     { 
       name: 'Jobs', 
       path: '/jobs', 
-      icon: '📋',
+      icon: <ClipboardIcon />,
       ariaLabel: 'Navigate to Jobs page'
     },
     { 
       name: 'Products', 
       path: '/products', 
-      icon: '🔧',
+      icon: <WrenchIcon />,
       ariaLabel: 'Navigate to Products page'
     },
     { 
       name: 'Shops', 
       path: '/shops', 
-      icon: '🏭',
+      icon: <FactoryIcon />,
       ariaLabel: 'Navigate to Shops page'
     },
     { 
       name: 'Reports', 
       path: '/reports', 
-      icon: '📊',
+      icon: <BarChartIcon />,
       ariaLabel: 'Navigate to Reports page'
     },
     { 
       name: 'Salesmen', 
       path: '/salesmen', 
-      icon: '🤝',
+      icon: <HandshakeIcon />,
       ariaLabel: 'Navigate to Salesmen page'
     },
   ];
@@ -59,7 +60,7 @@ const Sidebar: React.FC = () => {
     menuItems.push({
       name: 'Users',
       path: '/users',
-      icon: '🔐',
+      icon: <ShieldIcon />,
       ariaLabel: 'Navigate to Users management page'
     });
   }

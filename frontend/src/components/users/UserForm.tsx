@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangleIcon, SaveIcon, UsersIcon } from '../common/icons';
 import type { User, RegisterRequest } from '../../services/auth';
 import './UserForm.css';
 
@@ -149,7 +150,7 @@ const UserForm: React.FC<UserFormProps> = ({
           {/* General Error */}
           {errors.submit && (
             <div style={{marginBottom: '16px', padding: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626'}}>
-              ⚠️ {errors.submit}
+              <span style={{display: 'inline-flex', verticalAlign: 'middle', marginRight: 8}}><AlertTriangleIcon /></span>{errors.submit}
             </div>
           )}
           
@@ -255,7 +256,7 @@ const UserForm: React.FC<UserFormProps> = ({
               {isSubmitting ? (
                 user ? 'Updating...' : 'Creating...'
               ) : (
-                user ? '💾 Update User' : '👤 Create User'
+                user ? (<span style={{display: 'inline-flex', alignItems: 'center', gap: 8}}><SaveIcon /> Update User</span>) : (<span style={{display: 'inline-flex', alignItems: 'center', gap: 8}}><UsersIcon /> Create User</span>)
               )}
             </button>
           </div>

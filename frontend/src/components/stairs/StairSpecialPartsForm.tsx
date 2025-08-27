@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangleIcon, WrenchIcon, DollarIcon, BarChartIcon, InfoIcon } from '../common/icons';
 import './StairForms.css';
 import stairProductService, { 
   type StairSpecialPart, 
@@ -158,15 +159,15 @@ const StairSpecialPartsForm: React.FC<StairSpecialPartsFormProps> = ({ specialPa
           <div className="modal-body">
             {submitError && (
               <div className="error-message">
-                <span className="error-icon">⚠️</span>
+                <span className="error-icon"><AlertTriangleIcon /></span>
                 {submitError}
               </div>
             )}
 
             {/* Basic Information */}
             <div className="form-section">
-              <h3>🔧 Basic Information</h3>
-              
+              <h3><span style={{display:'inline-flex', marginRight:8}}><WrenchIcon /></span>Basic Information</h3>
+            
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="stpart_id">Special Part ID *</label>
@@ -241,7 +242,7 @@ const StairSpecialPartsForm: React.FC<StairSpecialPartsFormProps> = ({ specialPa
 
             {/* Pricing */}
             <div className="form-section">
-              <h3>💰 Pricing</h3>
+              <h3><span style={{display:'inline-flex', marginRight:8}}><DollarIcon /></span>Pricing</h3>
               
               <div className="form-row">
                 <div className="form-group">
@@ -279,7 +280,7 @@ const StairSpecialPartsForm: React.FC<StairSpecialPartsFormProps> = ({ specialPa
 
               {selectedMaterial && (
                 <div className="constraint-row">
-                  <h4>💡 Pricing Preview</h4>
+                  <h4><InfoIcon width={18} height={18} /> Pricing Preview</h4>
                   <div className="form-row">
                     <div className="form-group">
                       <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
@@ -302,7 +303,7 @@ const StairSpecialPartsForm: React.FC<StairSpecialPartsFormProps> = ({ specialPa
 
             {/* Status */}
             <div className="form-section">
-              <h3>📊 Status</h3>
+              <h3><span style={{display:'inline-flex', marginRight:8}}><BarChartIcon /></span>Status</h3>
               
               <div className="form-group">
                 <label className="checkbox-label">

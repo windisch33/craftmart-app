@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { TrashIcon } from './icons';
 import './SelectableList.css';
 
 interface SelectableListProps<T> {
@@ -98,7 +99,9 @@ export function SelectableList<T>({
                         }}
                         aria-label={`Edit item ${id}`}
                       >
-                        ✏️
+                        <span style={{display:'inline-flex'}}>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                        </span>
                       </button>
                     )}
                     {onDelete && (
@@ -110,7 +113,7 @@ export function SelectableList<T>({
                         }}
                         aria-label={`Delete item ${id}`}
                       >
-                        🗑️
+                        <TrashIcon width={14} height={14} />
                       </button>
                     )}
                   </div>

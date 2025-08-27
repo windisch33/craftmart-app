@@ -4,6 +4,7 @@ import type { User, RegisterRequest } from '../services/auth';
 import UserForm from '../components/users/UserForm';
 import './Users.css';
 import '../styles/common.css';
+import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, ClockIcon, CalendarIcon, EditIcon, KeyIcon } from '../components/common/icons';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,7 +169,7 @@ const Users: React.FC = () => {
           <p className="page-subtitle">Manage system users and permissions</p>
         </div>
         <button className="btn btn-primary" onClick={handleAddUser}>
-          <span>👤</span>
+          <span className="nav-icon"><UsersIcon /></span>
           Add User
         </button>
       </div>
@@ -176,7 +177,7 @@ const Users: React.FC = () => {
       {/* Large Search Bar */}
       <div className="search-section">
         <div className="search-container-large">
-          <div className="search-icon-large">🔍</div>
+          <div className="search-icon-large"><SearchIcon /></div>
           <input
             type="text"
             placeholder="Search users by name, email, or role..."
@@ -195,7 +196,7 @@ const Users: React.FC = () => {
       {error && (
         <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
-            <span>⚠️</span>
+            <AlertTriangleIcon />
             {error}
           </div>
         </div>
@@ -203,7 +204,7 @@ const Users: React.FC = () => {
 
       {users.length === 0 ? (
         <div className="empty-customers">
-          <div className="empty-icon">🔍</div>
+          <div className="empty-icon"><SearchIcon /></div>
           <h2 className="empty-title">No users found</h2>
           <p className="empty-desc">
             Try adjusting your search terms or add a new user.
@@ -222,22 +223,22 @@ const Users: React.FC = () => {
               <div className="customer-contact">
                 {user.email && (
                   <div className="contact-item">
-                    <span className="contact-icon">✉️</span>
+                    <span className="contact-icon"><MailIcon /></span>
                     <span>{user.email}</span>
                   </div>
                 )}
                 <div className="contact-item">
-                  <span className="contact-icon">👤</span>
+                  <span className="contact-icon"><UsersIcon /></span>
                   <span>Role: {user.role === 'admin' ? 'Administrator' : 'Employee'}</span>
                 </div>
                 {user.last_login && (
                   <div className="contact-item">
-                    <span className="contact-icon">🕒</span>
+                    <span className="contact-icon"><ClockIcon /></span>
                     <span>Last login: {new Date(user.last_login).toLocaleDateString()}</span>
                   </div>
                 )}
                 <div className="contact-item">
-                  <span className="contact-icon">📅</span>
+                  <span className="contact-icon"><CalendarIcon /></span>
                   <span>Created: {new Date(user.created_at).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -247,13 +248,13 @@ const Users: React.FC = () => {
                   className="action-btn" 
                   onClick={() => handleEditUser(user)}
                 >
-                  ✏️ Edit
+                  <span className="contact-icon"><EditIcon /></span> Edit
                 </button>
                 <button 
                   className="action-btn" 
                   onClick={() => handleResetPassword(user)}
                 >
-                  🔑 Reset Password
+                  <span className="contact-icon"><KeyIcon /></span> Reset Password
                 </button>
               </div>
             </div>

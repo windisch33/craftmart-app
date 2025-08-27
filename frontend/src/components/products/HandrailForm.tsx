@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import productService, { type Product, type CreateHandrailProductRequest, type UpdateHandrailProductRequest } from '../../services/productService';
 import './HandrailForm.css';
+import { AlertTriangleIcon } from '../common/icons';
 
 interface HandrailFormProps {
   product?: Product | null;
@@ -107,7 +108,7 @@ const HandrailForm: React.FC<HandrailFormProps> = ({ product, onClose }) => {
         <form onSubmit={handleSubmit} className="handrail-form">
           {error && (
             <div className="error-message">
-              <span className="error-icon">⚠️</span>
+              <span className="error-icon"><AlertTriangleIcon /></span>
               {error}
             </div>
           )}

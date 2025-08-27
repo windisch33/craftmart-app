@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import materialService, { type Material, type CreateMaterialRequest, type UpdateMaterialRequest } from '../../services/materialService';
 import './MaterialForm.css';
+import { AlertTriangleIcon } from '../common/icons';
 
 interface MaterialFormProps {
   material?: Material | null;
@@ -114,7 +115,7 @@ const MaterialForm: React.FC<MaterialFormProps> = ({ material, onClose }) => {
         <form onSubmit={handleSubmit} className="material-form">
           {error && (
             <div className="error-message">
-              <span className="error-icon">⚠️</span>
+              <span className="error-icon"><AlertTriangleIcon /></span>
               {error}
             </div>
           )}

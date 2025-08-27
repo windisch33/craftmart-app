@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WarningIcon } from '../common/icons';
 import './StairForms.css';
 import stairProductService, { 
   type StairMaterial, 
@@ -107,7 +108,7 @@ const StairMaterialForm: React.FC<StairMaterialFormProps> = ({ material, onClose
           <div className="modal-body">
             {submitError && (
               <div className="error-message">
-                <span className="error-icon">⚠️</span>
+                <span className="error-icon"><WarningIcon width={16} height={16} /></span>
                 {submitError}
               </div>
             )}

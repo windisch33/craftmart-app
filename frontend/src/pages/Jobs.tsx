@@ -10,6 +10,7 @@ import JobDetail from '../components/jobs/JobDetail';
 import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
 import { StairConfigurationProvider } from '../contexts/StairConfigurationContext';
 import '../styles/common.css';
+import { SearchIcon, AlertTriangleIcon, ClipboardIcon, UsersIcon, CalendarIcon, FileIcon, RefreshIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, ArrowRightIcon } from '../components/common/icons';
 import './Jobs.css';
 
 const Jobs: React.FC = () => {
@@ -309,7 +310,7 @@ const Jobs: React.FC = () => {
             onClick={handleRefresh}
             title="Refresh jobs list"
           >
-            <span>🔄</span>
+            <span><RefreshIcon width={16} height={16} /></span>
             Refresh
           </button>
           <button 
@@ -317,14 +318,14 @@ const Jobs: React.FC = () => {
             onClick={handleClearPDFCache}
             title="Clear PDF cache"
           >
-            <span>🗑️</span>
+            <span><TrashIcon width={16} height={16} /></span>
             Clear Cache
           </button>
           <button 
             className="btn btn-primary"
             onClick={() => setShowJobForm(true)}
           >
-            <span>📋</span>
+            <span className="nav-icon"><ClipboardIcon /></span>
             Create Job
           </button>
         </div>
@@ -333,7 +334,7 @@ const Jobs: React.FC = () => {
       {/* Large Search Bar */}
       <div className="search-section">
         <div className="search-container-large">
-          <div className="search-icon-large">🔍</div>
+          <div className="search-icon-large"><SearchIcon /></div>
           <input
             type="text"
             placeholder="Search jobs by title, customer, job number, or salesman..."
@@ -356,7 +357,7 @@ const Jobs: React.FC = () => {
             className="btn btn-secondary"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           >
-            <span>{showAdvancedFilters ? '🔽' : '▶️'}</span>
+            <span>{showAdvancedFilters ? <ChevronDownIcon width={16} height={16} /> : <ChevronRightIcon width={16} height={16} />}</span>
             Advanced Filters
           </button>
         </div>
@@ -403,14 +404,14 @@ const Jobs: React.FC = () => {
       )}
 
       {/* Error Message */}
-      {error && (
-        <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
-            <span>⚠️</span>
-            {error}
-          </div>
-        </div>
-      )}
+{error && (
+  <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
+    <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
+      <AlertTriangleIcon />
+      {error}
+    </div>
+  </div>
+)}
 
       {/* Jobs Grid */}
       {!loading && jobs.length > 0 ? (
@@ -438,11 +439,11 @@ const Jobs: React.FC = () => {
 
               <div className="job-details">
                 <div className="detail-row">
-                  <span className="detail-label">📅 Created:</span>
+                  <span className="detail-label" style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}><CalendarIcon /> Created:</span>
                   <span className="detail-value">{formatDate(job.created_at)}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">🔄 Updated:</span>
+                  <span className="detail-label"><RefreshIcon width={14} height={14} /> Updated:</span>
                   <span className="detail-value">{formatDate(job.updated_at)}</span>
                 </div>
                 {job.delivery_date && (
@@ -453,7 +454,7 @@ const Jobs: React.FC = () => {
                 )}
                 {job.salesman_name && (
                   <div className="detail-row">
-                    <span className="detail-label">👤 Salesman:</span>
+                    <span className="detail-label" style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}><UsersIcon /> Salesman:</span>
                     <span className="detail-value">{job.salesman_name}</span>
                   </div>
                 )}
@@ -470,14 +471,14 @@ const Jobs: React.FC = () => {
                   onClick={() => handleViewDetails(job.id)}
                   title="View Details"
                 >
-                  👁️ View
+                  <EyeIcon width={16} height={16} /> View
                 </button>
                 <button 
                   className="action-btn action-btn-info" 
                   onClick={() => handleViewPDF(job.id, job.title)}
                   title="View PDF"
                 >
-                  📄 PDF
+                  <span className="nav-icon"><FileIcon /></span> PDF
                 </button>
                 {job.status !== 'invoice' && (
                   <button 
@@ -485,7 +486,7 @@ const Jobs: React.FC = () => {
                     onClick={() => handleNextStage(job)}
                     title="Next Stage"
                   >
-                    ➡️ Next
+                    <ArrowRightIcon width={16} height={16} /> Next
                   </button>
                 )}
               </div>
@@ -494,7 +495,7 @@ const Jobs: React.FC = () => {
         </div>
       ) : (
         <div className="empty-jobs">
-          <div className="empty-icon">📋</div>
+          <div className="empty-icon"><ClipboardIcon /></div>
           <h2 className="empty-title">
             {isSearching ? 'No jobs found' : 'No recent jobs'}
           </h2>
@@ -505,7 +506,7 @@ const Jobs: React.FC = () => {
           </p>
           {!isSearching && (
             <button className="btn btn-primary" onClick={() => setShowJobForm(true)}>
-              <span>📋</span>
+              <span className="nav-icon"><ClipboardIcon /></span>
               Create Your First Job
             </button>
           )}
@@ -517,7 +518,6 @@ const Jobs: React.FC = () => {
         <JobForm
           onSubmit={handleCreateJob}
           onCancel={() => setShowJobForm(false)}
-          isLoading={jobFormLoading}
         />
       )}
 
@@ -546,7 +546,7 @@ const Jobs: React.FC = () => {
       {confirmNextStage && (
         <div className="modal-overlay">
           <div className="modal confirmation-modal">
-            <div className="confirmation-icon">⚠️</div>
+            <div className="confirmation-icon"><AlertTriangleIcon /></div>
             <h3>Confirm Status Change</h3>
             <p>
               Are you sure you want to advance "{confirmNextStage.title}" from{' '}

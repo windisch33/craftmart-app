@@ -16,6 +16,7 @@ import BoardTypeForm from '../components/stairs/BoardTypeForm';
 import StairSpecialPartsForm from '../components/stairs/StairSpecialPartsForm';
 import QuickPricer from '../components/stairs/QuickPricer';
 import { SelectableList } from '../components/common/SelectableList';
+import { ConstructionIcon, WrenchIcon, HammerIcon, TreeIcon, RulerIcon, AlertTriangleIcon, DollarIcon } from '../components/common/icons';
 import '../styles/common.css';
 import './Products.css';
 
@@ -436,14 +437,14 @@ const Products: React.FC = () => {
     <div className="container">
       <div className="page-header">
         <div className="page-title-section">
-          <h1 className="gradient-title">🔧 Products</h1>
+          <h1 className="gradient-title">Products</h1>
           <p className="page-subtitle">Manage products and materials</p>
         </div>
       </div>
 
       {error && (
         <div className="error-message">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon"><AlertTriangleIcon /></span>
           {error}
         </div>
       )}
@@ -455,7 +456,7 @@ const Products: React.FC = () => {
           className={`tab-button ${activeTab === 'quick_pricer' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('quick_pricer')}
         >
-          💰 Quick Pricer
+          Quick Pricer
         </button>
         
         {/* Existing Product Tabs */}
@@ -463,25 +464,25 @@ const Products: React.FC = () => {
           className={`tab-button ${activeTab === 'handrails' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('handrails')}
         >
-          🏗️ Handrail
+          Handrail
         </button>
         <button
           className={`tab-button ${activeTab === 'landing_treads' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('landing_treads')}
         >
-          🪜 Landing Treads
+          Landing Treads
         </button>
         <button
           className={`tab-button ${activeTab === 'rail_parts' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('rail_parts')}
         >
-          🔩 Rail Parts
+          Rail Parts
         </button>
         <button
           className={`tab-button ${activeTab === 'materials' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('materials')}
         >
-          🪵 Materials
+          Materials
         </button>
         
         {/* New Stair Component Tabs */}
@@ -489,20 +490,20 @@ const Products: React.FC = () => {
           className={`tab-button ${activeTab === 'stair_materials' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('stair_materials')}
         >
-          🪜 Stair Materials
+          Stair Materials
         </button>
         <button
           className={`tab-button ${activeTab === 'board_types' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('board_types')}
         >
-          📏 Stair Pricing
+          Stair Pricing
         </button>
 
         <button
           className={`tab-button ${activeTab === 'special_parts' ? 'tab-button--active' : ''}`}
           onClick={() => setActiveTab('special_parts')}
         >
-          🔧 Special Parts
+          Special Parts
         </button>
       </div>
 

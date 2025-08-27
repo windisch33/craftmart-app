@@ -1,4 +1,5 @@
 import React from 'react';
+import { TreeIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
 import type { StairMaterial } from '../../../services/stairService';
 
@@ -60,7 +61,7 @@ const MaterialsAndStringers: React.FC<MaterialsAndStringersProps> = ({
 
   return (
     <div className="materials-stringer-section">
-      <h3 className="config-section-header">🌳 Materials & Stringers</h3>
+      <h3 className="config-section-header"><TreeIcon width={20} height={20} /> Materials & Stringers</h3>
       <div className="materials-stringer-grid">
         {/* Materials */}
         <div>

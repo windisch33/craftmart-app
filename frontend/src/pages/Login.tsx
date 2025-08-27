@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './Login.css';
+import { KeyIcon, AlertTriangleIcon } from '../components/common/icons';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -69,7 +70,7 @@ const Login: React.FC = () => {
           
           {error && (
             <div className="error">
-              <span>⚠️</span>
+              <AlertTriangleIcon />
               {error}
             </div>
           )}
@@ -121,7 +122,7 @@ const Login: React.FC = () => {
                 </span>
               ) : (
                 <span className="button-content">
-                  <span className="button-icon">🔑</span>
+                  <span className="button-icon"><KeyIcon /></span>
                   Sign In
                 </span>
               )}

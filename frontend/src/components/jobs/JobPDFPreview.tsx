@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DownloadIcon, PrintIcon, WarningIcon } from '../common/icons';
 import jobService from '../../services/jobService';
 import './JobPDFPreview.css';
 
@@ -195,7 +196,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
               disabled={loading || !!error}
               title="Download PDF"
             >
-              <span className="icon">⬇️</span>
+              <span className="icon"><DownloadIcon width={16} height={16} /></span>
               Download
             </button>
             <button 
@@ -204,7 +205,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
               disabled={loading || !!error}
               title="Print PDF"
             >
-              <span className="icon">🖨️</span>
+              <span className="icon"><PrintIcon width={16} height={16} /></span>
               Print
             </button>
             <button 
@@ -227,7 +228,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
 
           {error && (
             <div className="pdf-error">
-              <span className="error-icon">⚠️</span>
+              <span className="error-icon"><WarningIcon width={20} height={20} /></span>
               <p>{error}</p>
               <button onClick={loadPDF} className="retry-button">
                 Try Again

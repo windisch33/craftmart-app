@@ -5,6 +5,7 @@ import CustomerForm from '../components/customers/CustomerForm';
 import CustomerJobs from '../components/customers/CustomerJobs';
 import './Customers.css';
 import '../styles/common.css';
+import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, PhoneIcon, MobileIcon, BriefcaseIcon, EditIcon } from '../components/common/icons';
 
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -144,7 +145,7 @@ const Customers: React.FC = () => {
           <p className="page-subtitle">Search and manage your client relationships</p>
         </div>
         <button className="btn btn-primary" onClick={handleAddCustomer}>
-          <span>👤</span>
+          <span className="nav-icon"><UsersIcon /></span>
           Add Customer
         </button>
       </div>
@@ -152,7 +153,7 @@ const Customers: React.FC = () => {
       {/* Large Search Bar */}
       <div className="search-section">
         <div className="search-container-large">
-          <div className="search-icon-large">🔍</div>
+          <div className="search-icon-large"><SearchIcon /></div>
           <input
             type="text"
             placeholder="Search customers by name, email, city, or state..."
@@ -174,7 +175,7 @@ const Customers: React.FC = () => {
       {error && (
         <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
-            <span>⚠️</span>
+            <AlertTriangleIcon />
             {error}
           </div>
         </div>
@@ -195,25 +196,25 @@ const Customers: React.FC = () => {
               <div className="customer-contact">
                 {customer.email && (
                   <div className="contact-item">
-                    <span className="contact-icon">✉️</span>
+                    <span className="contact-icon"><MailIcon /></span>
                     <span>{customer.email}</span>
                   </div>
                 )}
                 {customer.phone && (
                   <div className="contact-item">
-                    <span className="contact-icon">📞</span>
+                    <span className="contact-icon"><PhoneIcon /></span>
                     <span>{formatPhoneNumber(customer.phone)}</span>
                   </div>
                 )}
                 {customer.mobile && (
                   <div className="contact-item">
-                    <span className="contact-icon">📱</span>
+                    <span className="contact-icon"><MobileIcon /></span>
                     <span>{formatPhoneNumber(customer.mobile)}</span>
                   </div>
                 )}
                 {customer.accounting_email && (
                   <div className="contact-item">
-                    <span className="contact-icon">💼</span>
+                    <span className="contact-icon"><BriefcaseIcon /></span>
                     <span>{customer.accounting_email}</span>
                   </div>
                 )}
@@ -234,7 +235,7 @@ const Customers: React.FC = () => {
                     handleEditCustomer(customer);
                   }}
                 >
-                  ✏️ Edit
+                  <span className="contact-icon"><EditIcon /></span> Edit
                 </button>
 
               </div>
@@ -243,7 +244,7 @@ const Customers: React.FC = () => {
         </div>
       ) : (
         <div className="empty-customers">
-          <div className="empty-icon">🔍</div>
+          <div className="empty-icon"><SearchIcon /></div>
           <h2 className="empty-title">
             {isSearching ? 'No customers found' : 'No recent customers'}
           </h2>
@@ -254,7 +255,7 @@ const Customers: React.FC = () => {
           </p>
           {!isSearching && (
             <button className="btn btn-primary" onClick={handleAddCustomer}>
-              <span>👤</span>
+              <span className="nav-icon"><UsersIcon /></span>
               Add Your First Customer
             </button>
           )}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { RulerIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
 
 interface BasicConfigurationProps {
@@ -16,7 +17,7 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
 
   return (
     <div className="basic-config-section">
-      <h3 className="config-section-header">📏 Basic Configuration</h3>
+      <h3 className="config-section-header"><RulerIcon width={20} height={20} /> Basic Configuration</h3>
       <div className="basic-config-grid">
         <div className="form-group">
           <label htmlFor="configName">Configuration Name *</label>

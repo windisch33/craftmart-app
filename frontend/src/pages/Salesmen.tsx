@@ -4,6 +4,7 @@ import type { Salesman, CreateSalesmanData } from '../services/salesmanService';
 import SalesmanForm from '../components/salesmen/SalesmanForm';
 import './Salesmen.css';
 import '../styles/common.css';
+import { UsersIcon, AlertTriangleIcon, SearchIcon, MailIcon, PhoneIcon, DollarIcon, EditIcon } from '../components/common/icons';
 
 const Salesmen: React.FC = () => {
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
@@ -116,14 +117,14 @@ const Salesmen: React.FC = () => {
           <p className="page-subtitle">Manage your sales team</p>
         </div>
         <button onClick={handleAddSalesman} className="btn btn-primary">
-          <span>👤</span>
+          <span className="nav-icon"><UsersIcon /></span>
           Add Salesman
         </button>
       </div>
 
       <div className="search-section">
         <div className="search-container-large">
-          <div className="search-icon-large">🔍</div>
+          <div className="search-icon-large"><SearchIcon /></div>
           <input
             type="text"
             placeholder="Search salesmen by name, email, or phone..."
@@ -138,7 +139,7 @@ const Salesmen: React.FC = () => {
       {error && (
         <div className="card" style={{marginBottom: '24px', backgroundColor: error.startsWith('✅') ? '#dcfce7' : '#fef2f2', border: error.startsWith('✅') ? '1px solid #86efac' : '1px solid #fecaca'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: error.startsWith('✅') ? '#166534' : '#b91c1c'}}>
-            {!error.startsWith('✅') && <span>⚠️</span>}
+            {!error.startsWith('✅') && <AlertTriangleIcon />}
             {error}
           </div>
         </div>
@@ -146,7 +147,7 @@ const Salesmen: React.FC = () => {
 
       {salesmen.length === 0 ? (
         <div className="empty-customers">
-          <div className="empty-icon">🔍</div>
+          <div className="empty-icon"><SearchIcon /></div>
           <h2 className="empty-title">No salesmen found</h2>
           <p className="empty-desc">
             Try adjusting your search terms or add a new salesman.
@@ -166,18 +167,18 @@ const Salesmen: React.FC = () => {
               <div className="customer-contact">
                 {salesman.email && (
                   <div className="contact-item">
-                    <span className="contact-icon">✉️</span>
+                    <span className="contact-icon"><MailIcon /></span>
                     <span>{salesman.email}</span>
                   </div>
                 )}
                 {salesman.phone && (
                   <div className="contact-item">
-                    <span className="contact-icon">📞</span>
+                    <span className="contact-icon"><PhoneIcon /></span>
                     <span>{salesman.phone}</span>
                   </div>
                 )}
                 <div className="contact-item">
-                  <span className="contact-icon">💰</span>
+                  <span className="contact-icon"><DollarIcon /></span>
                   <span>Commission: {salesman.commission_rate}%</span>
                 </div>
               </div>
@@ -194,7 +195,7 @@ const Salesmen: React.FC = () => {
                   className="action-btn" 
                   onClick={() => handleEditSalesman(salesman)}
                 >
-                  ✏️ Edit
+                  <span className="contact-icon"><EditIcon /></span> Edit
                 </button>
 
               </div>

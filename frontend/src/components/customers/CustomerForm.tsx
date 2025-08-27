@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangleIcon, SaveIcon, UsersIcon } from '../common/icons';
 import type { Customer, CreateCustomerRequest } from '../../services/customerService';
 import './CustomerForm.css';
 
@@ -158,7 +159,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           {/* General Error */}
           {errors.submit && (
             <div className="form-error">
-              <span>⚠️</span>
+              <span style={{display:'inline-flex', marginRight:8}}><AlertTriangleIcon /></span>
               {errors.submit}
             </div>
           )}
@@ -384,9 +385,11 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                   {customer ? 'Updating...' : 'Creating...'}
                 </>
               ) : (
-                <>
-                  {customer ? '💾 Update Customer' : '👤 Create Customer'}
-                </>
+                customer ? (
+                  <span style={{display:'inline-flex', alignItems:'center', gap:8}}><SaveIcon /> Update Customer</span>
+                ) : (
+                  <span style={{display:'inline-flex', alignItems:'center', gap:8}}><UsersIcon /> Create Customer</span>
+                )
               )}
             </button>
           </div>

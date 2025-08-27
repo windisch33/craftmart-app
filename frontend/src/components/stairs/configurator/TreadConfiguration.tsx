@@ -1,4 +1,5 @@
 import React from 'react';
+import { BoxIcon, LockIcon, UnlockIcon, ArrowLeftIcon, ArrowRightIcon, WarningIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
 
 interface TreadConfigurationProps {
@@ -64,7 +65,7 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
       <div className="tread-configuration-sections">
         {/* Box Treads Section */}
         <div className="tread-type-section">
-          <h4>📦 Box Treads</h4>
+          <h4>Box Treads</h4>
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Box Treads</label>
@@ -95,7 +96,7 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
 
         {/* Open Treads Section */}
         <div className="tread-type-section">
-          <h4>🔓 Open Treads</h4>
+          <h4>Open Treads</h4>
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Open Treads</label>
@@ -130,8 +131,8 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
               onChange={(e) => setOpenTreadDirection(e.target.value as 'left' | 'right')}
               disabled={openTreadCount === 0}
             >
-              <option value="left">⬅️ Open Left</option>
-              <option value="right">➡️ Open Right</option>
+              <option value="left">⬅ Open Left</option>
+              <option value="right">➡ Open Right</option>
             </select>
           </div>
           
@@ -167,7 +168,7 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
 
         {/* Double Open Treads Section */}
         <div className="tread-type-section">
-          <h4>↔️ Double Open Treads</h4>
+          <h4>Double Open Treads</h4>
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Double Open Treads</label>
@@ -236,7 +237,7 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
           <p className="info-message success">✓ Includes landing tread</p>
         )}
         {totalTreads > formData.numRisers && (
-          <p className="info-message error">⚠️ Too many treads specified</p>
+          <p className="info-message error"><WarningIcon width={16} height={16} /> Too many treads specified</p>
         )}
       </div>
       {errors.treads && <div className="error-message">{errors.treads}</div>}

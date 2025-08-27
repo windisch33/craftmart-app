@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import jobService from '../../services/jobService';
 import type { JobSection, CreateJobSectionData } from '../../services/jobService';
+import { HomeIcon, BuildingIcon, CarIcon, TreeIcon, BoxIcon, ClipboardIcon, CheckIcon, RefreshIcon, TrashIcon } from '../common/icons';
 import './SectionManager.css';
 
 interface SectionManagerProps {
@@ -124,14 +125,14 @@ const SectionManager: React.FC<SectionManagerProps> = ({
     setShowAddForm(true);
   };
 
-  const getSectionIcon = (section: JobSection): string => {
-    if (section.name.toLowerCase().includes('basement')) return '🏠';
-    if (section.name.toLowerCase().includes('floor')) return '🏢';
-    if (section.name.toLowerCase().includes('attic')) return '🏠';
-    if (section.name.toLowerCase().includes('garage')) return '🚗';
-    if (section.name.toLowerCase().includes('exterior')) return '🌳';
-    if (section.name.toLowerCase().includes('misc')) return '📦';
-    return '📋';
+  const getSectionIcon = (section: JobSection): React.ReactNode => {
+    if (section.name.toLowerCase().includes('basement')) return <HomeIcon width={16} height={16} />;
+    if (section.name.toLowerCase().includes('floor')) return <BuildingIcon width={16} height={16} />;
+    if (section.name.toLowerCase().includes('attic')) return <HomeIcon width={16} height={16} />;
+    if (section.name.toLowerCase().includes('garage')) return <CarIcon width={16} height={16} />;
+    if (section.name.toLowerCase().includes('exterior')) return <TreeIcon width={16} height={16} />;
+    if (section.name.toLowerCase().includes('misc')) return <BoxIcon width={16} height={16} />;
+    return <ClipboardIcon width={16} height={16} />;
   };
 
   return (
@@ -146,7 +147,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
               onClick={() => setReorderMode(!reorderMode)}
               disabled={isReadOnly || isLoading}
             >
-              {reorderMode ? '✓ Done' : '↕️ Reorder'}
+              {reorderMode ? <><CheckIcon width={16} height={16} /> Done</> : <><RefreshIcon width={16} height={16} /> Reorder</>}
             </button>
           )}
           {!isReadOnly && (
@@ -229,7 +230,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
       <div className="sections-list">
         {sections.length === 0 ? (
           <div className="empty-sections">
-            <div className="empty-icon">📋</div>
+            <div className="empty-icon"><ClipboardIcon width={32} height={32} /></div>
             <h4>No sections yet</h4>
             <p>Add sections to organize your job items</p>
           </div>
@@ -276,7 +277,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
                           disabled={deletingSection === section.id || isLoading}
                           className="delete-section-btn"
                         >
-                          {deletingSection === section.id ? '...' : '🗑️'}
+                          {deletingSection === section.id ? '...' : <TrashIcon width={14} height={14} />}
                         </button>
                       )}
                     </>

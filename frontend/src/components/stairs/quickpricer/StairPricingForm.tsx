@@ -1,4 +1,5 @@
 import React from 'react';
+import { BoxIcon, LockIcon, ArrowLeftIcon, ArrowRightIcon, WarningIcon, UnlockIcon } from '../../common/icons';
 import type { StairMaterial, StairSpecialPart } from '../../../services/stairService';
 import type { StairFormData, TreadBulkConfig, StairStringersConfig } from './types';
 
@@ -119,7 +120,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
       <div className="tread-configuration-sections">
         {/* Box Treads */}
         <div className="tread-type-section">
-          <h4>📦 Box Treads</h4>
+          <h4>Box Treads</h4>
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Box Treads</label>
@@ -150,7 +151,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
 
         {/* Open Treads */}
         <div className="tread-type-section">
-          <h4>🔓 Open Treads</h4>
+          <h4>Open Treads</h4>
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Open Treads</label>
@@ -185,8 +186,8 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
               onChange={(e) => setBulkConfig({ openTreadDirection: e.target.value as 'left' | 'right' })}
               disabled={bulkConfig.openTreadCount === 0}
             >
-              <option value="left">⬅️ Open Left</option>
-              <option value="right">➡️ Open Right</option>
+              <option value="left">⬅ Open Left</option>
+              <option value="right">➡ Open Right</option>
             </select>
           </div>
           
@@ -222,7 +223,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
 
         {/* Double Open Treads */}
         <div className="tread-type-section">
-          <h4>↔️ Double Open Treads</h4>
+          <h4>Double Open Treads</h4>
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Double Open Treads</label>
@@ -291,7 +292,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
           <p className="info-message success">✓ Includes landing tread</p>
         )}
         {totalTreads > stairFormData.numRisers && (
-          <p className="info-message error">⚠️ Too many treads specified</p>
+          <p className="info-message error"><WarningIcon width={16} height={16} /> Too many treads specified</p>
         )}
       </div>
 

@@ -5,6 +5,7 @@ import SalesmanForm from '../components/salesmen/SalesmanForm';
 import { SelectableList } from '../components/common/SelectableList';
 import './Salesmen.css';
 import '../styles/common.css';
+import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, PhoneIcon, RefreshIcon } from '../components/common/icons';
 
 const SalesmenBasic: React.FC = () => {
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
@@ -146,8 +147,8 @@ const SalesmenBasic: React.FC = () => {
       width: '30%',
       render: (salesman: Salesman) => (
         <div style={{ fontSize: '14px' }}>
-          {salesman.email && <div>📧 {salesman.email}</div>}
-          {salesman.phone && <div>📞 {salesman.phone}</div>}
+          {salesman.email && <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}><MailIcon /> {salesman.email}</div>}
+          {salesman.phone && <div style={{display: 'flex', alignItems: 'center', gap: '6px'}}><PhoneIcon /> {salesman.phone}</div>}
         </div>
       )
     },
@@ -202,10 +203,10 @@ const SalesmenBasic: React.FC = () => {
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            {isRefreshing ? '🔄' : '↻'} Refresh
+            {isRefreshing ? <RefreshIcon width={16} height={16} /> : <RefreshIcon width={16} height={16} />} Refresh
           </button>
           <button className="btn btn-primary" onClick={handleAddSalesman}>
-            <span>👥</span>
+            <span className="nav-icon"><UsersIcon /></span>
             Add Salesman
           </button>
         </div>
@@ -214,7 +215,7 @@ const SalesmenBasic: React.FC = () => {
       <div className="card" style={{marginBottom: '24px'}}>
         <div className="customers-controls">
           <div className="search-container">
-            <div className="search-icon">🔍</div>
+            <div className="search-icon"><SearchIcon /></div>
             <input
               type="text"
               placeholder="Search salesmen by name, email, or phone..."
@@ -229,7 +230,7 @@ const SalesmenBasic: React.FC = () => {
       {error && (
         <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
           <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
-            <span>⚠️</span>
+            <AlertTriangleIcon />
             {error}
           </div>
         </div>

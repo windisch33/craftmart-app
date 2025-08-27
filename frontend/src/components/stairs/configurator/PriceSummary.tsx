@@ -1,4 +1,5 @@
 import React from 'react';
+import { DollarIcon } from '../../common/icons';
 import type { StairPriceResponse } from '../../../services/stairService';
 
 interface PriceSummaryProps {
@@ -12,7 +13,7 @@ const PriceSummary: React.FC<PriceSummaryProps> = ({
 }) => {
   return (
     <div className="step-content">
-      <h3>💰 Price Summary</h3>
+      <h3><DollarIcon width={20} height={20} /> Price Summary</h3>
       
       {calculating ? (
         <div className="loading">Calculating pricing...</div>

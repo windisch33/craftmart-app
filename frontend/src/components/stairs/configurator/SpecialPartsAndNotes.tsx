@@ -1,4 +1,5 @@
 import React from 'react';
+import { SettingsIcon } from '../../common/icons';
 import type { FormData } from './types';
 import type { StairSpecialPart, SpecialPartConfiguration } from '../../../services/stairService';
 
@@ -23,7 +24,7 @@ const SpecialPartsAndNotes: React.FC<SpecialPartsAndNotesProps> = ({
 }) => {
   return (
     <div className="bottom-section">
-      <h3 className="config-section-header">⚙️ Special Parts & Notes</h3>
+      <h3 className="config-section-header"><SettingsIcon width={20} height={20} /> Special Parts & Notes</h3>
       <div className="bottom-section-grid">
         <div className="special-parts-section">
           <div className="section-header">

@@ -204,6 +204,13 @@
   --container-xl: 1280px;
 }
 
+/* Semantic Surfaces */
+:root {
+  --surface: var(--color-white);
+  --surface-subtle: var(--color-gray-50);
+  --surface-elevated: var(--color-white);
+}
+
 /* Animation Keyframes */
 @keyframes spin {
   from {
