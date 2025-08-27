@@ -1,29 +1,36 @@
 import express from 'express';
+// Import from specific controller files
 import {
-  // Existing functions
   getStairMaterials,
-  getStairBoardTypes,
-  getStairSpecialParts,
-  getStairPriceRules,
-  calculateStairPrice,
-  createStairConfiguration,
-  getStairConfiguration,
-  getJobStairConfigurations,
-  deleteStairConfiguration,
-  // New CRUD functions
   createStairMaterial,
   updateStairMaterial,
-  deleteStairMaterial,
+  deleteStairMaterial
+} from '../controllers/stairMaterialController';
+import {
+  getStairBoardTypes,
   createBoardType,
   updateBoardType,
-  deleteBoardType,
+  deleteBoardType
+} from '../controllers/stairBoardTypeController';
+import {
+  getStairPriceRules,
+  calculateStairPrice,
   createBoardPrice,
   updateBoardPrice,
-  deleteBoardPrice,
+  deleteBoardPrice
+} from '../controllers/stairPricingController';
+import {
+  getStairSpecialParts,
   createSpecialPart,
   updateSpecialPart,
   deleteSpecialPart
-} from '../controllers/stairController';
+} from '../controllers/stairSpecialPartController';
+import {
+  createStairConfiguration,
+  getStairConfiguration,
+  getJobStairConfigurations,
+  deleteStairConfiguration
+} from '../controllers/stairConfigurationController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
