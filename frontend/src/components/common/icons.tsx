@@ -64,9 +64,9 @@ export const BarChartIcon: React.FC<IconProps> = (props) => (
 
 export const HandshakeIcon: React.FC<IconProps> = (props) => (
   <svg {...baseProps} {...props}>
-    <path d="M12 12l3-3 3 3-3 3-3-3z" />
-    <path d="M2 12l5-5 5 5-5 5-5-5z" />
-    <path d="M22 12l-5-5-2.5 2.5" />
+    <path d="M12 3L10 5h4l-2-2z" />
+    <rect x="10.5" y="5" width="3" height="3" rx="0.5" />
+    <path d="M12 8v13L9 19v-7l3-1 3 1v7l-3 2z" />
   </svg>
 );
 
@@ -85,8 +85,8 @@ export const ClockIcon: React.FC<IconProps> = (props) => (
 
 export const DollarIcon: React.FC<IconProps> = (props) => (
   <svg {...baseProps} {...props}>
-    <path d="M12 1v22" />
-    <path d="M17 5a4 4 0 0 0-4-2H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6h-8a4 4 0 0 1-4-4" />
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6" />
   </svg>
 );
 
@@ -205,10 +205,10 @@ export const PlusIcon: React.FC<IconProps> = (props) => (
 
 export const RefreshIcon: React.FC<IconProps> = (props) => (
   <svg {...baseProps} {...props}>
-    <path d="M21.5 2v6h-6" />
-    <path d="M2.5 22v-6h6" />
-    <path d="M21.5 8a10 10 0 1 1-3-7 9.7 9.7 0 0 1 3 7z" />
-    <path d="M2.5 16a10 10 0 1 0 3 7 9.7 9.7 0 0 0-3-7z" />
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+    <path d="M3 21v-5h5" />
   </svg>
 );
 
@@ -382,6 +382,15 @@ export const TreeIcon: React.FC<IconProps> = (props) => (
     <path d="M12 1L6 10h12z" />
     <path d="M12 1L4 12h16z" />
     <line x1="12" y1="12" x2="12" y2="23" />
+  </svg>
+);
+
+export const TruckIcon: React.FC<IconProps> = (props) => (
+  <svg {...baseProps} {...props}>
+    <rect x="1" y="3" width="15" height="9" rx="2" ry="2" />
+    <path d="M16 8h4l3 3v5H1V8" />
+    <circle cx="5.5" cy="18" r="2.5" />
+    <circle cx="18.5" cy="18" r="2.5" />
   </svg>
 );
 

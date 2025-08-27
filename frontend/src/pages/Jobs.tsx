@@ -10,7 +10,7 @@ import JobDetail from '../components/jobs/JobDetail';
 import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
 import { StairConfigurationProvider } from '../contexts/StairConfigurationContext';
 import '../styles/common.css';
-import { SearchIcon, AlertTriangleIcon, ClipboardIcon, UsersIcon, CalendarIcon, FileIcon, RefreshIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, ArrowRightIcon } from '../components/common/icons';
+import { SearchIcon, AlertTriangleIcon, ClipboardIcon, UsersIcon, CalendarIcon, FileIcon, RefreshIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, ArrowRightIcon, TruckIcon } from '../components/common/icons';
 import './Jobs.css';
 
 const Jobs: React.FC = () => {
@@ -448,7 +448,7 @@ const Jobs: React.FC = () => {
                 </div>
                 {job.delivery_date && (
                   <div className="detail-row">
-                    <span className="detail-label">🚚 Delivery:</span>
+                    <span className="detail-label" style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}><TruckIcon /> Delivery:</span>
                     <span className="detail-value">{formatDate(job.delivery_date)}</span>
                   </div>
                 )}
