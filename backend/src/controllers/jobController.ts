@@ -582,19 +582,19 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
     // Check if this is a stair configuration item
     if (part_number === 'STAIR-CONFIG' && stair_configuration) {
       // Log received stair configuration data for debugging
-      console.log('🔧 jobController: Creating stair configuration via addQuoteItem');
-      console.log('🔧 jobController: Full stair_configuration object:', JSON.stringify(stair_configuration, null, 2));
-      console.log('🔧 jobController: Has individualStringers?', !!stair_configuration.individualStringers);
-      console.log('🔧 jobController: individualStringers data:', JSON.stringify(stair_configuration.individualStringers, null, 2));
+      console.log('[JOB_CONTROLLER] Creating stair configuration via addQuoteItem');
+      console.log('[JOB_CONTROLLER] Full stair_configuration object:', JSON.stringify(stair_configuration, null, 2));
+      console.log('[JOB_CONTROLLER] Has individualStringers?', !!stair_configuration.individualStringers);
+      console.log('[JOB_CONTROLLER] individualStringers data:', JSON.stringify(stair_configuration.individualStringers, null, 2));
       
       // Extract individual stringer data
       const leftStringer = stair_configuration.individualStringers?.left;
       const rightStringer = stair_configuration.individualStringers?.right;
       const centerStringer = stair_configuration.individualStringers?.center;
       
-      console.log('🔧 jobController: Extracted left stringer:', JSON.stringify(leftStringer, null, 2));
-      console.log('🔧 jobController: Extracted right stringer:', JSON.stringify(rightStringer, null, 2));
-      console.log('🔧 jobController: Extracted center stringer:', JSON.stringify(centerStringer, null, 2));
+      console.log('[JOB_CONTROLLER] Extracted left stringer:', JSON.stringify(leftStringer, null, 2));
+      console.log('[JOB_CONTROLLER] Extracted right stringer:', JSON.stringify(rightStringer, null, 2));
+      console.log('[JOB_CONTROLLER] Extracted center stringer:', JSON.stringify(centerStringer, null, 2));
       
       // Create the stair configuration first (riser_height is computed, don't insert it)
       const stairResult = await pool.query(
@@ -641,10 +641,10 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
         ]
       );
       
-      console.log('🔧 jobController: SQL INSERT values for individual stringers:');
-      console.log('🔧   Left - width:', leftStringer?.width, 'thickness:', leftStringer?.thickness, 'materialId:', leftStringer?.materialId);
-      console.log('🔧   Right - width:', rightStringer?.width, 'thickness:', rightStringer?.thickness, 'materialId:', rightStringer?.materialId);
-      console.log('🔧   Center - width:', centerStringer?.width, 'thickness:', centerStringer?.thickness, 'materialId:', centerStringer?.materialId);
+      console.log('[JOB_CONTROLLER] SQL INSERT values for individual stringers:');
+      console.log('[JOB_CONTROLLER]   Left - width:', leftStringer?.width, 'thickness:', leftStringer?.thickness, 'materialId:', leftStringer?.materialId);
+      console.log('[JOB_CONTROLLER]   Right - width:', rightStringer?.width, 'thickness:', rightStringer?.thickness, 'materialId:', rightStringer?.materialId);
+      console.log('[JOB_CONTROLLER]   Center - width:', centerStringer?.width, 'thickness:', centerStringer?.thickness, 'materialId:', centerStringer?.materialId);
       
       stairConfigId = stairResult.rows[0].id;
       finalPartNumber = `STAIR-${stairConfigId}`;

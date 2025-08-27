@@ -4,6 +4,6 @@ import { config } from './config/env';
 const PORT = config.PORT || 3001;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${config.NODE_ENV}`);
+  console.log(`[SERVER] Server running on port ${PORT}`);
+  console.log(`[SERVER] Environment: ${config.NODE_ENV}`);
 });

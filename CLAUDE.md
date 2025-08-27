@@ -102,6 +102,20 @@ Price = (Base Price + Length Charge + Width Charge) × Material Multiplier + Mit
 - **StairConfigurator**: Enhanced dimension display for stringers
 - **Products Page**: Cleaner interface without selection clutter
 
+## Component Architecture (August 2025 Refactoring)
+- **Target**: Keep components under 400 lines
+- **Pattern**: Extract forms, displays, utilities, and error boundaries
+- **Structure**: 
+  - Main component orchestrates
+  - Subcomponents handle specific UI sections
+  - Shared utilities for calculations and validations
+  - Dedicated types files
+
+### Refactored Components:
+- QuickPricer: 1,469 → 388 lines (-74%)
+- ProductSelector: 1,135 → 674 lines (-41%)  
+- StairConfigurator: 1,223 → 567 lines (-54%)
+
 ## Development Guidelines
 - TypeScript strict mode
 - JWT auth (24hr expiry)
@@ -128,9 +142,16 @@ Price = (Base Price + Length Charge + Width Charge) × Material Multiplier + Mit
   - Real-time price calculation
 - Production deployment via Cloudflare tunnel
 - Clean UI without checkbox clutter
+- Major component refactoring for maintainability
+- Component-based architecture with separation of concerns
+- Fixed QuickPricer dropdown bug (materialService method name)
 
 ### 🚧 Priority Tasks
-1. **Shops** - Cut sheet implementation
+1. **Shops** - Cut sheet implementation (partially complete)
+   - Database migrations created
+   - Backend services scaffolded  
+   - Frontend UI in progress
+   - PDF generation pending
 2. **Reports** - Frontend for sales/tax reports
 3. **Dashboard** - Business metrics overview
 4. **Performance** - Add database indexes
@@ -145,6 +166,11 @@ CREATE INDEX idx_tax_rates_state_code ON tax_rates(state_code);
 CREATE INDEX idx_stair_pricing_board_type ON stair_pricing_simple(board_type_id);
 CREATE INDEX idx_material_multipliers_active ON material_multipliers(is_active);
 ```
+
+## Known Issues & Fixes
+- QuickPricer dropdowns: Use `materialService.getAllMaterials()` not `getMaterials()`
+- TypeScript errors in older components (JobForm, JobDetail) - pending cleanup
+- QuickPricer_old.tsx exists as backup (can be removed after validation)
 
 ## Testing Commands
 ```bash
@@ -172,6 +198,9 @@ docker-compose restart [frontend|backend]
 - Center horses automatically use double thickness of stringers
 - Landing treads fixed at 3.5" width regardless of regular tread width
 - Board Type IDs cannot be edited after creation
+- Component files should target <400 lines for maintainability
+- Extract complex forms, displays, and utilities into separate files
+- Use shared types files for component families
 
 ## Database Migration Path
 - Migrated from `stair_materials` to `material_multipliers` table
@@ -179,4 +208,4 @@ docker-compose restart [frontend|backend]
 - Removed legacy pricing flags and complex matrix system
 - All pricing now uses simplified formula approach
 
-*Last Updated: August 12, 2025 - Simplified UI and Stringer Dimension Pricing*
+*Last Updated: August 25, 2025 - Component Refactoring and Shop Implementation Progress*

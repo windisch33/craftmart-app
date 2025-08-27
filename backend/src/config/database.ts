@@ -13,11 +13,11 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log('💾 Connected to PostgreSQL database');
+  console.log('[DATABASE] Connected to PostgreSQL database');
 });
 
 pool.on('error', (err) => {
-  console.error('⚠️  Database connection error:', err);
+  console.error('[DATABASE] Connection error:', err);
 });
 
 export default pool;
