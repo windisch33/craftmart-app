@@ -1,5 +1,5 @@
 import React from 'react';
-import { BoxIcon, LockIcon, UnlockIcon, ArrowLeftIcon, ArrowRightIcon, WarningIcon } from '../../common/icons';
+import { WarningIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
 
 interface TreadConfigurationProps {
@@ -44,7 +44,7 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
   doubleOpenWidth,
   doubleOpenFullMitre,
   doubleOpenBracket,
-  hasLandingTread,
+  hasLandingTread: _hasLandingTread,
   setBoxTreadCount,
   setBoxTreadWidth,
   setOpenTreadCount,

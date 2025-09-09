@@ -65,6 +65,7 @@ export interface StairSpecialPart {
   is_active: boolean;
   matrl_nam?: string;
   multiplier?: number;
+  quantity?: number;
 }
 
 export interface StairPriceRule {
@@ -229,6 +230,43 @@ export interface StairConfiguration {
   updatedAt?: string;
 }
 
+// Helpers to normalize API responses to our StairConfiguration shape
+export function normalizeStairConfiguration(data: any): StairConfiguration {
+  if (!data) return data as StairConfiguration;
+  return {
+    id: data.id,
+    jobId: data.jobId ?? data.job_id,
+    configName: data.configName ?? data.config_name,
+    floorToFloor: data.floorToFloor ?? data.floor_to_floor,
+    numRisers: data.numRisers ?? data.num_risers,
+    riserHeight: data.riserHeight ?? data.riser_height,
+    treadMaterialId: data.treadMaterialId ?? data.tread_material_id,
+    riserMaterialId: data.riserMaterialId ?? data.riser_material_id,
+    treadSize: data.treadSize ?? data.tread_size,
+    roughCutWidth: data.roughCutWidth ?? data.rough_cut_width,
+    noseSize: data.noseSize ?? data.nose_size,
+    stringerType: data.stringerType ?? data.stringer_type,
+    stringerMaterialId: data.stringerMaterialId ?? data.stringer_material_id,
+    numStringers: data.numStringers ?? data.num_stringers,
+    centerHorses: data.centerHorses ?? data.center_horses,
+    fullMitre: data.fullMitre ?? data.full_mitre ?? false,
+    bracketType: data.bracketType ?? data.bracket_type,
+    subtotal: data.subtotal,
+    laborTotal: data.laborTotal ?? data.labor_total ?? 0,
+    taxAmount: data.taxAmount ?? data.tax_amount ?? 0,
+    totalAmount: data.totalAmount ?? data.total_amount ?? 0,
+    specialNotes: data.specialNotes ?? data.special_notes,
+    items: data.items,
+    individualStringers: data.individualStringers ?? data.individual_stringers,
+    createdAt: data.createdAt ?? data.created_at,
+    updatedAt: data.updatedAt ?? data.updated_at,
+  };
+}
+
+function normalizeConfigurationArray(list: any[]): StairConfiguration[] {
+  return (list || []).map(normalizeStairConfiguration);
+}
+
 // API functions
 export const stairService = {
   // Get stair materials
@@ -269,19 +307,19 @@ export const stairService = {
   // Save stair configuration
   saveConfiguration: async (config: Omit<StairConfiguration, 'id'>): Promise<StairConfiguration> => {
     const response = await api.post('/configurations', config);
-    return response.data;
+    return normalizeStairConfiguration(response.data);
   },
 
   // Get stair configuration by ID
   getConfiguration: async (id: number): Promise<StairConfiguration> => {
     const response = await api.get(`/configurations/${id}`);
-    return response.data;
+    return normalizeStairConfiguration(response.data);
   },
 
   // Get all configurations for a job
   getJobConfigurations: async (jobId: number): Promise<StairConfiguration[]> => {
     const response = await api.get(`/jobs/${jobId}/configurations`);
-    return response.data;
+    return normalizeConfigurationArray(response.data);
   },
 
   // Delete stair configuration

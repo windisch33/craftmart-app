@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import jobService from '../../services/jobService';
 import type { JobSection, CreateJobSectionData } from '../../services/jobService';
 import { HomeIcon, BuildingIcon, CarIcon, TreeIcon, BoxIcon, ClipboardIcon, CheckIcon, RefreshIcon, TrashIcon } from '../common/icons';
@@ -17,7 +17,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
   jobId,
   sections,
   onSectionsChange,
-  onSectionTotalsChange,
+  onSectionTotalsChange: _onSectionTotalsChange,
   isReadOnly = false,
   isLoading = false
 }) => {
@@ -38,7 +38,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
   ];
 
   // Calculate section totals (placeholder - will be enhanced with actual items)
-  const calculateSectionTotal = (section: JobSection): number => {
+  const calculateSectionTotal = (_section: JobSection): number => {
     // This will be enhanced when we integrate with actual quote items
     // For now, return 0 as placeholder
     return 0;
@@ -207,7 +207,6 @@ const SectionManager: React.FC<SectionManagerProps> = ({
               onClick={() => {
                 setShowAddForm(false);
                 setNewSectionName('');
-                setNewSectionDescription('');
               }}
               disabled={isLoading}
               className="cancel-btn"

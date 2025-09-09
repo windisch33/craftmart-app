@@ -11,7 +11,7 @@ const Salesmen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSalesman, setEditingSalesman] = useState<Salesman | null>(null);
 
@@ -33,21 +33,7 @@ const Salesmen: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    console.log('Refresh button clicked');
-    setIsRefreshing(true);
-    setError(null); // Clear any existing errors
-    try {
-      await loadSalesmen();
-      // Show success feedback
-      setError('✅ Salesmen list refreshed successfully!');
-      setTimeout(() => setError(null), 3000); // Clear success message after 3 seconds
-    } catch (err) {
-      console.error('Refresh failed:', err);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  // Refresh handler (currently not wired to UI)
 
   const handleSearch = async (query: string) => {
     setSearchTerm(query);

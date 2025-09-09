@@ -75,7 +75,7 @@ export const calculateStairPrice = async (
   // Add special parts configurations
   const specialPartsConfig = specialParts.map(part => ({
     partId: part.stpart_id,
-    quantity: part.quantity
+    quantity: part.quantity ?? 1
   }));
 
   const request = {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/common.css';
 import './Shops.css';
 import { shopService, type Shop } from '../services/shopService';
@@ -454,11 +454,7 @@ const ShopGenerationModal: React.FC<{
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    loadAvailableOrders();
-  }, [filter]);
-
-  const loadAvailableOrders = async () => {
+  const loadAvailableOrders = useCallback(async () => {
     try {
       setLoading(true);
       const orders = await shopService.getAvailableOrders(filter);
@@ -468,7 +464,11 @@ const ShopGenerationModal: React.FC<{
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    loadAvailableOrders();
+  }, [loadAvailableOrders]);
 
   const handleGenerateShops = async () => {
     if (selectedOrders.length === 0) {

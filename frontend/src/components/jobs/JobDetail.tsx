@@ -1,15 +1,21 @@
-import React, { useState, useEffect, Component } from 'react';
-import type { ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import jobService from '../../services/jobService';
 import salesmanService from '../../services/salesmanService';
-import ProductSelector from './ProductSelector';
-import StairItemDisplay from './StairItemDisplay';
 import type { JobWithDetails, QuoteItem } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
-import { formatCurrency } from '../../utils/jobCalculations';
-import { EyeIcon, PencilIcon, WarningIcon, CalendarIcon, TrashIcon, PlusIcon } from '../common/icons';
+// Removed unused icons import
 import '../../styles/common.css';
 import './JobDetail.css';
+import DetailHeader from './job-detail/DetailHeader';
+import LoadingState from './job-detail/LoadingState';
+import ErrorState from './job-detail/ErrorState';
+import Summary from './job-detail/Summary';
+import EditJobForm from './job-detail/EditJobForm';
+import JobInfoGrid from './job-detail/JobInfoGrid';
+import SectionsBlock from './job-detail/SectionsBlock';
+import TotalsPanel from './job-detail/TotalsPanel';
+import FooterActions from './job-detail/FooterActions';
+import JobDetailErrorBoundary from './job-detail/JobDetailErrorBoundary';
 
 interface EditableJobData {
   title: string;
@@ -46,57 +52,7 @@ interface ValidationErrors {
   sections?: { [sectionIndex: number]: { name?: string; items?: { [itemIndex: number]: { description?: string; quantity?: string; unit_price?: string } } } };
 }
 
-interface JobDetailErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
-}
-
-interface JobDetailErrorBoundaryProps {
-  children: ReactNode;
-}
-
-class JobDetailErrorBoundary extends Component<JobDetailErrorBoundaryProps, JobDetailErrorBoundaryState> {
-  constructor(props: JobDetailErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): JobDetailErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('JobDetail Error Boundary caught an error:', error, errorInfo);
-    this.setState({ error, errorInfo });
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="job-detail error">
-          <h3>Something went wrong loading the job details</h3>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
-            <summary>Error Details (click to expand)</summary>
-            <strong>Error:</strong> {this.state.error && this.state.error.toString()}
-            <br />
-            <strong>Stack:</strong> {this.state.error && this.state.error.stack}
-            <br />
-            <strong>Component Stack:</strong> {this.state.errorInfo && this.state.errorInfo.componentStack}
-          </details>
-          <button onClick={() => this.setState({ hasError: false })}>
-            Try Again
-          </button>
-          <button onClick={() => window.location.reload()}>
-            Reload Page
-          </button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+// Error boundary moved to ./job-detail/JobDetailErrorBoundary
 
 interface JobDetailProps {
   jobId: number;
@@ -118,14 +74,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
-  useEffect(() => {
-    if (isOpen && jobId) {
-      loadJobDetails();
-      loadSalesmen();
-    }
-  }, [isOpen, jobId]);
-
-  const loadJobDetails = async () => {
+  const loadJobDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -137,7 +86,16 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId]);
+
+  useEffect(() => {
+    if (isOpen && jobId) {
+      loadJobDetails();
+      loadSalesmen();
+    }
+  }, [isOpen, jobId, loadJobDetails]);
+
+  // loadJobDetails moved into useCallback above
 
   const loadSalesmen = async () => {
     try {
@@ -441,425 +399,64 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     <div className="job-detail-overlay">
       <div className="job-detail-modal">
         {/* Header */}
-        <div className="job-detail-header">
-          <div className="header-content">
-            <h2>Job Details</h2>
-            <div className="header-actions">
-              <button 
-                className="edit-toggle-btn"
-                onClick={handleEditToggle}
-                disabled={loading || isSaving}
-              >
-                {isEditing ? <><EyeIcon width={16} height={16} /> View</> : <><PencilIcon width={16} height={16} /> Edit</>}
-              </button>
-              <button 
-                className="close-btn"
-                onClick={onClose}
-                disabled={loading}
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
+        <DetailHeader
+          isEditing={isEditing}
+          loading={loading}
+          isSaving={isSaving}
+          onToggleEdit={handleEditToggle}
+          onClose={onClose}
+        />
 
         {/* Content */}
         <div className="job-detail-content">
-          {loading && (
-            <div className="loading-state">
-              <div className="loading-spinner"></div>
-              <p>Loading job details...</p>
-            </div>
-          )}
+          {loading && (<LoadingState />)}
 
-          {error && (
-            <div className="error-state">
-              <div className="error-icon"><WarningIcon width={20} height={20} /></div>
-              <h3>Error Loading Job</h3>
-              <p>{error}</p>
-              <button onClick={loadJobDetails} className="retry-btn">
-                Try Again
-              </button>
-            </div>
-          )}
+          {error && (<ErrorState message={error} onRetry={loadJobDetails} />)}
 
           {job && !loading && !error && (
             <>
               {/* Job Summary */}
-              <div className="job-summary-section">
-                <div className="summary-header">
-                  <div className="job-title-section">
-                    <h3>{job.title}</h3>
-                    <p className="customer-name">{job.customer_name}</p>
-                    <div className="job-meta">
-                      <span className="created-date">
-                        <CalendarIcon width={16} height={16} /> Created {new Date(job.created_at).toLocaleDateString()}
-                      </span>
-                      <div 
-                        className="job-number-badge"
-                        style={{
-                          backgroundColor: getStatusColor(job.status).bg,
-                          color: getStatusColor(job.status).color
-                        }}
-                      >
-                        {getJobNumber(job)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <Summary job={job} getJobNumber={getJobNumber} getStatusColor={getStatusColor} />
 
                 {/* Job Information - Edit/View Toggle */}
                 {isEditing && editJobData ? (
-                  <div className="edit-job-form">
-                    <h4>Edit Job Information</h4>
-                    <div className="edit-form-grid">
-                      <div className="form-section">
-                        <div className="form-field">
-                          <label>Title: <span className="required">*</span></label>
-                          <input
-                            type="text"
-                            value={editJobData.title}
-                            onChange={(e) => setEditJobData({ ...editJobData, title: e.target.value })}
-                            className={validationErrors.title ? 'error' : ''}
-                            placeholder="Enter job title"
-                          />
-                          {validationErrors.title && <span className="error-message">{validationErrors.title}</span>}
-                        </div>
-
-                        <div className="form-field">
-                          <label>Description:</label>
-                          <textarea
-                            value={editJobData.description}
-                            onChange={(e) => setEditJobData({ ...editJobData, description: e.target.value })}
-                            placeholder="Enter job description"
-                            rows={3}
-                          />
-                        </div>
-
-                        <div className="form-field">
-                          <label>Delivery Date:</label>
-                          <input
-                            type="date"
-                            value={editJobData.delivery_date}
-                            onChange={(e) => setEditJobData({ ...editJobData, delivery_date: e.target.value })}
-                          />
-                        </div>
-
-                        <div className="form-field">
-                          <label>Salesman:</label>
-                          <select
-                            value={editJobData.salesman_id || ''}
-                            onChange={(e) => setEditJobData({ ...editJobData, salesman_id: e.target.value ? parseInt(e.target.value) : undefined })}
-                          >
-                            <option value="">Select Salesman</option>
-                            {salesmen.map(salesman => (
-                              <option key={salesman.id} value={salesman.id}>
-                                {salesmanService.formatSalesmanName(salesman)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="form-section">
-                        <div className="form-field">
-                          <label>Order Type:</label>
-                          <input
-                            type="text"
-                            value={editJobData.order_designation}
-                            onChange={(e) => setEditJobData({ ...editJobData, order_designation: e.target.value })}
-                            placeholder="e.g., INSTALL"
-                          />
-                        </div>
-
-                        <div className="form-field">
-                          <label>Model Name:</label>
-                          <input
-                            type="text"
-                            value={editJobData.model_name}
-                            onChange={(e) => setEditJobData({ ...editJobData, model_name: e.target.value })}
-                            placeholder="Enter model name"
-                          />
-                        </div>
-
-                        <div className="form-field">
-                          <label>Installer:</label>
-                          <input
-                            type="text"
-                            value={editJobData.installer}
-                            onChange={(e) => setEditJobData({ ...editJobData, installer: e.target.value })}
-                            placeholder="Enter installer name"
-                          />
-                        </div>
-
-                        <div className="form-field">
-                          <label>Terms:</label>
-                          <input
-                            type="text"
-                            value={editJobData.terms}
-                            onChange={(e) => setEditJobData({ ...editJobData, terms: e.target.value })}
-                            placeholder="e.g., 1/2 DN BAL C.O.D."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <EditJobForm
+                    data={editJobData}
+                    errors={validationErrors as any}
+                    salesmen={salesmen}
+                    onChange={(next) => setEditJobData(next)}
+                  />
                 ) : (
-                  <div className="job-info-grid">
-                    <div className="info-section">
-                      <h4>Basic Information</h4>
-                      <div className="info-items">
-                        {job.description && (
-                          <div className="info-item">
-                            <label>Description:</label>
-                            <span>{job.description}</span>
-                          </div>
-                        )}
-                        {job.delivery_date && (
-                          <div className="info-item">
-                            <label>Delivery Date:</label>
-                            <span>{new Date(job.delivery_date).toLocaleDateString()}</span>
-                          </div>
-                        )}
-                        {job.salesman_first_name && job.salesman_last_name && (
-                          <div className="info-item">
-                            <label>Salesman:</label>
-                            <span>{job.salesman_first_name} {job.salesman_last_name}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="info-section">
-                      <h4>Job Details</h4>
-                      <div className="info-items">
-                        {job.order_designation && (
-                          <div className="info-item">
-                            <label>Order Type:</label>
-                            <span>{job.order_designation}</span>
-                          </div>
-                        )}
-                        {job.model_name && (
-                          <div className="info-item">
-                            <label>Model:</label>
-                            <span>{job.model_name}</span>
-                          </div>
-                        )}
-                        {job.installer && (
-                          <div className="info-item">
-                            <label>Installer:</label>
-                            <span>{job.installer}</span>
-                          </div>
-                        )}
-                        {job.terms && (
-                          <div className="info-item">
-                            <label>Terms:</label>
-                            <span>{job.terms}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <JobInfoGrid job={job} />
                 )}
-              </div>
 
-              {/* Sections & Items - Edit/View Toggle */}
-              <div className="sections-section">
-                <div className="sections-header">
-                  <h4>Sections & Items</h4>
-                  {isEditing && (
-                    <button className="add-section-btn" onClick={addNewSection}>
-                      <PlusIcon width={16} height={16} /> Add Section
-                    </button>
-                  )}
-                </div>
-
-                {isEditing ? (
-                  // Edit Mode - Editable Sections
-                  <div className="edit-sections-list">
-                    {editSections.length > 0 ? (
-                      editSections.map((section, sectionIndex) => (
-                        <div key={section.id || `new-${sectionIndex}`} className="edit-section-card">
-                          <div className="edit-section-header">
-                            <div className="section-name-field">
-                              <input
-                                type="text"
-                                value={section.name}
-                                onChange={(e) => updateSection(sectionIndex, { name: e.target.value })}
-                                placeholder="Section name"
-                                className={validationErrors.sections?.[sectionIndex]?.name ? 'error' : ''}
-                              />
-                              {validationErrors.sections?.[sectionIndex]?.name && (
-                                <span className="error-message">{validationErrors.sections[sectionIndex].name}</span>
-                              )}
-                            </div>
-                            <div className="section-actions">
-                              <button 
-                                className="remove-section-btn" 
-                                onClick={() => removeSection(sectionIndex)}
-                                title="Remove Section"
-                              >
-                                <TrashIcon width={14} height={14} />
-                              </button>
-                            </div>
-                          </div>
-
-
-
-                          {/* Product Selector for Adding New Items */}
-                          <div className="product-selector-section job-edit-product-selector">
-                            <ProductSelector
-                              jobId={jobId}
-                              section={{
-                                id: section.id || -1,
-                                name: section.name,
-                                display_order: section.display_order,
-                                job_id: jobId,
-                                created_at: new Date().toISOString(),
-                                updated_at: new Date().toISOString(),
-                                items: section.items.map(item => ({
-                                  id: item.id || -1,
-                                  job_id: jobId,
-                                  section_id: section.id || -1,
-                                  part_number: item.part_number || '',
-                                  description: item.description,
-                                  quantity: item.quantity,
-                                  unit_price: item.unit_price,
-                                  line_total: item.line_total,
-                                  is_taxable: item.is_taxable,
-                                  created_at: new Date().toISOString(),
-                                  updated_at: new Date().toISOString()
-                                }))
-                              }}
-                              onItemsChange={handleProductSelectorItemsChange}
-                              isReadOnly={isSaving}
-                              isLoading={isSaving}
-                              isDraftMode={false}
-                            />
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-sections-edit">
-                        <span>No sections found for this job</span>
-                        <button onClick={addNewSection}>Add First Section</button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // View Mode - Read-only Sections
-                  job.sections && job.sections.length > 0 ? (
-                    <div className="sections-list">
-                      {job.sections.map((section) => (
-                        <div key={section.id} className="section-card">
-                          <div className="section-header">
-                            <h5>{section.name}</h5>
-                            <span className="item-count">
-                              {section.items?.length || 0} items
-                            </span>
-                          </div>
-
-                          {section.items && section.items.length > 0 ? (
-                            <div className="items-table">
-                              <div className="table-header">
-                                <div className="col-qty">Qty</div>
-                                <div className="col-description">Description</div>
-                                <div className="col-unit-price">Unit Price</div>
-                                <div className="col-total">Total</div>
-                                <div className="col-tax">Tax</div>
-                              </div>
-                              {section.items.map((item) => (
-                                <div key={item.id} className="table-row">
-                                  <div className="col-qty">{item.quantity}</div>
-                                  {(item.stair_config_id || item.part_number?.startsWith('STAIR-')) ? (
-                                    <StairItemDisplay item={item} />
-                                  ) : (
-                                    <div className="col-description">
-                                      {item.part_number && (
-                                        <div className="part-number">{item.part_number}</div>
-                                      )}
-                                      <div className="description">{item.description}</div>
-                                    </div>
-                                  )}
-                                  <div className="col-unit-price">
-                                    {formatCurrency(item.unit_price)}
-                                  </div>
-                                  <div className="col-total">
-                                    {formatCurrency(item.line_total)}
-                                  </div>
-                                  <div className={`col-tax ${item.is_taxable ? 'taxable' : 'non-taxable'}`}>
-                                    {item.is_taxable ? '✓' : '✗'}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="no-items">
-                              <span>No items in this section</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="no-sections">
-                      <span>No sections found for this job</span>
-                    </div>
-                  )
-                )}
-              </div>
+              <SectionsBlock
+                isEditing={isEditing}
+                job={job}
+                editSections={editSections}
+                validationErrors={validationErrors}
+                addNewSection={addNewSection}
+                updateSection={updateSection}
+                removeSection={removeSection}
+                onItemsChange={handleProductSelectorItemsChange}
+                jobId={jobId}
+              />
 
               {/* Totals */}
-              <div className="totals-section">
-                <h4>Job Totals</h4>
-                <div className="totals-breakdown">
-                  <div className="total-line">
-                    <span>Subtotal (Taxable):</span>
-                    <span>{formatCurrency(job.subtotal || 0)}</span>
-                  </div>
-                  <div className="total-line">
-                    <span>Labor & Non-Taxable:</span>
-                    <span>{formatCurrency(job.labor_total || 0)}</span>
-                  </div>
-                  <div className="total-line">
-                    <span>Tax ({((job.tax_rate || 0) * 100).toFixed(2)}%):</span>
-                    <span>{formatCurrency(job.tax_amount || 0)}</span>
-                  </div>
-                  <div className="total-line grand-total">
-                    <span>Grand Total:</span>
-                    <span>{formatCurrency(job.total_amount || 0)}</span>
-                  </div>
-                </div>
-              </div>
+              <TotalsPanel job={job} />
             </>
           )}
         </div>
 
         {/* Footer Actions */}
         {job && !loading && !error && (
-          <div className="job-detail-footer">
-            <button className="footer-btn secondary" onClick={onClose}>
-              Close
-            </button>
-            {isEditing && (
-              <>
-                <button 
-                  className="btn btn-secondary"
-                  onClick={handleCancelChanges}
-                  disabled={isSaving}
-                >
-                  Cancel Changes
-                </button>
-                <button 
-                  className="btn btn-primary"
-                  onClick={handleSaveChanges}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </>
-            )}
-          </div>
+          <FooterActions
+            isEditing={isEditing}
+            isSaving={isSaving}
+            onClose={onClose}
+            onCancelChanges={handleCancelChanges}
+            onSaveChanges={handleSaveChanges}
+          />
         )}
       </div>
     </div>

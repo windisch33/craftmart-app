@@ -51,6 +51,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
       status, 
       salesman_id,
       customer_id,
+      project_id,
       recent,
       // Advanced search parameters
       searchTerm,
@@ -102,6 +103,11 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     if (customer_id) {
       conditions.push(`j.customer_id = $${queryParams.length + 1}`);
       queryParams.push(customer_id);
+    }
+
+    if (project_id) {
+      conditions.push(`j.project_id = $${queryParams.length + 1}`);
+      queryParams.push(project_id);
     }
 
     // Advanced search functionality
@@ -386,17 +392,31 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
 export const createJob = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { 
-      customer_id, salesman_id, title, description, status = 'quote',
+      customer_id, project_id, salesman_id, title, description, status = 'quote',
       delivery_date, job_location, order_designation, model_name, installer, terms,
       show_line_pricing = true
     } = req.body;
     
-    if (!customer_id || !title) {
-      return res.status(400).json({ error: 'Customer ID and title are required' });
+    // Validate required fields - either customer_id or project_id must be provided
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    let finalCustomerId = customer_id;
+
+    // If project_id is provided, get customer from project
+    if (project_id) {
+      const projectResult = await pool.query('SELECT customer_id FROM projects WHERE id = $1', [project_id]);
+      if (projectResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Project not found' });
+      }
+      finalCustomerId = projectResult.rows[0].customer_id;
+    } else if (!customer_id) {
+      return res.status(400).json({ error: 'Either customer ID or project ID is required' });
     }
 
     // Get customer state for tax calculation
-    const customerResult = await pool.query('SELECT state FROM customers WHERE id = $1', [customer_id]);
+    const customerResult = await pool.query('SELECT state FROM customers WHERE id = $1', [finalCustomerId]);
     if (customerResult.rows.length === 0) {
       return res.status(400).json({ error: 'Customer not found' });
     }
@@ -406,11 +426,11 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
     
     const result = await pool.query(
       `INSERT INTO jobs (
-        customer_id, salesman_id, title, description, status,
+        customer_id, project_id, salesman_id, title, description, status,
         delivery_date, job_location, order_designation, model_name, installer, terms,
         show_line_pricing, tax_rate
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
-      [customer_id, salesman_id, title, description, status,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+      [finalCustomerId, project_id || null, salesman_id, title, description, status,
        delivery_date, job_location, order_designation, model_name, installer, terms,
        show_line_pricing, taxRate]
     );
@@ -428,7 +448,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
     
     // Build dynamic update query
     const allowedFields = [
-      'customer_id', 'salesman_id', 'title', 'description', 'status',
+      'customer_id', 'project_id', 'salesman_id', 'title', 'description', 'status',
       'delivery_date', 'job_location', 'order_designation', 'model_name', 
       'installer', 'terms', 'show_line_pricing'
     ];

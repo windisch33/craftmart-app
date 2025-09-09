@@ -61,10 +61,22 @@ CREATE INDEX idx_jobs_project_id ON jobs(project_id);
 
 ## Frontend Changes
 
+### 0. Refactor Prep (completed)
+- Modularize existing Jobs feature to enable reuse inside Projects without changing behavior:
+  - Jobs page split into presentational components under `frontend/src/pages/jobs/`:
+    - `JobsHeader.tsx`, `JobsSearchSection.tsx`, `JobsAdvancedFiltersPanel.tsx`, `JobsErrorBanner.tsx`,
+      `JobsGrid.tsx`, `JobsEmptyState.tsx`, `NextStageConfirmModal.tsx`.
+  - Job Detail split into components under `frontend/src/components/jobs/job-detail/`:
+    - `DetailHeader.tsx`, `LoadingState.tsx`, `ErrorState.tsx`, `Summary.tsx`, `EditJobForm.tsx`,
+      `JobInfoGrid.tsx`, `SectionsBlock.tsx`, `TotalsPanel.tsx`, `FooterActions.tsx`, `JobDetailErrorBoundary.tsx`.
+  - Job Form extracted shared UI under `frontend/src/components/jobs/job-form/`:
+    - `FormHeader.tsx`, `StepNavigation.tsx`, `TotalsSidebar.tsx`, `FormFooter.tsx`, `JobFormErrorBoundary.tsx`.
+- Result: Smaller containers (`Jobs.tsx`, `JobDetail.tsx`, `JobForm.tsx`) and reusable parts to drop into `ProjectDetail`.
+
 ### 1. Replace Jobs Page with Projects Page
 - `frontend/src/pages/Projects.tsx` - main projects list page
-- Remove `frontend/src/pages/Jobs.tsx`
 - Update navigation to point to Projects instead of Jobs
+- Keep `frontend/src/pages/Jobs.tsx` temporarily as a wrapper during migration (now thin and modular). Remove after full cutover.
 
 ### 2. Project Components (`frontend/src/components/projects/`)
 - `ProjectList.tsx` - display projects with customer name and job count
@@ -73,8 +85,12 @@ CREATE INDEX idx_jobs_project_id ON jobs(project_id);
 
 ### 3. Update Job Components
 - `JobForm.tsx` - remove customer selection (inherit from project)
-- `JobForm.tsx` - accept project_id as prop
+- `JobForm.tsx` - accept `project_id` as prop
 - Job creation happens from within ProjectDetail view
+- Reuse refactored components (job-form/* and job-detail/*) inside project views.
+  - TODO: Extract remaining JobForm sections into dedicated components to simplify project-context wiring without behavior changes:
+    - `frontend/src/components/jobs/job-form/Step1BasicInfo.tsx` (title, status, description, customer/salesman block, job details). Should support a prop like `hideCustomer` when `project_id` is provided.
+    - `frontend/src/components/jobs/job-form/Step3Review.tsx` (review summary + totals), consuming the same props derived from container state.
 
 ### 4. Service Layer (`frontend/src/services/projectService.ts`)
 
@@ -100,6 +116,11 @@ export interface Project {
 
 ## Implementation Steps
 
+### Step 0 - Frontend Refactor (completed)
+- Extract Jobs page into presentational components (header, search, grid, modals).
+- Extract Job Detail into components (header, summary, sections, totals, footer) ensuring stair configuration display parity.
+- Extract Job Form scaffolding (header, step navigation, totals sidebar, footer, error boundary).
+
 ### Step 1 - Database
 - Create and run migration for projects table
 - Add project_id to jobs (nullable initially)
@@ -115,9 +136,16 @@ export interface Project {
 - Replace Jobs menu item with Projects
 
 ### Step 4 - Frontend Integration
-- Create ProjectDetail component showing jobs
-- Update JobForm to work within project context
-- Remove customer selection from JobForm
+- Create ProjectDetail component showing jobs (reuse jobs/job-detail components where possible)
+- Update JobForm to work within project context (pass `project_id`, remove customer selection)
+- Ensure stair configuration details render correctly within project context
+  
+  Follow-up TODOs (JobForm extraction):
+  - Create `job-form/Step1BasicInfo.tsx` and migrate current Step 1 JSX without altering classNames.
+  - Create `job-form/Step3Review.tsx` and migrate current Step 3 JSX unchanged.
+  - Add a `projectId?: number` prop to `JobForm` container and pass it down to `Step1BasicInfo` to conditionally hide customer selection and validation.
+  - Keep legacy mode (no `projectId`) fully functional until Jobs page is removed.
+  - Verification: compile clean, UI parity on both legacy and project flows; stair config behavior unaffected.
 
 ### Step 5 - Data Migration
 - Create migration script for existing jobs
@@ -153,10 +181,11 @@ export interface Project {
 - `frontend/src/services/jobService.ts` - update Job interface with project_id
 
 ### Deleted Files
-- `frontend/src/pages/Jobs.tsx` - replaced by Projects.tsx
+- `frontend/src/pages/Jobs.tsx` - remove after full Projects cutover (kept during transition)
 
 ## Notes
-- Maintain backward compatibility during migration
-- All existing jobs will be assigned to auto-created projects
-- Project names for migration: "Default Project - [Customer Name]"
-- After migration, project_id becomes required for all new jobs
+- Maintain backward compatibility during migration; Jobs routes/pages remain functional until cutover.
+- All existing jobs will be assigned to auto-created projects.
+- Project names for migration: "Default Project - [Customer Name]".
+- After migration, `project_id` becomes required for all new jobs.
+- The refactor ensures UI parity (including stair configuration display) and reduces risk by reusing components between Jobs and Projects.

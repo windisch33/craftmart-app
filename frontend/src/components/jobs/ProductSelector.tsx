@@ -368,7 +368,6 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           line_total: stairConfig.totalAmount,
           is_taxable: true,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
           // Include the full stair configuration data so it gets saved when job is created
           stair_configuration: {
             configName: stairConfig.configName,
@@ -424,34 +423,35 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         
         // Create a quote item for the stair configuration
         console.log('Creating quote item with ID:', stairConfig.id);
+        const sc: any = stairConfig as any;
         const stairItem: CreateQuoteItemData = {
           part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
-          description: stairConfig.config_name || stairConfig.configName || 'Straight Staircase',
+          description: sc.config_name || stairConfig.configName || 'Straight Staircase',
           quantity: 1,
-          unit_price: stairConfig.total_amount || stairConfig.totalAmount || 0,
+          unit_price: sc.total_amount || stairConfig.totalAmount || 0,
           is_taxable: true,
           // Include the full stair configuration data
           stair_configuration: {
-            configName: stairConfig.config_name || stairConfig.configName,
-            floorToFloor: stairConfig.floor_to_floor || stairConfig.floorToFloor,
-            numRisers: stairConfig.num_risers || stairConfig.numRisers,
-            riserHeight: stairConfig.riser_height || stairConfig.riserHeight,
-            treadMaterialId: stairConfig.tread_material_id || stairConfig.treadMaterialId,
-            riserMaterialId: stairConfig.riser_material_id || stairConfig.riserMaterialId,
-            treadSize: stairConfig.tread_size || stairConfig.treadSize,
-            roughCutWidth: stairConfig.rough_cut_width || stairConfig.roughCutWidth,
-            noseSize: stairConfig.nose_size || stairConfig.noseSize,
-            stringerType: stairConfig.stringer_type || stairConfig.stringerType,
-            stringerMaterialId: stairConfig.stringer_material_id || stairConfig.stringerMaterialId,
-            numStringers: stairConfig.num_stringers || stairConfig.numStringers,
-            centerHorses: stairConfig.center_horses || stairConfig.centerHorses,
-            fullMitre: stairConfig.full_mitre || stairConfig.fullMitre,
-            bracketType: stairConfig.bracket_type || stairConfig.bracketType,
-            specialNotes: stairConfig.special_notes || stairConfig.specialNotes,
+            configName: sc.config_name || stairConfig.configName,
+            floorToFloor: sc.floor_to_floor || stairConfig.floorToFloor,
+            numRisers: sc.num_risers || stairConfig.numRisers,
+            riserHeight: sc.riser_height || stairConfig.riserHeight,
+            treadMaterialId: sc.tread_material_id || stairConfig.treadMaterialId,
+            riserMaterialId: sc.riser_material_id || stairConfig.riserMaterialId,
+            treadSize: sc.tread_size || stairConfig.treadSize,
+            roughCutWidth: sc.rough_cut_width || stairConfig.roughCutWidth,
+            noseSize: sc.nose_size || stairConfig.noseSize,
+            stringerType: sc.stringer_type || stairConfig.stringerType,
+            stringerMaterialId: sc.stringer_material_id || stairConfig.stringerMaterialId,
+            numStringers: sc.num_stringers || stairConfig.numStringers,
+            centerHorses: sc.center_horses || stairConfig.centerHorses,
+            fullMitre: sc.full_mitre || stairConfig.fullMitre,
+            bracketType: sc.bracket_type || stairConfig.bracketType,
+            specialNotes: sc.special_notes || stairConfig.specialNotes,
             subtotal: stairConfig.subtotal,
-            laborTotal: stairConfig.labor_total || stairConfig.laborTotal,
-            taxAmount: stairConfig.tax_amount || stairConfig.taxAmount,
-            totalAmount: stairConfig.total_amount || stairConfig.totalAmount,
+            laborTotal: sc.labor_total || stairConfig.laborTotal,
+            taxAmount: sc.tax_amount || stairConfig.taxAmount,
+            totalAmount: sc.total_amount || stairConfig.totalAmount,
             items: stairConfig.items,
             individualStringers: stairConfig.individualStringers
           }
@@ -536,17 +536,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         totalPrice: 0
       };
     }
-  }, [
-    formData.productId, 
-    formData.materialId, 
-    formData.quantity, 
-    formData.lengthInches, 
-    formData.includeLabor, 
-    formData.useCustomPrice, 
-    formData.customUnitPrice,
-    selectedProduct, 
-    selectedMaterial
-  ]);
+  }, [formData, selectedProduct, selectedMaterial]);
 
   if (loadingProducts) {
     return (

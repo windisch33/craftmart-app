@@ -101,6 +101,7 @@ export interface StairSpecialPart {
   position?: string;
   unit_cost: number;
   labor_cost: number;
+  quantity?: number; // used by UI/calculations
   is_active: boolean;
   created_at?: string;
   updated_at?: string;

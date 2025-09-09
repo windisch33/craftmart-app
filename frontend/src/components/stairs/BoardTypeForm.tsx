@@ -42,8 +42,8 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
     mitre_price: boardType?.mitre_price || 0,
     base_length: boardType?.base_length || 36,
     base_width: boardType?.base_width || 9,
-    length_increment_size: boardType?.length_increment_size || 6,
-    width_increment_size: boardType?.width_increment_size || 1,
+    length_increment_size: (boardType as any)?.length_increment_size || 6,
+    width_increment_size: (boardType as any)?.width_increment_size || 1,
     is_active: boardType?.is_active ?? true
   });
 

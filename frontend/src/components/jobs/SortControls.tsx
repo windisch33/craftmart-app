@@ -42,11 +42,6 @@ const SortControls: React.FC<SortControlsProps> = ({
     return currentField ? currentField.label : 'Created Date';
   };
 
-  const getCurrentFieldIcon = () => {
-    const currentField = sortFieldOptions.find(option => option.value === sortBy);
-    return currentField ? currentField.icon : <CalendarIcon width={16} height={16} />;
-  };
-
   const getSortOrderIcon = () => {
     return sortOrder === 'asc' ? <ChevronUpIcon width={16} height={16} /> : <ChevronDownIcon width={16} height={16} />;
   };

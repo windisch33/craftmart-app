@@ -33,7 +33,7 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
   editingItem,
   addingItem,
   selectedProduct,
-  selectedMaterial,
+  selectedMaterial: _selectedMaterial,
   isHandrailProduct,
   requiresMaterial,
   materialPrice,

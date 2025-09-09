@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import productService, { type Product } from '../services/productService';
 import materialService, { type Material } from '../services/materialService';
 import stairProductService, { 
@@ -16,7 +16,7 @@ import BoardTypeForm from '../components/stairs/BoardTypeForm';
 import StairSpecialPartsForm from '../components/stairs/StairSpecialPartsForm';
 import QuickPricer from '../components/stairs/QuickPricer';
 import { SelectableList } from '../components/common/SelectableList';
-import { ConstructionIcon, WrenchIcon, HammerIcon, TreeIcon, RulerIcon, AlertTriangleIcon, DollarIcon } from '../components/common/icons';
+import { AlertTriangleIcon } from '../components/common/icons';
 import '../styles/common.css';
 import './Products.css';
 
@@ -60,11 +60,7 @@ const Products: React.FC = () => {
   const [editingSpecialParts, setEditingSpecialParts] = useState<StairSpecialPart | null>(null);
 
   // Load data on component mount and tab change
-  useEffect(() => {
-    loadData();
-  }, [activeTab]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -121,7 +117,11 @@ const Products: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    loadData();
+  }, [activeTab, loadData]);
 
   const handleCreateHandrail = () => {
     setEditingHandrail(null);

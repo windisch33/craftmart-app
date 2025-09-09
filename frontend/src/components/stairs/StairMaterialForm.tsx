@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { WarningIcon } from '../common/icons';
 import './StairForms.css';
 import stairProductService, { 
@@ -26,7 +26,7 @@ const StairMaterialForm: React.FC<StairMaterialFormProps> = ({ material, onClose
   const [formData, setFormData] = useState<FormData>({
     material_name: material?.matrl_nam || '',
     multiplier: material?.multiplier || 1.0,
-    display_order: material?.display_order || 0,
+    display_order: (material as any)?.display_order || 0,
     is_active: material?.is_active ?? true
   });
 

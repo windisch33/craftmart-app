@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DownloadIcon, PrintIcon, WarningIcon } from '../common/icons';
-import jobService from '../../services/jobService';
 import './JobPDFPreview.css';
 
 interface JobPDFPreviewProps {
@@ -20,6 +19,63 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [showLinePricing, setShowLinePricing] = useState(true);
+  const pdfUrlRef = useRef<string | null>(null);
+
+  const loadPDF = useCallback(async () => {
+    const TIMEOUT_MS = 15000;
+    let timeoutId: number | undefined;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Clean up previous blob URL if exists (use ref to avoid re-renders)
+      if (pdfUrlRef.current) {
+        URL.revokeObjectURL(pdfUrlRef.current);
+        pdfUrlRef.current = null;
+        setPdfUrl(null);
+      }
+
+      const token = localStorage.getItem('authToken');
+      const controller = new AbortController();
+      timeoutId = window.setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      const response = await fetch(`/api/jobs/${jobId}/pdf?showLinePricing=${showLinePricing}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        const status = response.status;
+        const statusText = response.statusText || 'Error';
+        if (status === 401 || status === 403) {
+          throw new Error('Unauthorized. Please log in again.');
+        }
+        // Try to read error body for more context (best-effort)
+        const detail = await response.text().then(t => t).catch(() => '');
+        const message = detail ? `${status} ${statusText} – ${detail}` : `${status} ${statusText}`;
+        throw new Error(`Failed to load PDF (${message})`);
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+      pdfUrlRef.current = url;
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setError(`Request timed out after ${Math.round(TIMEOUT_MS / 1000)}s. Please try again.`);
+      } else {
+        const msg = err?.message || 'Failed to load PDF preview';
+        setError(msg);
+      }
+      console.error('Error loading PDF:', err);
+    } finally {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      setLoading(false);
+    }
+  }, [jobId, showLinePricing]);
 
   useEffect(() => {
     if (isOpen && jobId) {
@@ -28,47 +84,14 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
 
     // Cleanup blob URL when component unmounts or modal closes
     return () => {
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
+      if (pdfUrlRef.current) {
+        URL.revokeObjectURL(pdfUrlRef.current);
+        pdfUrlRef.current = null;
       }
     };
-  }, [isOpen, jobId, showLinePricing]);
+  }, [isOpen, jobId, showLinePricing, loadPDF]);
 
-  const loadPDF = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Clean up previous blob URL if exists
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-        setPdfUrl(null);
-      }
-      
-      // Get auth token
-      const token = localStorage.getItem('authToken');
-      
-      // Fetch PDF as blob with pricing parameter
-      const response = await fetch(`/api/jobs/${jobId}/pdf?showLinePricing=${showLinePricing}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to load PDF');
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-    } catch (err) {
-      console.error('Error loading PDF:', err);
-      setError('Failed to load PDF preview');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // loadPDF is useCallback above
 
   const handleDownload = () => {
     try {
@@ -83,8 +106,8 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
+    } catch (_e) {
+      console.error('Error downloading PDF:');
       alert('Failed to download PDF');
     }
   };
@@ -102,7 +125,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
         try {
           currentIframe.contentWindow.print();
           return; // Success - exit early
-        } catch (e) {
+        } catch (_e) {
           console.log('Direct iframe print failed, trying fallback methods');
         }
       }
@@ -121,9 +144,9 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
                 printWindow.close();
               }
             }, 1000);
-          } catch (e) {
-            console.log('Hidden window print failed');
-          }
+        } catch (_e) {
+          console.log('Hidden window print failed');
+        }
         };
 
         // Try multiple approaches to detect when PDF is loaded
@@ -149,7 +172,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
           setTimeout(() => {
             try {
               iframe.contentWindow?.print();
-            } catch (e) {
+            } catch (_e) {
               console.log('Hidden iframe print failed');
               alert('Print failed. Please use the built-in PDF print button or your browser\'s print function (Ctrl+P)');
             }
@@ -163,8 +186,8 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
           }, 500);
         };
       }
-    } catch (error) {
-      console.error('Error printing PDF:', error);
+    } catch (_e) {
+      console.error('Error printing PDF');
       alert('Print failed. Please use the built-in PDF print button or your browser\'s print function (Ctrl+P)');
     }
   };

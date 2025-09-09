@@ -7,11 +7,17 @@ import type { Salesman } from '../services/salesmanService';
 import JobForm from '../components/jobs/JobForm';
 import JobPDFPreview from '../components/jobs/JobPDFPreview';
 import JobDetail from '../components/jobs/JobDetail';
-import FilterPanel, { type FilterCriteria } from '../components/jobs/FilterPanel';
+import { type FilterCriteria } from '../components/jobs/FilterPanel';
 import { StairConfigurationProvider } from '../contexts/StairConfigurationContext';
 import '../styles/common.css';
-import { SearchIcon, AlertTriangleIcon, ClipboardIcon, UsersIcon, CalendarIcon, FileIcon, RefreshIcon, TrashIcon, ChevronDownIcon, ChevronRightIcon, EyeIcon, ArrowRightIcon, TruckIcon } from '../components/common/icons';
 import './Jobs.css';
+import JobsHeader from './jobs/JobsHeader';
+import JobsSearchSection from './jobs/JobsSearchSection';
+import JobsAdvancedFiltersPanel from './jobs/JobsAdvancedFiltersPanel';
+import JobsErrorBanner from './jobs/JobsErrorBanner';
+import JobsGrid from './jobs/JobsGrid';
+import JobsEmptyState from './jobs/JobsEmptyState';
+import NextStageConfirmModal from './jobs/NextStageConfirmModal';
 
 const Jobs: React.FC = () => {
   const location = useLocation();
@@ -22,7 +28,7 @@ const Jobs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showJobForm, setShowJobForm] = useState(false);
-  const [jobFormLoading, setJobFormLoading] = useState(false);
+  const [_jobFormLoading, setJobFormLoading] = useState(false);
   const [pdfPreview, setPdfPreview] = useState<{ jobId: number; jobTitle: string } | null>(null);
   const [jobDetail, setJobDetail] = useState<{ jobId: number } | null>(null);
   const [confirmNextStage, setConfirmNextStage] = useState<Job | null>(null);
@@ -216,8 +222,7 @@ const Jobs: React.FC = () => {
     if (!confirmNextStage) return;
 
     try {
-      const nextStatus = confirmNextStage.status === 'quote' ? 'order' : 
-                        confirmNextStage.status === 'order' ? 'invoice' : 'completed';
+      const nextStatus = confirmNextStage.status === 'quote' ? 'order' : 'invoice';
       
       await jobService.updateJob(confirmNextStage.id, {
         status: nextStatus
@@ -299,218 +304,59 @@ const Jobs: React.FC = () => {
   return (
     <div className="container">
       {/* Header */}
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="gradient-title">Jobs</h1>
-          <p className="page-subtitle">Search and manage quotes, orders, and invoices</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button 
-            className="btn btn-secondary"
-            onClick={handleRefresh}
-            title="Refresh jobs list"
-          >
-            <span><RefreshIcon width={16} height={16} /></span>
-            Refresh
-          </button>
-          <button 
-            className="btn btn-secondary"
-            onClick={handleClearPDFCache}
-            title="Clear PDF cache"
-          >
-            <span><TrashIcon width={16} height={16} /></span>
-            Clear Cache
-          </button>
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowJobForm(true)}
-          >
-            <span className="nav-icon"><ClipboardIcon /></span>
-            Create Job
-          </button>
-        </div>
-      </div>
+      <JobsHeader 
+        onRefresh={handleRefresh}
+        onClearPDFCache={handleClearPDFCache}
+        onCreateJob={() => setShowJobForm(true)}
+      />
 
       {/* Large Search Bar */}
-      <div className="search-section">
-        <div className="search-container-large">
-          <div className="search-icon-large"><SearchIcon /></div>
-          <input
-            type="text"
-            placeholder="Search jobs by title, customer, job number, or salesman..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="search-input-large"
-            autoFocus
-          />
-        </div>
-        {isSearching && (
-          <p className="search-status">Showing search results for "{searchTerm}"</p>
-        )}
-        {!isSearching && jobs.length > 0 && (
-          <p className="search-status">Recently updated jobs</p>
-        )}
-        
-        {/* Advanced Filters Toggle */}
-        <div className="advanced-filters-toggle">
-          <button
-            className="btn btn-secondary"
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          >
-            <span>{showAdvancedFilters ? <ChevronDownIcon width={16} height={16} /> : <ChevronRightIcon width={16} height={16} />}</span>
-            Advanced Filters
-          </button>
-        </div>
-      </div>
+      <JobsSearchSection
+        searchTerm={searchTerm}
+        onSearch={handleSearch}
+        isSearching={isSearching}
+        showAdvancedFilters={showAdvancedFilters}
+        onToggleAdvancedFilters={() => setShowAdvancedFilters(!showAdvancedFilters)}
+      />
 
       {/* Advanced Filters Panel */}
-      {showAdvancedFilters && (
-        <div className="advanced-filters-panel">
-          <FilterPanel
-            onFilterChange={handleFilterChange}
-            salesmenOptions={salesmen.map(s => ({ 
-              id: s.id.toString(), 
-              name: salesmanService.formatSalesmanName(s) 
-            }))}
-            isLoading={loading}
-            activeFiltersCount={0}
-          />
-          <div className="filter-actions">
-            <button
-              className="btn btn-primary"
-              onClick={handleAdvancedFilter}
-            >
-              Apply Filters
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => {
-                setFilterCriteria({
-                  status: [],
-                  salesman: [],
-                  dateRange: null,
-                  amountRange: null,
-                  sortBy: 'updated_at',
-                  sortOrder: 'desc'
-                });
-                setShowAdvancedFilters(false);
-                loadRecentJobs();
-              }}
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
-      )}
+      <JobsAdvancedFiltersPanel
+        visible={showAdvancedFilters}
+        salesmenOptions={salesmen.map(s => ({ id: s.id.toString(), name: salesmanService.formatSalesmanName(s) }))}
+        isLoading={loading}
+        onFilterChange={handleFilterChange}
+        onApplyFilters={handleAdvancedFilter}
+        onClearFilters={() => {
+          setFilterCriteria({
+            status: [],
+            salesman: [],
+            dateRange: null,
+            amountRange: null,
+            sortBy: 'updated_at',
+            sortOrder: 'desc'
+          });
+          setShowAdvancedFilters(false);
+          loadRecentJobs();
+        }}
+      />
 
       {/* Error Message */}
-{error && (
-  <div className="card" style={{marginBottom: '24px', backgroundColor: '#fef2f2', border: '1px solid #fecaca'}}>
-    <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c'}}>
-      <AlertTriangleIcon />
-      {error}
-    </div>
-  </div>
-)}
+      {error && <JobsErrorBanner message={error} />}
 
       {/* Jobs Grid */}
       {!loading && jobs.length > 0 ? (
-        <div className="jobs-grid">
-          {jobs.map(job => (
-            <div key={job.id} className="job-card">
-              <div className="job-header">
-                <div className="job-info">
-                  <h3 className="job-title">{job.title}</h3>
-                  <p className="job-number">{getJobNumber(job)}</p>
-                  <p className="job-customer">{job.customer_name}</p>
-                </div>
-                <div className="job-status">
-                  <span 
-                    className="status-badge"
-                    style={{
-                      backgroundColor: getStatusColor(job.status).bg,
-                      color: getStatusColor(job.status).color
-                    }}
-                  >
-                    {job.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="job-details">
-                <div className="detail-row">
-                  <span className="detail-label" style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}><CalendarIcon /> Created:</span>
-                  <span className="detail-value">{formatDate(job.created_at)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label"><RefreshIcon width={14} height={14} /> Updated:</span>
-                  <span className="detail-value">{formatDate(job.updated_at)}</span>
-                </div>
-                {job.delivery_date && (
-                  <div className="detail-row">
-                    <span className="detail-label" style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}><TruckIcon /> Delivery:</span>
-                    <span className="detail-value">{formatDate(job.delivery_date)}</span>
-                  </div>
-                )}
-                {job.salesman_name && (
-                  <div className="detail-row">
-                    <span className="detail-label" style={{display: 'inline-flex', alignItems: 'center', gap: '6px'}}><UsersIcon /> Salesman:</span>
-                    <span className="detail-value">{job.salesman_name}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="job-amount">
-                <div className="amount-label">Total Amount</div>
-                <div className="amount-value">{jobService.formatCurrency(job.total_amount)}</div>
-              </div>
-
-              <div className="job-actions">
-                <button 
-                  className="action-btn action-btn-primary" 
-                  onClick={() => handleViewDetails(job.id)}
-                  title="View Details"
-                >
-                  <EyeIcon width={16} height={16} /> View
-                </button>
-                <button 
-                  className="action-btn action-btn-info" 
-                  onClick={() => handleViewPDF(job.id, job.title)}
-                  title="View PDF"
-                >
-                  <span className="nav-icon"><FileIcon /></span> PDF
-                </button>
-                {job.status !== 'invoice' && (
-                  <button 
-                    className="action-btn action-btn-warning" 
-                    onClick={() => handleNextStage(job)}
-                    title="Next Stage"
-                  >
-                    <ArrowRightIcon width={16} height={16} /> Next
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <JobsGrid
+          jobs={jobs}
+          onViewDetails={handleViewDetails}
+          onViewPDF={handleViewPDF}
+          onNextStage={handleNextStage}
+          getStatusColor={getStatusColor}
+          getJobNumber={getJobNumber}
+          formatDate={formatDate}
+          formatCurrency={jobService.formatCurrency}
+        />
       ) : (
-        <div className="empty-jobs">
-          <div className="empty-icon"><ClipboardIcon /></div>
-          <h2 className="empty-title">
-            {isSearching ? 'No jobs found' : 'No recent jobs'}
-          </h2>
-          <p className="empty-desc">
-            {isSearching 
-              ? 'Try adjusting your search terms or filters.'
-              : 'Start by creating a new job or search for existing ones.'}
-          </p>
-          {!isSearching && (
-            <button className="btn btn-primary" onClick={() => setShowJobForm(true)}>
-              <span className="nav-icon"><ClipboardIcon /></span>
-              Create Your First Job
-            </button>
-          )}
-        </div>
+        <JobsEmptyState isSearching={isSearching} onCreateJob={() => setShowJobForm(true)} />
       )}
 
       {/* Job Creation Modal */}
@@ -544,34 +390,11 @@ const Jobs: React.FC = () => {
 
       {/* Next Stage Confirmation Modal */}
       {confirmNextStage && (
-        <div className="modal-overlay">
-          <div className="modal confirmation-modal">
-            <div className="confirmation-icon"><AlertTriangleIcon /></div>
-            <h3>Confirm Status Change</h3>
-            <p>
-              Are you sure you want to advance "{confirmNextStage.title}" from{' '}
-              <strong>{confirmNextStage.status}</strong> to{' '}
-              <strong>
-                {confirmNextStage.status === 'quote' ? 'order' : 
-                 confirmNextStage.status === 'order' ? 'invoice' : 'completed'}
-              </strong>?
-            </p>
-            <div className="modal-actions">
-              <button
-                onClick={() => setConfirmNextStage(null)}
-                className="btn btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmNextStage}
-                className="btn btn-primary"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
+        <NextStageConfirmModal
+          job={confirmNextStage}
+          onCancel={() => setConfirmNextStage(null)}
+          onConfirm={handleConfirmNextStage}
+        />
       )}
     </div>
   );

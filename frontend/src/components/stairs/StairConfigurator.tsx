@@ -93,8 +93,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
 
   // Initialize treads when numRisers changes
   useEffect(() => {
-    const newTreads = initializeTreads(formData.numRisers, treads);
-    setTreads(newTreads);
+    setTreads(prev => initializeTreads(formData.numRisers, prev));
     setHasLandingTread(true);
   }, [formData.numRisers]);
 
@@ -135,30 +134,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
     }
   };
 
-  const handleTreadChange = (index: number, field: keyof TreadConfiguration, value: any) => {
-    setTreads(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      
-      // If width is being changed, validate tread configuration
-      if (field === 'stairWidth') {
-        setTimeout(() => validateTreadConfiguration(), 0); // Use setTimeout to ensure state update
-      }
-      
-      return updated;
-    });
-  };
-
-  const bulkUpdateTreads = (field: keyof Omit<TreadConfiguration, 'riserNumber'>, value: any) => {
-    setTreads(prev => 
-      prev.map(tread => ({ ...tread, [field]: value }))
-    );
-    
-    // If width is being changed, validate tread configuration
-    if (field === 'stairWidth') {
-      setTimeout(() => validateTreadConfiguration(), 0); // Use setTimeout to ensure state update
-    }
-  };
+  // Removed unused tread change helpers; keep validation in effects
 
   const addSpecialPart = () => {
     setSpecialParts(prev => [...prev, {
@@ -415,8 +391,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
           id: 0, // Temporary ID
           jobId: jobId || 0,
           ...baseConfig,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          // timestamps omitted in temp object
         };
         
         onSave(tempConfig);

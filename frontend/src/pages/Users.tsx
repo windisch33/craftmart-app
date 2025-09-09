@@ -102,18 +102,6 @@ const Users: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (user: User) => {
-    if (!window.confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}?`)) {
-      return;
-    }
-
-    try {
-      await authService.deleteUser(user.id);
-      await loadAllUsers(); // Refresh the list
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete user');
-    }
-  };
 
   const handleResetPassword = (user: User) => {
     setResetPasswordUserId(user.id);
@@ -133,19 +121,6 @@ const Users: React.FC = () => {
     }
   };
 
-  const formatRole = (role: string) => {
-    return role.charAt(0).toUpperCase() + role.slice(1);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   if (loading) {
     return (
@@ -158,7 +133,7 @@ const Users: React.FC = () => {
     );
   }
 
-  const currentUser = authService.getCurrentUser();
+  // const currentUser = authService.getCurrentUser();
 
   return (
     <div className="container">

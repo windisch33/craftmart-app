@@ -1,5 +1,5 @@
 import React from 'react';
-import { BoxIcon, LockIcon, ArrowLeftIcon, ArrowRightIcon, WarningIcon, UnlockIcon } from '../../common/icons';
+import { WarningIcon } from '../../common/icons';
 import type { StairMaterial, StairSpecialPart } from '../../../services/stairService';
 import type { StairFormData, TreadBulkConfig, StairStringersConfig } from './types';
 

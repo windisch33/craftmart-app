@@ -43,7 +43,6 @@ export const calculateHandrailPrice = (
   product: Product,
   material: Material,
   lengthInches: number,
-  quantity: number = 1,
   includeLabor: boolean = false
 ): number => {
   if (!product.cost_per_6_inches || product.product_type !== 'handrail') {
@@ -78,7 +77,7 @@ export const calculateItemTotal = (
   } else if (product && material) {
     // Calculate based on product and material
     if (product.product_type === 'handrail' && product.cost_per_6_inches) {
-      unitPrice = calculateHandrailPrice(product, material, lengthInches, 1, false);
+      unitPrice = calculateHandrailPrice(product, material, lengthInches, false);
     } else {
       // For other product types, you might have different calculation logic
       // This is a placeholder - implement based on your specific product pricing
@@ -123,7 +122,7 @@ export const calculateSectionTotals = (section: JobSection): SectionTotals => {
     taxableTotal: Math.round(taxableTotal * 100) / 100,
     nonTaxableTotal: Math.round(nonTaxableTotal * 100) / 100,
     sectionTotal: Math.round((taxableTotal + nonTaxableTotal) * 100) / 100,
-    isLaborSection: section.is_labor_section
+    isLaborSection: Boolean((section as any).is_labor_section)
   };
 };
 
@@ -227,7 +226,7 @@ export const calculateItemTax = (
  */
 export const getDefaultTaxStatus = (section: JobSection): boolean => {
   // Labor sections default to non-taxable
-  if (section.is_labor_section) {
+  if ((section as any).is_labor_section) {
     return false;
   }
   

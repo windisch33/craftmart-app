@@ -6,6 +6,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 export interface Job {
   id: number;
   customer_id: number;
+  project_id?: number;
   salesman_id?: number;
   title: string;
   description?: string;
@@ -75,7 +76,7 @@ export interface CreateJobData {
   terms?: string;
 }
 
-export interface UpdateJobData extends Partial<CreateJobData> {}
+export type UpdateJobData = Partial<CreateJobData>;
 
 export interface CreateJobSectionData {
   name: string;

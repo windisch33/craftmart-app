@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import customerService from '../../services/customerService';
 import salesmanService from '../../services/salesmanService';
-import jobService from '../../services/jobService';
-import stairService from '../../services/stairService';
 import type { Customer } from '../../services/customerService';
 import type { Salesman } from '../../services/salesmanService';
 import type { CreateJobData, JobSection, QuoteItem } from '../../services/jobService';
@@ -11,74 +9,30 @@ import SalesmanForm from '../salesmen/SalesmanForm';
 import SectionManager from './SectionManager';
 import ProductSelector from './ProductSelector';
 import { calculateJobTotals, getTaxRateForState, formatCurrency } from '../../utils/jobCalculations';
-import type { JobTotals } from '../../utils/jobCalculations';
 import { StairConfigurationProvider, useStairConfiguration } from '../../contexts/StairConfigurationContext';
 import './JobForm.css';
+import FormHeader from './job-form/FormHeader';
+import StepNavigation from './job-form/StepNavigation';
+import TotalsSidebar from './job-form/TotalsSidebar';
+import FormFooter from './job-form/FormFooter';
+import JobFormErrorBoundary from './job-form/JobFormErrorBoundary';
 
-interface JobFormErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-  errorInfo?: ErrorInfo;
-}
-
-interface JobFormErrorBoundaryProps {
-  children: ReactNode;
-}
-
-class JobFormErrorBoundary extends Component<JobFormErrorBoundaryProps, JobFormErrorBoundaryState> {
-  constructor(props: JobFormErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): JobFormErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('JobForm Error Boundary caught an error:', error, errorInfo);
-    this.setState({ error, errorInfo });
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="job-form error">
-          <h3>Something went wrong with the job form</h3>
-          <details style={{ whiteSpace: 'pre-wrap' }}>
-            <summary>Error Details (click to expand)</summary>
-            <strong>Error:</strong> {this.state.error && this.state.error.toString()}
-            <br />
-            <strong>Stack:</strong> {this.state.error && this.state.error.stack}
-            <br />
-            <strong>Component Stack:</strong> {this.state.errorInfo && this.state.errorInfo.componentStack}
-          </details>
-          <button onClick={() => this.setState({ hasError: false })}>
-            Try Again
-          </button>
-          <button onClick={() => window.location.reload()}>
-            Reload Page
-          </button>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
+// Error boundary moved to ./job-form/JobFormErrorBoundary
 
 interface JobFormProps {
   onSubmit: (job: CreateJobData, sections: JobSection[]) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  projectId?: number;
 }
 
 const JobFormInner: React.FC<JobFormProps> = ({ 
   onSubmit, 
   onCancel, 
-  isLoading = false 
+  isLoading = false,
+  projectId 
 }) => {
-  const { draftConfigurations, clearDraftConfigurations } = useStairConfiguration();
+  const { clearDraftConfigurations } = useStairConfiguration();
   const [formData, setFormData] = useState<CreateJobData>({
     customer_id: 0,
     salesman_id: undefined,
@@ -132,7 +86,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
     return (step: number): boolean => {
       // Step 1: Basic Information
       if (step >= 1) {
-        if (!formData.customer_id) return false;
+        if (!projectId && !formData.customer_id) return false;
         if (!formData.title.trim()) return false;
         if (formData.delivery_date) {
           const deliveryDate = new Date(formData.delivery_date);
@@ -151,7 +105,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
 
       return true;
     };
-  }, [formData.customer_id, formData.title, formData.delivery_date, sections]);
+  }, [projectId, formData.customer_id, formData.title, formData.delivery_date, sections]);
 
   // Update tax rate when customer changes
   useEffect(() => {
@@ -184,7 +138,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
 
     // Step 1: Basic Information
     if (validateStep >= 1) {
-      if (!formData.customer_id) {
+      if (!projectId && !formData.customer_id) {
         newErrors.customer_id = 'Please select a customer';
       }
 
@@ -271,10 +225,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
       e.stopPropagation();
       
       // Only allow form submission if we're on step 3 AND focused on the submit button
-      if (currentStep === 3 && target.type === 'submit') {
-        // Let the form submit naturally
-        return;
-      }
+      // Do not attempt to detect submit button via target.type (not on HTMLElement)
       
       // For steps 1 and 2, advance to next step if valid
       if (currentStep < 3 && canProceedToNextStep()) {
@@ -369,7 +320,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
 
   const canProceedToNextStep = () => {
     if (currentStep === 1) {
-      return formData.customer_id > 0 && formData.title.trim().length > 0;
+      return ((projectId != null) || formData.customer_id > 0) && formData.title.trim().length > 0;
     }
     if (currentStep === 2) {
       return sections.length > 0 && sections.some(s => s.items && s.items.length > 0);
@@ -396,32 +347,10 @@ const JobFormInner: React.FC<JobFormProps> = ({
     <>
       <div className="job-form-overlay">
         <div className="job-form-modal">
-          <div className="job-form-header">
-            <h2>Create New Job</h2>
-            <button 
-              className="job-form-close" 
-              onClick={onCancel}
-              disabled={isLoading}
-            >
-              ×
-            </button>
-          </div>
+          <FormHeader title="Create New Job" onClose={onCancel} isLoading={isLoading} />
 
           {/* Step Navigation */}
-          <div className="job-form-step-navigation">
-            <div className={`job-form-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-              <div className="job-form-step-number">1</div>
-              <div className="job-form-step-label">Basic Information</div>
-            </div>
-            <div className={`job-form-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-              <div className="job-form-step-number">2</div>
-              <div className="job-form-step-label">Sections & Products</div>
-            </div>
-            <div className={`job-form-step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
-              <div className="job-form-step-number">3</div>
-              <div className="job-form-step-label">Review & Submit</div>
-            </div>
-          </div>
+          <StepNavigation currentStep={currentStep} />
 
           <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="job-form">
             {/* Step 1: Basic Information */}
@@ -482,43 +411,45 @@ const JobFormInner: React.FC<JobFormProps> = ({
               <h3 className="section-title">Customer & Salesman</h3>
               
               <div className="form-row">
-                <div className="form-field">
-                  <label htmlFor="customer_id">Customer *</label>
-                  <div className="select-with-add">
-                    <select
-                      id="customer_id"
-                      name="customer_id"
-                      value={formData.customer_id}
-                      onChange={handleChange}
-                      className={errors.customer_id ? 'error' : ''}
-                      disabled={isLoading}
-                      required
-                    >
-                      <option value="">Select Customer</option>
-                      {customers.map(customer => (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="add-button"
-                      onClick={() => setShowCustomerForm(true)}
-                      disabled={isLoading}
-                    >
-                      + New
-                    </button>
-                  </div>
-                  {errors.customer_id && <span className="error-message">{errors.customer_id}</span>}
-                  {selectedCustomer && (
-                    <div className="selected-info">
-                      <small>
-                        📧 {selectedCustomer.email} • 📞 {selectedCustomer.phone} • 📍 {selectedCustomer.city}, {selectedCustomer.state}
-                      </small>
+                {!projectId && (
+                  <div className="form-field">
+                    <label htmlFor="customer_id">Customer *</label>
+                    <div className="select-with-add">
+                      <select
+                        id="customer_id"
+                        name="customer_id"
+                        value={formData.customer_id}
+                        onChange={handleChange}
+                        className={errors.customer_id ? 'error' : ''}
+                        disabled={isLoading}
+                        required
+                      >
+                        <option value="">Select Customer</option>
+                        {customers.map(customer => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="add-button"
+                        onClick={() => setShowCustomerForm(true)}
+                        disabled={isLoading}
+                      >
+                        + New
+                      </button>
                     </div>
-                  )}
-                </div>
+                    {errors.customer_id && <span className="error-message">{errors.customer_id}</span>}
+                    {selectedCustomer && (
+                      <div className="selected-info">
+                        <small>
+                          📧 {selectedCustomer.email} • 📞 {selectedCustomer.phone} • 📍 {selectedCustomer.city}, {selectedCustomer.state}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="form-field">
                   <label htmlFor="salesman_id">Salesman</label>
@@ -685,32 +616,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
                 </div>
 
                 {/* Running Totals Sidebar */}
-                <div className="totals-sidebar">
-                  <h4>Job Totals</h4>
-                  <div className="totals-breakdown">
-                    <div className="total-line">
-                      <span>Taxable Items:</span>
-                      <span>{formatCurrency(jobTotals.taxableAmount)}</span>
-                    </div>
-                    <div className="total-line">
-                      <span>Labor & Non-Taxable:</span>
-                      <span>{formatCurrency(jobTotals.laborTotal)}</span>
-                    </div>
-                    <div className="total-line">
-                      <span>Tax ({(taxRate * 100).toFixed(2)}%):</span>
-                      <span>{formatCurrency(jobTotals.taxAmount)}</span>
-                    </div>
-                    <div className="total-line grand-total">
-                      <span>Grand Total:</span>
-                      <span>{formatCurrency(jobTotals.grandTotal)}</span>
-                    </div>
-                  </div>
-                  {selectedCustomer && (
-                    <div className="tax-info">
-                      <small>Tax rate for {selectedCustomer.state}: {(taxRate * 100).toFixed(2)}%</small>
-                    </div>
-                  )}
-                </div>
+                <TotalsSidebar jobTotals={jobTotals} taxRate={taxRate} selectedCustomer={selectedCustomer} />
               </>
             )}
 
@@ -798,46 +704,14 @@ const JobFormInner: React.FC<JobFormProps> = ({
             )}
 
             {/* Step Navigation Actions */}
-            <div className="job-form-actions">
-              {currentStep > 1 && (
-                <button 
-                  type="button" 
-                  onClick={handlePrevStep}
-                  disabled={isLoading}
-                  className="prev-button"
-                >
-                  ← Previous
-                </button>
-              )}
-              
-              <button 
-                type="button" 
-                onClick={onCancel}
-                disabled={isLoading}
-                className="cancel-button"
-              >
-                Cancel
-              </button>
-              
-              {currentStep < 3 ? (
-                <button 
-                  type="button"
-                  onClick={handleNextStep}
-                  disabled={isLoading || !canProceedToNextStep()}
-                  className="next-button"
-                >
-                  Next →
-                </button>
-              ) : (
-                <button 
-                  type="submit"
-                  disabled={isLoading || !isFormValidForStep(3)}
-                  className="submit-button"
-                >
-                  {isLoading ? 'Creating...' : 'Create Job'}
-                </button>
-              )}
-            </div>
+            <FormFooter
+              currentStep={currentStep}
+              isLoading={isLoading}
+              canProceed={currentStep < 3 ? canProceedToNextStep() : isFormValidForStep(3)}
+              onPrev={handlePrevStep}
+              onCancel={onCancel}
+              onNext={handleNextStep}
+            />
           </form>
         </div>
       </div>

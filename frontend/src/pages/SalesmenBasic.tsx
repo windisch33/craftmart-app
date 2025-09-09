@@ -101,31 +101,7 @@ const SalesmenBasic: React.FC = () => {
     }
   };
 
-  const handleBulkAction = (action: string, selectedSalesmen: Salesman[]) => {
-    switch (action) {
-      case 'export':
-        // Export selected salesmen to CSV
-        const csvContent = [
-          ['First Name', 'Last Name', 'Email', 'Phone', 'Commission Rate'],
-          ...selectedSalesmen.map(s => [
-            s.first_name,
-            s.last_name,
-            s.email || '',
-            s.phone || '',
-            `${s.commission_rate}%`
-          ])
-        ].map(row => row.join(',')).join('\n');
-        
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'salesmen.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-        break;
-    }
-  };
+  // Removed bulk action export handler (not used)
 
   const columns = [
     {
@@ -242,10 +218,6 @@ const SalesmenBasic: React.FC = () => {
         getItemId={(salesman) => salesman.id}
         onEdit={handleEditSalesman}
         onDelete={handleDeleteSalesmen}
-        onBulkAction={handleBulkAction}
-        bulkActions={[
-          { label: 'Export', action: 'export', icon: '📥' }
-        ]}
         emptyMessage={
           searchTerm 
             ? 'No salesmen found. Try adjusting your search criteria.' 

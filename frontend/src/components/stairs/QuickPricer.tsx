@@ -123,9 +123,9 @@ const QuickPricer: React.FC = () => {
   });
 
   // Helper functions to update configurations
-  const updateBulkConfig = (updates: Partial<TreadBulkConfig>) => {
+  const updateBulkConfig = React.useCallback((updates: Partial<TreadBulkConfig>) => {
     setBulkConfig(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   const updateStringersConfig = (updates: Partial<StairStringersConfig>) => {
     setStringersConfig(prev => ({ ...prev, ...updates }));
@@ -173,13 +173,15 @@ const QuickPricer: React.FC = () => {
   const addSpecialPart = () => {
     if (availableSpecialParts.length > 0) {
       const newPart: StairSpecialPart = {
+        id: -1 as any,
         stpart_id: availableSpecialParts[0].stpart_id,
         stpar_desc: availableSpecialParts[0].stpar_desc,
         unit_cost: availableSpecialParts[0].unit_cost,
-        labor_install_cost: availableSpecialParts[0].labor_install_cost,
+        labor_cost: (availableSpecialParts[0] as any).labor_install_cost ?? availableSpecialParts[0].labor_cost ?? 0,
         mat_seq_n: availableSpecialParts[0].mat_seq_n,
         matrl_nam: availableSpecialParts[0].matrl_nam,
-        quantity: 1
+        quantity: 1 as any,
+        is_active: true as any
       };
       setSpecialParts(prev => [...prev, newPart]);
     }
@@ -198,10 +200,10 @@ const QuickPricer: React.FC = () => {
   };
 
   // Validation and calculation
-  const handleTreadValidation = () => {
+  const handleTreadValidation = React.useCallback(() => {
     const { hasLandingTread } = validateTreadConfiguration(bulkConfig, stairFormData.numRisers);
     updateBulkConfig({ hasLandingTread });
-  };
+  }, [bulkConfig, stairFormData.numRisers, updateBulkConfig]);
 
   const calculatePrice = async () => {
     let validationError: string | null = null;
@@ -277,7 +279,7 @@ const QuickPricer: React.FC = () => {
   // Validate tread configuration when bulk inputs change
   useEffect(() => {
     handleTreadValidation();
-  }, [bulkConfig.boxTreadCount, bulkConfig.openTreadCount, bulkConfig.doubleOpenCount, stairFormData.numRisers]);
+  }, [bulkConfig.boxTreadCount, bulkConfig.openTreadCount, bulkConfig.doubleOpenCount, stairFormData.numRisers, handleTreadValidation]);
 
   const renderProductSelector = () => (
     <div className="form-group">

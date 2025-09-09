@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import jobService from '../../services/jobService';
 import type { Job } from '../../services/jobService';
@@ -18,13 +18,7 @@ const CustomerJobs: React.FC<CustomerJobsProps> = ({ customer, isOpen, onClose }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen && customer) {
-      loadCustomerJobs();
-    }
-  }, [isOpen, customer]);
-
-  const loadCustomerJobs = async () => {
+  const loadCustomerJobs = useCallback(async () => {
     if (!customer) return;
     
     setLoading(true);
@@ -39,7 +33,13 @@ const CustomerJobs: React.FC<CustomerJobsProps> = ({ customer, isOpen, onClose }
     } finally {
       setLoading(false);
     }
-  };
+  }, [customer]);
+
+  useEffect(() => {
+    if (isOpen && customer) {
+      loadCustomerJobs();
+    }
+  }, [isOpen, customer, loadCustomerJobs]);
 
   const handleJobClick = (job: Job) => {
     // Navigate to jobs page with the selected job
@@ -102,7 +102,7 @@ const CustomerJobs: React.FC<CustomerJobsProps> = ({ customer, isOpen, onClose }
                 >
                   <div className="job-header">
                     <div className="job-info">
-                      <span className="job-number">#{job.job_number || job.id}</span>
+                      <span className="job-number">#{job.id}</span>
                       <h3 className="job-title">{job.title || 'Untitled Job'}</h3>
                     </div>
                     <span 

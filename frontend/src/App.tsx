@@ -9,6 +9,7 @@ import Customers from './pages/Customers';
 import Products from './pages/Products';
 import Salesmen from './pages/Salesmen';
 import Jobs from './pages/Jobs';
+import Projects from './pages/Projects';
 import Shops from './pages/Shops';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
@@ -35,6 +36,7 @@ function App() {
                       <Route path="/products" element={<Products />} />
                       <Route path="/salesmen" element={<Salesmen />} />
                       <Route path="/jobs" element={<Jobs />} />
+                      <Route path="/projects" element={<Projects />} />
                       <Route path="/shops" element={<Shops />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />

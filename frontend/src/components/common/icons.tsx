@@ -171,6 +171,12 @@ export const FileIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const FolderIcon: React.FC<IconProps> = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9L8.97 3.9A2 2 0 0 0 7.31 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z" />
+  </svg>
+);
+
 export const UserIcon: React.FC<IconProps> = (props) => (
   <svg {...baseProps} {...props}>
     <circle cx="12" cy="8" r="4" />

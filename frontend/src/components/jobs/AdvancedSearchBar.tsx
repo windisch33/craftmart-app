@@ -80,14 +80,7 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
     }
   };
 
-  const getOperatorLabel = (operator: string) => {
-    switch (operator) {
-      case 'contains': return 'Contains';
-      case 'startsWith': return 'Starts With';
-      case 'exact': return 'Exact Match';
-      default: return 'Contains';
-    }
-  };
+  // Note: operator label rendering removed; value used directly in select
 
   return (
     <div className="advanced-search-bar">
