@@ -22,7 +22,7 @@ const JobsSearchSection: React.FC<JobsSearchSectionProps> = ({
         <div className="search-icon-large"><SearchIcon /></div>
         <input
           type="text"
-          placeholder="Search jobs by title, customer, job number, or salesman..."
+          placeholder="Search job items by title, customer, job number, or salesman..."
           value={searchTerm}
           onChange={(e) => onSearch(e.target.value)}
           className="search-input-large"
@@ -33,7 +33,7 @@ const JobsSearchSection: React.FC<JobsSearchSectionProps> = ({
         <p className="search-status">Showing search results for "{searchTerm}"</p>
       )}
       {!isSearching && (
-        <p className="search-status">Recently updated jobs</p>
+        <p className="search-status">Recently updated job items</p>
       )}
 
       <div className="advanced-filters-toggle">
@@ -50,4 +50,3 @@ const JobsSearchSection: React.FC<JobsSearchSectionProps> = ({
 };
 
 export default JobsSearchSection;
-

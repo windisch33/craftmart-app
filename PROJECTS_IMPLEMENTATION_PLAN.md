@@ -1,36 +1,30 @@
-# Projects Implementation Plan
+# Jobs (Projects) Implementation Plan
+
+Naming note: In current architecture, “Projects” are called Jobs (project-level) and stored in the `jobs` table; individual “Jobs” are called Job Items and stored in `job_items`.
 
 ## Overview
-- Projects page replaces Jobs page as the main entry point
-- All jobs must belong to a project (no standalone jobs)
-- Projects are simple: just customer + name
+- Jobs (project-level) page replaces Job Items page as the main entry point
+- All Job Items must belong to a Job (no standalone job items)
+- Jobs (project-level) are simple: just customer + name
 - Jobs remain unchanged except for required project_id
 
 ## Database Changes
 
-### 1. Create projects table (`database/migrations/16-add-projects.sql`)
+### 1. Create jobs table (already exists) and use as project container
 
 ```sql
-CREATE TABLE projects (
-  id SERIAL PRIMARY KEY,
-  customer_id INTEGER REFERENCES customers(id) ON DELETE RESTRICT,
-  name VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Use existing `jobs` table for project-level container
 
 -- Add indexes
-CREATE INDEX idx_projects_customer_id ON projects(customer_id);
-CREATE INDEX idx_projects_created_at ON projects(created_at DESC);
+-- Indices already present on `jobs` (customer_id, created_at)
 ```
 
-### 2. Modify jobs table
+### 2. Link job_items to jobs
 
 ```sql
-ALTER TABLE jobs 
-ADD COLUMN project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE;
+-- `job_items.job_id` references `jobs.id` (already implemented)
 
-CREATE INDEX idx_jobs_project_id ON jobs(project_id);
+-- Index present: `idx_job_items_job_id` on job_items(job_id)
 ```
 
 ### 3. Data Migration
@@ -47,12 +41,12 @@ CREATE INDEX idx_jobs_project_id ON jobs(project_id);
 - `updateProject` - update name only
 - `deleteProject` - delete if no jobs exist
 
-### 2. Project Routes (`backend/src/routes/projects.ts`)
-- `GET /api/projects` - list all projects
-- `GET /api/projects/:id` - get project with jobs
-- `POST /api/projects` - create project
-- `PUT /api/projects/:id` - update project
-- `DELETE /api/projects/:id` - delete project
+### 2. Jobs Routes (project-level)
+- `GET /api/jobs` - list jobs (project-level)
+- `GET /api/jobs/:id` - get job with job items
+- `POST /api/jobs` - create job
+- `PUT /api/jobs/:id` - update job
+- `DELETE /api/jobs/:id` - delete job
 
 ### 3. Job Controller Updates
 - `createJob` - require project_id parameter
@@ -108,11 +102,10 @@ export interface Project {
 }
 ```
 
-### 5. Routing Updates
-- `/projects` - list all projects
-- `/projects/new` - create project
-- `/projects/:id` - view project with jobs
-- `/projects/:id/jobs/new` - create job within project
+### 5. Routing Updates (frontend)
+- `/jobs` - list all Jobs (project-level)
+- `/jobs/:id` - open job detail (modal) listing its job items
+- `/job-items` - Job Items overview (search/filter)
 
 ## Implementation Steps
 

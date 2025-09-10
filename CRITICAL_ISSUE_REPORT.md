@@ -1,6 +1,8 @@
-# CRITICAL: Projects Component Module Loading Failure
+# CRITICAL: Projects (Jobs at project-level) Component Module Loading Failure
 
 ## Issue Summary
+Note on naming: “Projects” refers to Jobs at the project-level (DB table `jobs`). “Jobs” refers to Job Items (DB table `job_items`).
+
 **CRITICAL BUILD SYSTEM BUG**: The Projects component cannot import ANY interfaces from service files, even though the exact same import syntax works perfectly in all other components.
 
 ## Evidence of the Problem

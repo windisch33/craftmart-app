@@ -64,7 +64,7 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
   };
 
   const quickSearchPresets = [
-    { label: 'All Jobs', criteria: { searchTerm: '', searchField: 'all' as const, searchOperator: 'contains' as const } },
+    { label: 'All Job Items', criteria: { searchTerm: '', searchField: 'all' as const, searchOperator: 'contains' as const } },
     { label: 'Recent Orders', criteria: { searchTerm: 'order', searchField: 'all' as const, searchOperator: 'contains' as const } },
     { label: 'Pending Quotes', criteria: { searchTerm: 'quote', searchField: 'all' as const, searchOperator: 'contains' as const } }
   ];
@@ -72,9 +72,9 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
   const getFieldLabel = (field: string) => {
     switch (field) {
       case 'all': return 'All Fields';
-      case 'title': return 'Job Title';
+      case 'title': return 'Job Item Title';
       case 'customer': return 'Customer';
-      case 'jobNumber': return 'Job Number';
+      case 'jobNumber': return 'Job Item Number';
       case 'salesman': return 'Salesman';
       default: return 'All Fields';
     }
@@ -184,7 +184,7 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
             'Searching...'
           ) : (
             <>
-              <strong>{totalResults}</strong> job{totalResults !== 1 ? 's' : ''} found
+              <strong>{totalResults}</strong> job item{totalResults !== 1 ? 's' : ''} found
               {searchCriteria.searchTerm && (
                 <span className="search-details">
                   {' '}for "{searchCriteria.searchTerm}" in {getFieldLabel(searchCriteria.searchField)}

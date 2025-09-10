@@ -348,7 +348,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
   return (
     <>
       <AccessibleModal isOpen={true} onClose={onCancel} labelledBy={titleId} overlayClassName="job-form-overlay" contentClassName="job-form-modal">
-          <FormHeader title="Create New Job" onClose={onCancel} isLoading={isLoading} titleId={titleId} />
+          <FormHeader title="Create New Job Item" onClose={onCancel} isLoading={isLoading} titleId={titleId} />
 
           {/* Step Navigation */}
           <StepNavigation currentStep={currentStep} />
@@ -362,7 +362,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
               
               <div className="form-row">
                 <div className="form-field">
-                  <label htmlFor="title">Job Title *</label>
+                  <label htmlFor="title">Job Item Title *</label>
                   <input
                     type="text"
                     id="title"
@@ -572,7 +572,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
               </div>
 
               <div className="form-field">
-                <label htmlFor="job_location">Job Location / Directions</label>
+                <label htmlFor="job_location">Job Item Location / Directions</label>
                 <textarea
                   id="job_location"
                   name="job_location"
@@ -591,7 +591,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
             {currentStep === 2 && (
               <>
                 <div className="job-form-section">
-                  <h3 className="section-title">Job Sections & Products</h3>
+                  <h3 className="section-title">Job Item Sections & Products</h3>
                   
                   {/* Section Management */}
                   <SectionManager
@@ -625,7 +625,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
             {currentStep === 3 && (
               <>
                 <div className="job-form-section">
-                  <h3 className="section-title">Review Job Details</h3>
+                  <h3 className="section-title">Review Job Item Details</h3>
                   
                   {/* Job Summary */}
                   <div className="job-summary">

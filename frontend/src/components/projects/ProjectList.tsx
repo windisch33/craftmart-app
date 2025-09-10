@@ -33,17 +33,17 @@ const ProjectList: React.FC<ProjectListProps> = ({
       <div className="empty-customers">
         <div className="empty-icon"><FolderIcon /></div>
         <h2 className="empty-title">
-          {isSearching ? 'No projects found' : 'No projects yet'}
+          {isSearching ? 'No jobs found' : 'No jobs yet'}
         </h2>
         <p className="empty-desc">
           {isSearching 
-            ? 'Try adjusting your search terms or create a new project.'
-            : 'Create your first project to start organizing jobs by customer.'}
+            ? 'Try adjusting your search terms or create a new job.'
+            : 'Create your first job to start organizing items by customer.'}
         </p>
         {!isSearching && (
           <button className="btn btn-primary" onClick={onCreateProject}>
             <span className="nav-icon"><FolderIcon /></span>
-            Create Your First Project
+            Create Your First Job
           </button>
         )}
       </div>
@@ -69,7 +69,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
           <div className="customer-contact">
             <div className="contact-item">
               <span className="contact-icon"><FolderIcon /></span>
-              <span>{project.job_count || 0} job{(project.job_count || 0) === 1 ? '' : 's'}</span>
+              <span>{project.job_count || 0} job item{(project.job_count || 0) === 1 ? '' : 's'}</span>
             </div>
             {(project.total_value || 0) > 0 && (
               <div className="contact-item">
@@ -87,14 +87,14 @@ const ProjectList: React.FC<ProjectListProps> = ({
             <button 
               className="action-btn" 
               onClick={() => onViewProject(project)}
-              title="View Project"
+              title="View Job"
             >
               <span className="contact-icon"><EyeIcon /></span> View
             </button>
             <button 
               className="action-btn" 
               onClick={() => onEditProject(project)}
-              title="Edit Project"
+              title="Edit Job"
             >
               <span className="contact-icon"><EditIcon /></span> Edit
             </button>
@@ -102,7 +102,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
               <button 
                 className="action-btn action-btn-danger" 
                 onClick={() => onDeleteProject(project.id)}
-                title="Delete Project"
+                title="Delete Job"
               >
                 <span className="contact-icon"><TrashIcon /></span> Delete
               </button>

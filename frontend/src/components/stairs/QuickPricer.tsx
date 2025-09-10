@@ -200,10 +200,11 @@ const QuickPricer: React.FC = () => {
   };
 
   // Validation and calculation
+  // Guard against render loops by only updating when the value changes
   const handleTreadValidation = React.useCallback(() => {
     const { hasLandingTread } = validateTreadConfiguration(bulkConfig, stairFormData.numRisers);
-    updateBulkConfig({ hasLandingTread });
-  }, [bulkConfig, stairFormData.numRisers, updateBulkConfig]);
+    setBulkConfig(prev => (prev.hasLandingTread === hasLandingTread ? prev : { ...prev, hasLandingTread }));
+  }, [bulkConfig, stairFormData.numRisers]);
 
   const calculatePrice = async () => {
     let validationError: string | null = null;
@@ -276,7 +277,7 @@ const QuickPricer: React.FC = () => {
     setError(null);
   }, [stairFormData, linearProductFormData, railPartsFormData, productType]);
 
-  // Validate tread configuration when bulk inputs change
+  // Validate tread configuration when relevant inputs change
   useEffect(() => {
     handleTreadValidation();
   }, [bulkConfig.boxTreadCount, bulkConfig.openTreadCount, bulkConfig.doubleOpenCount, stairFormData.numRisers, handleTreadValidation]);

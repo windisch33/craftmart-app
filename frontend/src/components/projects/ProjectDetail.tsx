@@ -37,7 +37,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
       const projectData = await projectService.getProjectById(projectId);
       setProject(projectData);
     } catch (err: any) {
-      setError(err.message || 'Failed to load project');
+      setError(err.message || 'Failed to load job');
       console.error('Error loading project:', err);
     } finally {
       setLoading(false);
@@ -174,7 +174,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
           {loading && (
             <div className="loading-container">
               <div className="spinner"></div>
-              <p>Loading project...</p>
+              <p>Loading job...</p>
             </div>
           )}
 
@@ -191,7 +191,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
               <div className="project-summary" style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                   <div>
-                    <strong>Jobs:</strong> {project.jobs?.length || 0}
+                    <strong>Job Items:</strong> {project.jobs?.length || 0}
                   </div>
                   <div>
                     <strong>Total Value:</strong> {projectService.formatCurrency(project.total_value || 0)}
@@ -202,14 +202,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                 </div>
               </div>
 
-              {/* Jobs Header */}
+              {/* Job Items Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0 }}>Jobs in this Project</h3>
+                <h3 style={{ margin: 0 }}>Job Items in this Job</h3>
                 <button 
                   className="btn btn-primary"
                   onClick={() => setShowJobForm(true)}
                 >
-                  <ClipboardIcon /> Create Job
+                  <ClipboardIcon /> Create Job Item
                 </button>
               </div>
 
@@ -279,13 +279,13 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
               ) : (
                 <div className="empty-jobs" style={{ textAlign: 'center', padding: '40px' }}>
                   <ClipboardIcon width={48} height={48} style={{ opacity: 0.5 }} />
-                  <h3>No jobs in this project yet</h3>
-                  <p>Create your first job to get started.</p>
+                  <h3>No job items in this job yet</h3>
+                  <p>Create your first job item to get started.</p>
                   <button 
                     className="btn btn-primary"
                     onClick={() => setShowJobForm(true)}
                   >
-                    <ClipboardIcon /> Create First Job
+                    <ClipboardIcon /> Create First Job Item
                   </button>
                 </div>
               )}

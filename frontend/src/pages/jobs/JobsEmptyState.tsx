@@ -11,17 +11,17 @@ const JobsEmptyState: React.FC<JobsEmptyStateProps> = ({ isSearching, onCreateJo
     <div className="empty-jobs">
       <div className="empty-icon"><ClipboardIcon /></div>
       <h2 className="empty-title">
-        {isSearching ? 'No jobs found' : 'No recent jobs'}
+        {isSearching ? 'No job items found' : 'No recent job items'}
       </h2>
       <p className="empty-desc">
         {isSearching 
           ? 'Try adjusting your search terms or filters.'
-          : 'Start by creating a new job or search for existing ones.'}
+          : 'Start by creating a new job item or search for existing ones.'}
       </p>
       {!isSearching && (
         <button className="btn btn-primary" onClick={onCreateJob}>
           <span className="nav-icon"><ClipboardIcon /></span>
-          Create Your First Job
+          Create Your First Job Item
         </button>
       )}
     </div>
@@ -29,4 +29,3 @@ const JobsEmptyState: React.FC<JobsEmptyStateProps> = ({ isSearching, onCreateJo
 };
 
 export default JobsEmptyState;
-

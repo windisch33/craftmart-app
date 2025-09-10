@@ -832,8 +832,8 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
   const startTime = Date.now();
   
   try {
-    // First, get job updated timestamp for cache validation
-    const timestampResult = await pool.query('SELECT updated_at FROM jobs WHERE id = $1', [jobId]);
+    // First, get job updated timestamp for cache validation (from job_items)
+    const timestampResult = await pool.query('SELECT updated_at FROM job_items WHERE id = $1', [jobId]);
     if (timestampResult.rows.length === 0) {
       throw new Error('Job not found');
     }
@@ -856,10 +856,10 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              s.email as salesman_email, s.phone as salesman_phone,
              p.name as project_name
-      FROM jobs j 
+      FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
-      LEFT JOIN projects p ON j.project_id = p.id
+      LEFT JOIN jobs p ON j.job_id = p.id
       WHERE j.id = $1
     `, [jobId]);
 
@@ -884,8 +884,8 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
              ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
       FROM job_sections js
       LEFT JOIN quote_items qi ON js.id = qi.section_id
-      WHERE js.job_id = $1
-      GROUP BY js.id, js.job_id, js.name, js.display_order, js.created_at, js.updated_at
+      WHERE js.job_item_id = $1
+      GROUP BY js.id, js.job_item_id, js.name, js.display_order, js.created_at, js.updated_at
       ORDER BY js.display_order, js.id
     `, [jobId]);
 

@@ -17,7 +17,7 @@ type TotalsSidebarProps = {
 
 const TotalsSidebar: React.FC<TotalsSidebarProps> = ({ jobTotals, taxRate, selectedCustomer }) => (
   <div className="totals-sidebar">
-    <h4>Job Totals</h4>
+    <h4>Job Item Totals</h4>
     <div className="totals-breakdown">
       <div className="total-line">
         <span>Taxable Items:</span>
@@ -45,4 +45,3 @@ const TotalsSidebar: React.FC<TotalsSidebarProps> = ({ jobTotals, taxRate, selec
 );
 
 export default TotalsSidebar;
-

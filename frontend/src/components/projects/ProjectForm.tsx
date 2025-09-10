@@ -50,7 +50,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Project name is required';
+      newErrors.name = 'Job name is required';
     }
 
     setErrors(newErrors);
@@ -92,7 +92,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
         <div className="modal-header">
           <h2 className="modal-title" id={titleId}>
-            {project ? 'Edit Project' : 'Create New Project'}
+            {project ? 'Edit Job' : 'Create New Job'}
           </h2>
           <button className="modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
@@ -101,7 +101,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            {/* Customer Selection - only for new projects */}
+            {/* Customer Selection - only for new jobs */}
             {!project && (
               <div className="form-group">
                 <label htmlFor="customer_id" className="form-label">
@@ -128,10 +128,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               </div>
             )}
 
-            {/* Project Name */}
+            {/* Job Name */}
             <div className="form-group">
               <label htmlFor="name" className="form-label">
-                Project Name <span className="required">*</span>
+                Job Name <span className="required">*</span>
               </label>
               <input
                 type="text"
@@ -139,7 +139,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={`form-control ${errors.name ? 'error' : ''}`}
-                placeholder="Enter project name..."
+                placeholder="Enter job name..."
                 disabled={loading}
                 autoFocus
               />
@@ -159,7 +159,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                   }
                 </div>
                 <small className="help-text">
-                  Customer cannot be changed after project creation
+                  Customer cannot be changed after job creation
                 </small>
               </div>
             )}
@@ -179,7 +179,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Saving...' : (project ? 'Update Project' : 'Create Project')}
+              {loading ? 'Saving...' : (project ? 'Update Job' : 'Create Job')}
             </button>
           </div>
         </form>

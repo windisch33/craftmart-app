@@ -37,8 +37,9 @@ function App() {
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/salesmen" element={<Salesmen />} />
-                      <Route path="/jobs" element={<Jobs />} />
-                      <Route path="/projects" element={<Projects />} />
+                      {/* Job Items and Jobs (project-level) routes */}
+                      <Route path="/job-items" element={<Jobs />} />
+                      <Route path="/jobs" element={<Projects />} />
                       <Route path="/shops" element={<Shops />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />

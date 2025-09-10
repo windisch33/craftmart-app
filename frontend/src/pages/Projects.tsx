@@ -12,6 +12,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/common/ToastProvider';
 
 const Projects: React.FC = () => {
+  // Set document title for Jobs (project-level) page
+  useEffect(() => {
+    document.title = 'Jobs — CraftMart';
+  }, []);
   const [projects, setProjects] = useState<Project[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +78,7 @@ const Projects: React.FC = () => {
       await projectService.createProject(projectData);
       await loadProjects();
       setShowProjectForm(false);
-      showToast('Project created successfully', { type: 'success' });
+      showToast('Job created successfully', { type: 'success' });
     } catch (err: any) {
       console.error('Error creating project:', err);
       setError(err.message || 'Failed to create project');
@@ -87,7 +91,7 @@ const Projects: React.FC = () => {
       await projectService.updateProject(id, projectData);
       await loadProjects();
       setEditingProject(null);
-      showToast('Project updated', { type: 'success' });
+      showToast('Job updated', { type: 'success' });
     } catch (err: any) {
       console.error('Error updating project:', err);
       setError(err.message || 'Failed to update project');
@@ -96,14 +100,14 @@ const Projects: React.FC = () => {
   };
 
   const handleDeleteProject = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
       return;
     }
 
     try {
       await projectService.deleteProject(id);
       await loadProjects();
-      showToast('Project deleted', { type: 'success' });
+      showToast('Job deleted', { type: 'success' });
     } catch (err: any) {
       console.error('Error deleting project:', err);
       setError(err.message || 'Failed to delete project');
@@ -158,8 +162,8 @@ const Projects: React.FC = () => {
       <div className="page-header">
         <div className="header-content">
           <div className="header-title-section">
-            <h1 className="page-title">Projects</h1>
-            <p className="page-subtitle">Manage customer projects and their jobs</p>
+            <h1 className="page-title">Jobs</h1>
+            <p className="page-subtitle">Manage customer jobs and their items</p>
           </div>
           <button 
             className="btn btn-primary"
@@ -167,7 +171,7 @@ const Projects: React.FC = () => {
             disabled={customers.length === 0}
           >
             <span className="nav-icon"><FolderIcon /></span>
-            Create Project
+            Create Job
           </button>
         </div>
       </div>
@@ -178,7 +182,7 @@ const Projects: React.FC = () => {
           <div className="search-icon-large"><SearchIcon /></div>
           <input
             type="text"
-            placeholder="Search projects by name, customer, or location..."
+            placeholder="Search jobs by name, customer, or location..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
             className="search-input-large"
@@ -189,7 +193,7 @@ const Projects: React.FC = () => {
           <p className="search-status">Showing search results for "{searchTerm}"</p>
         )}
         {!isSearching && filteredProjects.length > 0 && (
-          <p className="search-status">All projects</p>
+          <p className="search-status">All jobs</p>
         )}
       </div>
 
@@ -216,9 +220,9 @@ const Projects: React.FC = () => {
       ) : (
         <EmptyState
           icon={<FolderIcon />}
-          title={isSearching ? 'No projects found' : 'No projects yet'}
-          description={isSearching ? 'Try adjusting your search terms or create a new project.' : 'Create your first project to start organizing jobs by customer.'}
-          action={!isSearching ? { label: 'Create Project', onClick: () => setShowProjectForm(true) } : undefined}
+          title={isSearching ? 'No jobs found' : 'No jobs yet'}
+          description={isSearching ? 'Try adjusting your search terms or create a new job.' : 'Create your first job to start organizing items by customer.'}
+          action={!isSearching ? { label: 'Create Job', onClick: () => setShowProjectForm(true) } : undefined}
         />
       )}
 

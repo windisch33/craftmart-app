@@ -170,7 +170,7 @@ docker-compose up -d
 - **Infrastructure**: Docker, Nginx reverse proxy, Cloudflare Tunnel
 - **Security**: JWT authentication, parameterized queries, CORS protection
 
-### **Project Structure**
+### **Project Structure & Naming**
 ```
 craftmart-app/
 ├── frontend/                   # React TypeScript application
@@ -178,7 +178,7 @@ craftmart-app/
 │   │   ├── components/        # Reusable UI components
 │   │   │   ├── common/        # Shared components (SelectableList, Sidebar)
 │   │   │   ├── customers/     # Customer-specific components
-│   │   │   ├── jobs/          # Job management components
+│   │   │   ├── jobs/          # Job Item management components
 │   │   │   └── salesmen/      # Salesmen management components
 │   │   ├── pages/             # Route-based page components
 │   │   ├── services/          # API integration services
@@ -220,8 +220,9 @@ craftmart-app/
 - **users** - Authentication and user management
 - **customers** - Client information and contact details
 - **salesmen** - Sales team with commission tracking
-- **jobs** - Main job records with status progression
-- **job_sections** - Location-based job organization
+- **jobs** - Jobs (project-level container for a customer)
+- **job_items** - Job Items (quotes/orders/invoices) belonging to a Job
+- **job_sections** - Location-based organization under a Job Item
 - **quote_items** - Detailed product line items
 - **products** - Multi-type product catalog (handrails, landing_treads, rail_parts)
 - **handrail_products** - Per-6-inch pricing for handrail products
@@ -231,9 +232,10 @@ craftmart-app/
 - **tax_rates** - State-based tax rate lookup
 
 ### **Key Relationships**
-- Jobs → Customers (many-to-one)
-- Jobs → Salesmen (many-to-one)
-- Jobs → Job Sections (one-to-many)
+- Job Items → Jobs (many-to-one)
+- Job Items → Customers (many-to-one)
+- Job Items → Salesmen (many-to-one)
+- Job Items → Job Sections (one-to-many)
 - Job Sections → Quote Items (one-to-many)
 - Quote Items → Products/Materials (many-to-one)
 
@@ -249,12 +251,24 @@ craftmart-app/
 - `PUT /api/customers/:id` - Update customer
 - `DELETE /api/customers/:id` - Delete customer
 
-### **Job Management**
-- `GET /api/jobs` - Advanced job search with filtering
-- `POST /api/jobs` - Create job with automatic tax calculation
-- `GET /api/jobs/:id/pdf` - Generate and download job PDF
-- `POST /api/jobs/:id/sections` - Create job sections
-- `POST /api/jobs/:jobId/sections/:sectionId/items` - Add quote items
+### **Jobs (Project-level)**
+- `GET /api/jobs` - List jobs (project-level) with counts/aggregates
+- `POST /api/jobs` - Create job (customer + name)
+- `GET /api/jobs/:id` - Get job with details
+- `PUT /api/jobs/:id` - Update job (name)
+- `DELETE /api/jobs/:id` - Delete job (if no job items)
+
+### **Job Item Management**
+- `GET /api/job-items` - Advanced job item search with filtering
+- `POST /api/job-items` - Create a job item (under a Job via `job_id`)
+- `GET /api/job-items/:id/pdf` - Generate and download job item PDF
+- `GET /api/job-items/:id/details` - Get job item with sections/items
+- `POST /api/job-items/:id/sections` - Create job item sections
+- `PUT /api/job-sections/:sectionId` - Update job item section
+- `DELETE /api/job-sections/:sectionId` - Delete job item section
+- `POST /api/job-items/:jobId/sections/:sectionId/items` - Add quote items
+- `PUT /api/quote-items/:itemId` - Update quote item
+- `DELETE /api/quote-items/:itemId` - Delete quote item
 
 ### **Salesmen Management**
 - `GET /api/salesmen` - List salesmen with statistics
@@ -337,7 +351,7 @@ docker-compose exec postgres psql -U craftmart_user -d craftmart -c "\\dt"
 
 ### **✅ Completed Features**
 - Complete customer and salesmen management
-- Advanced job system with PDF generation
+- Advanced job item system with PDF generation
 - Mobile-responsive design with touch optimization
 - Advanced search and filtering system
 - Professional UI with consistent design system

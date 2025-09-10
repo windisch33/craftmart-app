@@ -3,7 +3,7 @@ Theme Migration Progress
 Overview
 - Goal: Replace hard-coded blues with theme variables and gradients so the entire UI adopts the primary color set in `frontend/src/styles/variables.css`.
 - Current primary: Fuchsia ramp (high visibility for verification).
-- Scope covered so far: Shared buttons, many page headers, forms, filters, modal actions, and spinners across Jobs, Projects, Users, Salesmen, Customers, Reports, Shops, Dashboard, Login, and Stairs.
+- Scope covered so far: Shared buttons, many page headers, forms, filters, modal actions, and spinners across Job Items, Jobs (project-level), Users, Salesmen, Customers, Reports, Shops, Dashboard, Login, and Stairs.
 
 How To Change Theme
 - Edit `frontend/src/styles/variables.css` to update the primary ramp (`--color-primary-XXX`) and semantic tokens:
@@ -16,7 +16,7 @@ Completed (migrated to variables)
   - Page titles (`.gradient-title`, `.page-title`) use gradient tied to primary.
 - Core flows
   - Jobs: `AdvancedSearchBar.css`, `DateRangeFilter.css`, `FilterPanel.css`, `FilterPanel.tsx`, `ProductSelector.css`, `SectionManager.css` (partial), `JobDetail.css`, `JobDetail.tsx`, `JobForm.css`.
-  - Projects: `ProjectDetail` uses AccessibleModal; page title gradient via common styles.
+  - Jobs (project-level): `ProjectDetail` uses AccessibleModal; page title gradient via common styles.
   - Users: `Users.css` (search focus), `components/users/UserForm.css` (header gradient, focus, submit button).
   - Salesmen: `components/salesmen/SalesmanForm.css` (header gradient, focus, submit button).
   - Customers: `components/customers/CustomerForm.css`, `components/customers/CustomerJobs.css`.

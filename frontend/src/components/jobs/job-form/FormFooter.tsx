@@ -53,11 +53,10 @@ const FormFooter: React.FC<FormFooterProps> = ({
         disabled={isLoading || !canProceed}
         className="submit-button"
       >
-        {isLoading ? 'Creating...' : 'Create Job'}
+        {isLoading ? 'Creating...' : 'Create Job Item'}
       </button>
     )}
   </div>
 );
 
 export default FormFooter;
-

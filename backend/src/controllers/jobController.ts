@@ -26,10 +26,10 @@ const calculateJobTotals = async (jobId: number): Promise<{ subtotal: number; la
         COALESCE(SUM(CASE WHEN is_taxable = false THEN line_total ELSE 0 END), 0) as non_taxable_total,
         COALESCE(SUM(line_total), 0) as subtotal
       FROM quote_items 
-      WHERE job_id = $1
+      WHERE job_item_id = $1
     `, [jobId]);
 
-    const jobResult = await pool.query('SELECT tax_rate FROM jobs WHERE id = $1', [jobId]);
+    const jobResult = await pool.query('SELECT tax_rate FROM job_items WHERE id = $1', [jobId]);
     const taxRate = jobResult.rows[0]?.tax_rate || 0;
 
     const taxableTotal = parseFloat(result.rows[0].taxable_total);
@@ -81,7 +81,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
              c.name as customer_name, c.state as customer_state,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              (s.first_name || ' ' || s.last_name) as salesman_name
-      FROM jobs j 
+      FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
     `;
@@ -106,7 +106,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
     }
 
     if (project_id) {
-      conditions.push(`j.project_id = $${queryParams.length + 1}`);
+      conditions.push(`j.job_id = $${queryParams.length + 1}`);
       queryParams.push(project_id);
     }
 
@@ -286,7 +286,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
                c.name as customer_name, c.state as customer_state,
                s.first_name as salesman_first_name, s.last_name as salesman_last_name,
                (s.first_name || ' ' || s.last_name) as salesman_name
-        FROM jobs j 
+        FROM job_items j 
         LEFT JOIN customers c ON j.customer_id = c.id 
         LEFT JOIN salesmen s ON j.salesman_id = s.id
         ORDER BY j.updated_at DESC
@@ -313,7 +313,7 @@ export const getJobById = async (req: Request, res: Response, next: NextFunction
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              (s.first_name || ' ' || s.last_name) as salesman_name,
              s.email as salesman_email, s.phone as salesman_phone
-      FROM jobs j 
+      FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
       WHERE j.id = $1
@@ -345,7 +345,7 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
              c.phone, c.mobile, c.email, c.accounting_email,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              s.email as salesman_email, s.phone as salesman_phone
-      FROM jobs j 
+      FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
       WHERE j.id = $1
@@ -372,7 +372,7 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
              ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
       FROM job_sections js
       LEFT JOIN quote_items qi ON js.id = qi.section_id
-      WHERE js.job_id = $1
+      WHERE js.job_item_id = $1
       GROUP BY js.id
       ORDER BY js.display_order, js.id
     `, [id]);
@@ -406,7 +406,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
 
     // If project_id is provided, get customer from project
     if (project_id) {
-      const projectResult = await pool.query('SELECT customer_id FROM projects WHERE id = $1', [project_id]);
+      const projectResult = await pool.query('SELECT customer_id FROM jobs WHERE id = $1', [project_id]);
       if (projectResult.rows.length === 0) {
         return res.status(400).json({ error: 'Project not found' });
       }
@@ -425,8 +425,8 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
     const taxRate = customerState ? await calculateTaxForState(customerState) : 0;
     
     const result = await pool.query(
-      `INSERT INTO jobs (
-        customer_id, project_id, salesman_id, title, description, status,
+      `INSERT INTO job_items (
+        customer_id, job_id, salesman_id, title, description, status,
         delivery_date, job_location, order_designation, model_name, installer, terms,
         show_line_pricing, tax_rate
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
@@ -448,7 +448,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
     
     // Build dynamic update query
     const allowedFields = [
-      'customer_id', 'project_id', 'salesman_id', 'title', 'description', 'status',
+      'customer_id', 'job_id', 'salesman_id', 'title', 'description', 'status',
       'delivery_date', 'job_location', 'order_designation', 'model_name', 
       'installer', 'terms', 'show_line_pricing'
     ];
@@ -474,7 +474,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
     updates.push('updated_at = NOW()');
     values.push(id);
     
-    const query = `UPDATE jobs SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`;
+    const query = `UPDATE job_items SET ${updates.join(', ')} WHERE id = $${paramCounter} RETURNING *`;
     const result = await pool.query(query, values);
     
     if (result.rows.length === 0) {
@@ -484,7 +484,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
     // Recalculate totals
     const totals = await calculateJobTotals(parseInt(id!));
     await pool.query(
-      'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
+      'UPDATE job_items SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
       [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, id]
     );
     
@@ -500,7 +500,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
 export const deleteJob = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM jobs WHERE id = $1 RETURNING id', [id]);
+    const result = await pool.query('DELETE FROM job_items WHERE id = $1 RETURNING id', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Job not found' });
@@ -517,7 +517,7 @@ export const getJobSections = async (req: Request, res: Response, next: NextFunc
   try {
     const { jobId } = req.params;
     const result = await pool.query(
-      'SELECT * FROM job_sections WHERE job_id = $1 ORDER BY display_order, id',
+      'SELECT * FROM job_sections WHERE job_item_id = $1 ORDER BY display_order, id',
       [jobId]
     );
     res.json(result.rows);
@@ -536,7 +536,7 @@ export const createJobSection = async (req: Request, res: Response, next: NextFu
     }
     
     const result = await pool.query(
-      'INSERT INTO job_sections (job_id, name, display_order) VALUES ($1, $2, $3) RETURNING *',
+      'INSERT INTO job_sections (job_item_id, name, display_order) VALUES ($1, $2, $3) RETURNING *',
       [jobId, name, display_order]
     );
     
@@ -619,7 +619,7 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
       // Create the stair configuration first (riser_height is computed, don't insert it)
       const stairResult = await pool.query(
         `INSERT INTO stair_configurations (
-          job_id, config_name, floor_to_floor, num_risers,
+          job_item_id, config_name, floor_to_floor, num_risers,
           tread_material_id, riser_material_id, tread_size, rough_cut_width, nose_size,
           stringer_type, stringer_material_id, num_stringers, center_horses, full_mitre,
           bracket_type, special_notes, subtotal, labor_total, tax_amount, total_amount,
@@ -695,7 +695,7 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
     
     const result = await pool.query(
       `INSERT INTO quote_items (
-        job_id, section_id, part_number, description, quantity, unit_price, line_total, is_taxable,
+        job_item_id, section_id, part_number, description, quantity, unit_price, line_total, is_taxable,
         product_type, product_name, stair_config_id
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
       [jobId, sectionId, finalPartNumber, description, quantity, unit_price, lineTotal, is_taxable, 'custom', description, stairConfigId]
@@ -704,7 +704,7 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
     // Recalculate job totals
     const totals = await calculateJobTotals(parseInt(jobId!));
     await pool.query(
-      'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
+      'UPDATE job_items SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
       [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, jobId]
     );
     
@@ -734,7 +734,7 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
     // Check if this is a stair configuration update
     if ((part_number === 'STAIR-CONFIG' || (part_number && part_number.startsWith('STAIR-'))) && stair_configuration) {
       // Get the job_id for this item
-      const itemResult = await pool.query('SELECT job_id, stair_config_id FROM quote_items WHERE id = $1', [itemId]);
+      const itemResult = await pool.query('SELECT job_item_id as job_id, stair_config_id FROM quote_items WHERE id = $1', [itemId]);
       if (itemResult.rows.length === 0) {
         return res.status(404).json({ error: 'Quote item not found' });
       }
@@ -746,7 +746,7 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
       if (!existingConfigId) {
         console.log(`UPDATE: No stair_config_id found for item ${itemId}, searching for existing config for job ${jobId}`);
         const existingConfigResult = await pool.query(
-          'SELECT id FROM stair_configurations WHERE job_id = $1 ORDER BY created_at DESC LIMIT 1',
+          'SELECT id FROM stair_configurations WHERE job_item_id = $1 ORDER BY created_at DESC LIMIT 1',
           [jobId]
         );
         if (existingConfigResult.rows.length > 0) {
@@ -923,12 +923,12 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
     }
     
     // Recalculate job totals
-    const jobResult = await pool.query('SELECT job_id FROM quote_items WHERE id = $1', [itemId]);
+    const jobResult = await pool.query('SELECT job_item_id as job_id FROM quote_items WHERE id = $1', [itemId]);
     if (jobResult.rows.length > 0) {
       const jobId = jobResult.rows[0].job_id;
       const totals = await calculateJobTotals(jobId);
       await pool.query(
-        'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
+        'UPDATE job_items SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
         [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, jobId]
       );
       
@@ -949,7 +949,7 @@ export const deleteQuoteItem = async (req: Request, res: Response, next: NextFun
     const { itemId } = req.params;
     
     // Get job_id before deletion
-    const jobResult = await pool.query('SELECT job_id FROM quote_items WHERE id = $1', [itemId]);
+    const jobResult = await pool.query('SELECT job_item_id as job_id FROM quote_items WHERE id = $1', [itemId]);
     
     const result = await pool.query('DELETE FROM quote_items WHERE id = $1 RETURNING *', [itemId]);
     
@@ -962,7 +962,7 @@ export const deleteQuoteItem = async (req: Request, res: Response, next: NextFun
       const jobId = jobResult.rows[0].job_id;
       const totals = await calculateJobTotals(jobId);
       await pool.query(
-        'UPDATE jobs SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
+        'UPDATE job_items SET subtotal = $1, labor_total = $2, tax_amount = $3, total_amount = $4 WHERE id = $5',
         [totals.subtotal, totals.laborTotal, totals.taxAmount, totals.total, jobId]
       );
       
@@ -988,9 +988,9 @@ export const generateJobPDFEndpoint = async (req: Request, res: Response, next: 
     // Get basic job info for filename
     const jobResult = await pool.query(`
       SELECT j.id, j.status, c.name as customer_name, p.name as project_name
-      FROM jobs j 
+      FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
-      LEFT JOIN projects p ON j.project_id = p.id
+      LEFT JOIN jobs p ON j.job_id = p.id
       WHERE j.id = $1
     `, [id]);
 

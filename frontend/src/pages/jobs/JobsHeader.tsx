@@ -11,14 +11,14 @@ const JobsHeader: React.FC<JobsHeaderProps> = ({ onRefresh, onClearPDFCache, onC
   return (
     <div className="page-header">
       <div className="page-title-section">
-        <h1 className="gradient-title">Jobs</h1>
-        <p className="page-subtitle">Search and manage quotes, orders, and invoices</p>
+        <h1 className="gradient-title">Job Items</h1>
+        <p className="page-subtitle">Search and manage job items</p>
       </div>
       <div style={{ display: 'flex', gap: '12px' }}>
         <button 
           className="btn btn-secondary"
           onClick={onRefresh}
-          title="Refresh jobs list"
+          title="Refresh job items list"
         >
           <span><RefreshIcon width={16} height={16} /></span>
           Refresh
@@ -36,7 +36,7 @@ const JobsHeader: React.FC<JobsHeaderProps> = ({ onRefresh, onClearPDFCache, onC
           onClick={onCreateJob}
         >
           <span className="nav-icon"><ClipboardIcon /></span>
-          Create Job
+          Create Job Item
         </button>
       </div>
     </div>
@@ -44,4 +44,3 @@ const JobsHeader: React.FC<JobsHeaderProps> = ({ onRefresh, onClearPDFCache, onC
 };
 
 export default JobsHeader;
-

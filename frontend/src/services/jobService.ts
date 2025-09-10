@@ -158,7 +158,7 @@ class JobService {
       if (filters?.sortBy) params.append('sortBy', filters.sortBy);
       if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      const response = await axios.get(`${API_BASE_URL}/api/jobs?${params.toString()}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items?${params.toString()}`, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -170,7 +170,7 @@ class JobService {
 
   async getRecentJobs(): Promise<Job[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/jobs?recent=true`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items?recent=true`, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -182,7 +182,7 @@ class JobService {
 
   async getJobsByCustomerId(customerId: number): Promise<Job[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/jobs?customer_id=${customerId}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items?customer_id=${customerId}`, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -194,7 +194,7 @@ class JobService {
 
   async getJobById(id: number): Promise<Job> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/jobs/${id}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items/${id}`, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -206,7 +206,7 @@ class JobService {
 
   async getJobWithDetails(id: number): Promise<JobWithDetails> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/jobs/${id}/details`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items/${id}/details`, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -218,7 +218,13 @@ class JobService {
 
   async createJob(data: CreateJobData): Promise<Job> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/jobs`, data, {
+      // Back-compat mapping: allow callers to pass project_id (maps to job_id)
+      const payload: any = { ...data };
+      if (payload.project_id && !payload.job_id) {
+        payload.job_id = payload.project_id;
+        delete payload.project_id;
+      }
+      const response = await axios.post(`${API_BASE_URL}/api/job-items`, payload, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -230,7 +236,7 @@ class JobService {
 
   async updateJob(id: number, data: UpdateJobData): Promise<Job> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/jobs/${id}`, data, {
+      const response = await axios.put(`${API_BASE_URL}/api/job-items/${id}`, data, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -242,7 +248,7 @@ class JobService {
 
   async deleteJob(id: number): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/api/jobs/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/job-items/${id}`, {
         headers: this.getAuthHeaders()
       });
     } catch (error) {
@@ -266,7 +272,7 @@ class JobService {
 
   async createJobSection(jobId: number, data: CreateJobSectionData): Promise<JobSection> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/jobs/${jobId}/sections`, data, {
+      const response = await axios.post(`${API_BASE_URL}/api/job-items/${jobId}/sections`, data, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -278,7 +284,7 @@ class JobService {
 
   async updateJobSection(sectionId: number, data: Partial<CreateJobSectionData>): Promise<JobSection> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/jobs/sections/${sectionId}`, data, {
+      const response = await axios.put(`${API_BASE_URL}/api/job-sections/${sectionId}`, data, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -290,7 +296,7 @@ class JobService {
 
   async deleteJobSection(sectionId: number): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/api/jobs/sections/${sectionId}`, {
+      await axios.delete(`${API_BASE_URL}/api/job-sections/${sectionId}`, {
         headers: this.getAuthHeaders()
       });
     } catch (error) {
@@ -303,7 +309,7 @@ class JobService {
   async addQuoteItem(jobId: number, sectionId: number, data: CreateQuoteItemData): Promise<QuoteItem> {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/jobs/${jobId}/sections/${sectionId}/items`, 
+        `${API_BASE_URL}/api/job-items/${jobId}/sections/${sectionId}/items`, 
         data,
         { headers: this.getAuthHeaders() }
       );
@@ -316,7 +322,7 @@ class JobService {
 
   async updateQuoteItem(itemId: number, data: UpdateQuoteItemData): Promise<QuoteItem> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/jobs/items/${itemId}`, data, {
+      const response = await axios.put(`${API_BASE_URL}/api/quote-items/${itemId}`, data, {
         headers: this.getAuthHeaders()
       });
       return response.data;
@@ -328,7 +334,7 @@ class JobService {
 
   async deleteQuoteItem(itemId: number): Promise<void> {
     try {
-      await axios.delete(`${API_BASE_URL}/api/jobs/items/${itemId}`, {
+      await axios.delete(`${API_BASE_URL}/api/quote-items/${itemId}`, {
         headers: this.getAuthHeaders()
       });
     } catch (error) {
@@ -340,7 +346,7 @@ class JobService {
   // PDF Generation
   async downloadJobPDF(jobId: number, filename?: string): Promise<void> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/jobs/${jobId}/pdf`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items/${jobId}/pdf`, {
         headers: {
           ...this.getAuthHeaders(),
           'Content-Type': 'application/pdf'

@@ -1,6 +1,6 @@
 # CraftMart Enhanced Jobs System - Implementation Plan
 
-## 📋 Project Overview
+## 📋 Overview (Jobs & Job Items)
 **Goal**: Implement a modern, comprehensive jobs management system with salesmen tracking, sections-based organization, tax calculations, and professional PDF generation.
 
 **Status**: Phase 1 Complete - Backend & Salesmen System Operational

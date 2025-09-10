@@ -1,6 +1,6 @@
 # Stair Pricing Implementation Plan
 
-## Project Overview
+## Overview
 Implement a comprehensive stair pricing system for CraftMart that allows users to configure, price, and add stairs to jobs/quotes. The system will replicate the sophisticated pricing logic from the legacy FoxPro system while integrating seamlessly with the modern web application.
 
 ## Current Status
@@ -353,7 +353,7 @@ interface StairPriceResponse {
 
 **Original Estimate:** 12-16 days  
 **Actual Time:** 10 days completed (100%)  
-**Project Status:** COMPLETE AND DEPLOYED
+**Status:** COMPLETE AND DEPLOYED
 
 ---
 
@@ -408,4 +408,4 @@ interface StairPriceResponse {
 
 ## Contact & Questions
 
-For questions about this implementation plan, refer to the project documentation or consult with the development team.
+For questions about this implementation plan, refer to the documentation or consult with the development team.

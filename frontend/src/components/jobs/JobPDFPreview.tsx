@@ -41,7 +41,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
       const controller = new AbortController();
       timeoutId = window.setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-      const response = await fetch(`/api/jobs/${jobId}/pdf?showLinePricing=${showLinePricing}`, {
+      const response = await fetch(`/api/job-items/${jobId}/pdf?showLinePricing=${showLinePricing}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -204,7 +204,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
   return (
     <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="pdf-preview-overlay" contentClassName="pdf-preview-modal">
         <div className="pdf-preview-header">
-          <h2 id={titleId}>Job PDF Preview</h2>
+          <h2 id={titleId}>Job Item PDF Preview</h2>
           <div className="pdf-preview-actions">
             <label className="pdf-pricing-toggle">
               <input

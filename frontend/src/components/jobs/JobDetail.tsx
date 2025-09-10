@@ -426,7 +426,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
           {job && !loading && !error && (
             <>
               {projectName && (
-                <div className="breadcrumb">Projects / {projectName} / {getJobNumber(job)}</div>
+                <div className="breadcrumb">Jobs / {projectName} / {getJobNumber(job)}</div>
               )}
               {/* Job Summary */}
               <Summary job={job} getJobNumber={getJobNumber} getStatusColor={getStatusColor} projectName={projectName} />

@@ -39,35 +39,35 @@ class ProjectService {
   }
 
   async getAllProjects(): Promise<Project[]> {
-    const response = await axios.get(`${API_BASE_URL}/api/projects`, {
+    const response = await axios.get(`${API_BASE_URL}/api/jobs`, {
       headers: this.getAuthHeaders(),
     });
     return response.data;
   }
 
   async getProjectById(id: number): Promise<Project> {
-    const response = await axios.get(`${API_BASE_URL}/api/projects/${id}` , {
+    const response = await axios.get(`${API_BASE_URL}/api/jobs/${id}` , {
       headers: this.getAuthHeaders(),
     });
     return response.data;
   }
 
   async createProject(data: CreateProjectData): Promise<Project> {
-    const response = await axios.post(`${API_BASE_URL}/api/projects`, data, {
+    const response = await axios.post(`${API_BASE_URL}/api/jobs`, data, {
       headers: this.getAuthHeaders(),
     });
     return response.data;
   }
 
   async updateProject(id: number, data: UpdateProjectData): Promise<Project> {
-    const response = await axios.put(`${API_BASE_URL}/api/projects/${id}`, data, {
+    const response = await axios.put(`${API_BASE_URL}/api/jobs/${id}`, data, {
       headers: this.getAuthHeaders(),
     });
     return response.data;
   }
 
   async deleteProject(id: number): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/api/projects/${id}`, {
+    await axios.delete(`${API_BASE_URL}/api/jobs/${id}`, {
       headers: this.getAuthHeaders(),
     });
   }
@@ -82,4 +82,3 @@ class ProjectService {
 
 export const projectService = new ProjectService();
 export default projectService;
-

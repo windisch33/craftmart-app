@@ -21,6 +21,10 @@ import NextStageConfirmModal from './jobs/NextStageConfirmModal';
 import { useToast } from '../components/common/ToastProvider';
 
 const Jobs: React.FC = () => {
+  // Set document title for Job Items page
+  useEffect(() => {
+    document.title = 'Job Items — CraftMart';
+  }, []);
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
@@ -241,7 +245,7 @@ const Jobs: React.FC = () => {
       }
       
       setShowJobForm(false);
-      showToast('Job created successfully', { type: 'success' });
+      showToast('Job item created successfully', { type: 'success' });
     } catch (err) {
       console.error('Error creating job:', err);
       setError('Failed to create job');
@@ -291,11 +295,14 @@ const Jobs: React.FC = () => {
   };
 
   const getStatusColor = (status: string) => {
-    return jobService.getStatusColor(status);
+    return jobService.getStatusColor(status || '');
   };
 
   const getJobNumber = (job: Job) => {
-    const statusWord = job.status.charAt(0).toUpperCase() + job.status.slice(1);
+    const status = (job as any)?.status || '';
+    const statusWord = status
+      ? status.charAt(0).toUpperCase() + status.slice(1)
+      : 'Job';
     return `${statusWord} #${job.id.toString().padStart(4, '0')}`;
   };
 
@@ -319,7 +326,7 @@ const Jobs: React.FC = () => {
 
   const handleClearPDFCache = async () => {
     try {
-      const response = await fetch('/api/jobs/cache/pdf', { 
+      const response = await fetch('/api/job-items/cache/pdf', { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -343,7 +350,7 @@ const Jobs: React.FC = () => {
       <div className="container">
         <div className="loading">
           <div className="spinner"></div>
-          <p>Loading jobs...</p>
+          <p>Loading job items...</p>
         </div>
       </div>
     );

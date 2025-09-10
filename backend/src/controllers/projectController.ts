@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../config/database';
 
-// Get all projects with customer info and job count
+// Get all projects (stored in table "jobs") with customer info and job item count
 export const getAllProjects = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const query = `
@@ -14,11 +14,11 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         c.name as customer_name,
         c.city as customer_city,
         c.state as customer_state,
-        COUNT(j.id) as job_count,
-        COALESCE(SUM(j.total_amount), 0) as total_value
-      FROM projects p
+        COUNT(ji.id) as job_count,
+        COALESCE(SUM(ji.total_amount), 0) as total_value
+      FROM jobs p
       JOIN customers c ON p.customer_id = c.id
-      LEFT JOIN jobs j ON p.id = j.project_id
+      LEFT JOIN job_items ji ON ji.job_id = p.id
       GROUP BY p.id, c.name, c.city, c.state
       ORDER BY p.created_at DESC
     `;
@@ -30,7 +30,7 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-// Get project by ID with all its jobs
+// Get project (row in table "jobs") by ID with all its job items
 export const getProjectById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = parseInt(req.params.id);
@@ -51,7 +51,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
         c.phone as customer_phone,
         c.city as customer_city,
         c.state as customer_state
-      FROM projects p
+      FROM jobs p
       JOIN customers c ON p.customer_id = c.id
       WHERE p.id = $1
     `;
@@ -62,21 +62,21 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    // Get all jobs for this project
-    const jobsQuery = `
+    // Get all job items for this project
+    const jobItemsQuery = `
       SELECT 
-        j.*,
+        ji.*,
         c.name as customer_name,
         s.first_name as salesman_first_name,
         s.last_name as salesman_last_name
-      FROM jobs j
-      JOIN customers c ON j.customer_id = c.id
-      LEFT JOIN salesmen s ON j.salesman_id = s.id
-      WHERE j.project_id = $1
-      ORDER BY j.created_at DESC
+      FROM job_items ji
+      JOIN customers c ON ji.customer_id = c.id
+      LEFT JOIN salesmen s ON ji.salesman_id = s.id
+      WHERE ji.job_id = $1
+      ORDER BY ji.created_at DESC
     `;
     
-    const jobsResult = await pool.query(jobsQuery, [projectId]);
+    const jobsResult = await pool.query(jobItemsQuery, [projectId]);
 
     const project = {
       ...projectResult.rows[0],
@@ -89,7 +89,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-// Create new project
+// Create new project (row in table "jobs")
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { customer_id, name } = req.body;
@@ -110,7 +110,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
     }
 
     const query = `
-      INSERT INTO projects (customer_id, name)
+      INSERT INTO jobs (customer_id, name)
       VALUES ($1, $2)
       RETURNING *
     `;
@@ -125,7 +125,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
         c.name as customer_name,
         c.city as customer_city,
         c.state as customer_state
-      FROM projects p
+      FROM jobs p
       JOIN customers c ON p.customer_id = c.id
       WHERE p.id = $1
     `, [newProject.id]);
@@ -136,7 +136,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-// Update project (name only)
+// Update project (name only) in table "jobs"
 export const updateProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = parseInt(req.params.id);
@@ -150,7 +150,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
     }
 
     const query = `
-      UPDATE projects 
+      UPDATE jobs 
       SET name = $1, updated_at = CURRENT_TIMESTAMP
       WHERE id = $2
       RETURNING *
@@ -180,7 +180,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-// Delete project (only if no jobs exist)
+// Delete project (only if no job items exist)
 export const deleteProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projectId = parseInt(req.params.id);
@@ -188,9 +188,9 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
       return res.status(400).json({ error: 'Invalid project ID' });
     }
 
-    // Check if project has jobs
+    // Check if project has job items
     const jobCheck = await pool.query(
-      'SELECT COUNT(*) as job_count FROM jobs WHERE project_id = $1',
+      'SELECT COUNT(*) as job_count FROM job_items WHERE job_id = $1',
       [projectId]
     );
 
@@ -201,7 +201,7 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
       });
     }
 
-    const query = 'DELETE FROM projects WHERE id = $1 RETURNING *';
+    const query = 'DELETE FROM jobs WHERE id = $1 RETURNING *';
     const result = await pool.query(query, [projectId]);
 
     if (result.rows.length === 0) {

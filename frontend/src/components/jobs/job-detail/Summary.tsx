@@ -17,7 +17,7 @@ const Summary: React.FC<SummaryProps> = ({ job, getJobNumber, getStatusColor, pr
       <div className="job-title-section">
         <h3>{job.title}</h3>
         {projectName && (
-          <p className="customer-name">Project: {projectName}</p>
+          <p className="customer-name">Job: {projectName}</p>
         )}
         <p className="customer-name">{job.customer_name}</p>
         <div className="job-meta">
