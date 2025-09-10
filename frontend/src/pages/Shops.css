@@ -59,7 +59,7 @@
 
 .shop-job {
   font-size: 14px;
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: 500;
   margin: 0 0 2px 0;
 }
@@ -229,8 +229,8 @@
 
 .shop-action-btn:hover {
   background-color: #f9fafb;
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 

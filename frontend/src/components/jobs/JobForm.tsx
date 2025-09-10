@@ -16,6 +16,7 @@ import StepNavigation from './job-form/StepNavigation';
 import TotalsSidebar from './job-form/TotalsSidebar';
 import FormFooter from './job-form/FormFooter';
 import JobFormErrorBoundary from './job-form/JobFormErrorBoundary';
+import AccessibleModal from '../common/AccessibleModal';
 
 // Error boundary moved to ./job-form/JobFormErrorBoundary
 
@@ -330,24 +331,24 @@ const JobFormInner: React.FC<JobFormProps> = ({
 
   // selectedCustomer and selectedSalesman are now memoized above
 
+  const titleId = 'job-form-title';
+
   if (loading) {
     return (
-      <div className="job-form-overlay">
-        <div className="job-form-modal">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading form data...</p>
-          </div>
+      <AccessibleModal isOpen={true} onClose={onCancel} labelledBy={titleId} overlayClassName="job-form-overlay" contentClassName="job-form-modal">
+        <div className="loading-state">
+          <h2 id={titleId} style={{ position: 'absolute', left: -9999 }}>Create New Job</h2>
+          <div className="loading-spinner"></div>
+          <p>Loading form data...</p>
         </div>
-      </div>
+      </AccessibleModal>
     );
   }
 
   return (
     <>
-      <div className="job-form-overlay">
-        <div className="job-form-modal">
-          <FormHeader title="Create New Job" onClose={onCancel} isLoading={isLoading} />
+      <AccessibleModal isOpen={true} onClose={onCancel} labelledBy={titleId} overlayClassName="job-form-overlay" contentClassName="job-form-modal">
+          <FormHeader title="Create New Job" onClose={onCancel} isLoading={isLoading} titleId={titleId} />
 
           {/* Step Navigation */}
           <StepNavigation currentStep={currentStep} />
@@ -713,8 +714,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
               onNext={handleNextStep}
             />
           </form>
-        </div>
-      </div>
+      </AccessibleModal>
 
       {/* Customer Creation Modal */}
       <CustomerForm

@@ -100,8 +100,8 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .form-input:disabled {
@@ -121,8 +121,8 @@
 }
 
 .currency-input-group:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .currency-symbol {
@@ -255,7 +255,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: var(--gradient-primary);
   color: white;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }

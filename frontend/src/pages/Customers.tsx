@@ -6,6 +6,8 @@ import CustomerJobs from '../components/customers/CustomerJobs';
 import './Customers.css';
 import '../styles/common.css';
 import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, PhoneIcon, MobileIcon, BriefcaseIcon, EditIcon } from '../components/common/icons';
+import EmptyState from '../components/common/EmptyState';
+import { useToast } from '../components/common/ToastProvider';
 
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +23,7 @@ const Customers: React.FC = () => {
   // CustomerJobs modal state
   const [isJobsModalOpen, setIsJobsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const { showToast } = useToast();
 
   // Load recent customers on component mount
   useEffect(() => {
@@ -81,21 +84,23 @@ const Customers: React.FC = () => {
   };
 
   const handleSaveCustomer = async (customerData: CreateCustomerRequest) => {
-    if (editingCustomer) {
-      // Update existing customer
-      const updatedCustomer = await customerService.updateCustomer(editingCustomer.id, customerData);
-      setCustomers(customers.map(c => 
-        c.id === editingCustomer.id ? updatedCustomer : c
-      ));
-    } else {
-      // Create new customer
-      const newCustomer = await customerService.createCustomer(customerData);
-      setCustomers([newCustomer, ...customers]);
-    }
-    
-    // Refresh the list to get updated last_visited_at if needed
-    if (!isSearching) {
-      await loadRecentCustomers();
+    try {
+      if (editingCustomer) {
+        const updatedCustomer = await customerService.updateCustomer(editingCustomer.id, customerData);
+        setCustomers(customers.map(c => c.id === editingCustomer.id ? updatedCustomer : c));
+        showToast('Customer updated', { type: 'success' });
+      } else {
+        const newCustomer = await customerService.createCustomer(customerData);
+        setCustomers([newCustomer, ...customers]);
+        showToast('Customer created successfully', { type: 'success' });
+      }
+      if (!isSearching) {
+        await loadRecentCustomers();
+      }
+      setIsFormOpen(false);
+      setEditingCustomer(null);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to save customer', { type: 'error' });
     }
   };
 
@@ -112,6 +117,7 @@ const Customers: React.FC = () => {
       }
     } catch (err) {
       console.error('Error viewing customer:', err);
+      showToast('Failed to open customer details', { type: 'error' });
     }
   };
 
@@ -151,7 +157,7 @@ const Customers: React.FC = () => {
       </div>
 
       {/* Large Search Bar */}
-      <div className="search-section">
+      <div className="search-section sticky-controls">
         <div className="search-container-large">
           <div className="search-icon-large"><SearchIcon /></div>
           <input
@@ -243,23 +249,12 @@ const Customers: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="empty-customers">
-          <div className="empty-icon"><SearchIcon /></div>
-          <h2 className="empty-title">
-            {isSearching ? 'No customers found' : 'No recent customers'}
-          </h2>
-          <p className="empty-desc">
-            {isSearching 
-              ? 'Try adjusting your search terms or add a new customer.'
-              : 'Start searching for customers or add a new one to get started.'}
-          </p>
-          {!isSearching && (
-            <button className="btn btn-primary" onClick={handleAddCustomer}>
-              <span className="nav-icon"><UsersIcon /></span>
-              Add Your First Customer
-            </button>
-          )}
-        </div>
+        <EmptyState
+          icon={<SearchIcon />}
+          title={isSearching ? 'No customers found' : 'No recent customers'}
+          description={isSearching ? 'Try adjusting your search terms or add a new customer.' : 'Start searching for customers or add a new one to get started.'}
+          action={!isSearching ? { label: 'Add Your First Customer', onClick: handleAddCustomer } : undefined}
+        />
       )}
 
       {/* Customer Form Modal */}

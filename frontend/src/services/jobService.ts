@@ -374,7 +374,7 @@ class JobService {
       case 'quote':
         return { bg: '#fef3c7', color: '#92400e', border: '#fbbf24' }; // Yellow
       case 'order':
-        return { bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' }; // Blue
+        return { bg: 'var(--color-primary-200)', color: 'var(--color-primary-800)', border: 'var(--color-primary)' }; // Primary
       case 'invoice':
         return { bg: '#d1fae5', color: '#065f46', border: '#10b981' }; // Green
       default:

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/common.css';
 import './Shops.css';
 import { shopService, type Shop } from '../services/shopService';
+import { useToast } from '../components/common/ToastProvider';
+import EmptyState from '../components/common/EmptyState';
 import { FactoryIcon, SearchIcon, CalendarIcon } from '../components/common/icons';
 
 const Shops: React.FC = () => {
@@ -11,6 +13,7 @@ const Shops: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showGenerationModal, setShowGenerationModal] = useState(false);
+  const { showToast } = useToast();
 
   // Define styles first so they can be used in conditional returns
   const cardStyle = {
@@ -37,7 +40,7 @@ const Shops: React.FC = () => {
       case 'generated':
         return { bg: '#fef3c7', color: '#92400e', border: '#fbbf24' };
       case 'in_progress':
-        return { bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' };
+        return { bg: '#fae8ff', color: '#86198f', border: 'var(--color-primary)' };
       case 'completed':
         return { bg: '#d1fae5', color: '#065f46', border: '#10b981' };
       default:
@@ -77,16 +80,18 @@ const Shops: React.FC = () => {
   const handleDownloadShopPaper = async (shopId: number) => {
     try {
       await shopService.downloadShopPaper(shopId);
-    } catch (err: any) {
-      alert('Error downloading shop paper: ' + err.message);
+      showToast('Shop paper downloaded', { type: 'success' });
+    } catch (_err: any) {
+      showToast('Failed to download shop paper', { type: 'error' });
     }
   };
 
   const handleDownloadCutList = async (shopId: number) => {
     try {
       await shopService.downloadCutList(shopId);
-    } catch (err: any) {
-      alert('Error downloading cut list: ' + err.message);
+      showToast('Cut list downloaded', { type: 'success' });
+    } catch (_err: any) {
+      showToast('Failed to download cut list', { type: 'error' });
     }
   };
 
@@ -94,8 +99,9 @@ const Shops: React.FC = () => {
     try {
       await shopService.updateShopStatus(shopId, newStatus);
       await loadShops(); // Refresh the list
-    } catch (err: any) {
-      alert('Error updating status: ' + err.message);
+      showToast(`Shop status updated to ${newStatus.replace('_', ' ')}`, { type: 'success' });
+    } catch (_err: any) {
+      showToast('Failed to update status', { type: 'error' });
     }
   };
 
@@ -169,7 +175,7 @@ const Shops: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{...inputStyle, paddingLeft: '48px'}}
-                onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
                 onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
               />
             </div>
@@ -188,7 +194,7 @@ const Shops: React.FC = () => {
                 transition: 'all 0.2s ease',
                 outline: 'none'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
             >
               <option value="all">All Status</option>
@@ -208,7 +214,7 @@ const Shops: React.FC = () => {
               }} 
               onClick={loadShops}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#3b82f6';
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
                 e.currentTarget.style.backgroundColor = '#f8fafc';
               }} 
               onMouseLeave={(e) => {
@@ -223,6 +229,14 @@ const Shops: React.FC = () => {
       </div>
 
       {/* Shops Grid */}
+      {filteredShops.length === 0 ? (
+        <EmptyState
+          icon={<FactoryIcon />}
+          title={shops.length === 0 ? 'No shops yet' : 'No shops match your filters'}
+          description={shops.length === 0 ? 'Generate shops to prepare cut sheets and track progress.' : 'Try clearing filters or generating new shops.'}
+          action={{ label: 'Generate Shops', onClick: () => setShowGenerationModal(true) }}
+        />
+      ) : (
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
@@ -348,7 +362,7 @@ const Shops: React.FC = () => {
                     flex: 1,
                     minWidth: '120px',
                     padding: '10px 16px',
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: 'var(--color-primary)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
@@ -361,8 +375,8 @@ const Shops: React.FC = () => {
                     e.stopPropagation();
                     handleDownloadShopPaper(shop.id);
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
                 >
                   Shop Paper
                 </button>
@@ -394,6 +408,7 @@ const Shops: React.FC = () => {
           );
         })}
       </div>
+      )}
 
       {/* Empty State */}
       {filteredShops.length === 0 && (
@@ -614,7 +629,7 @@ const ShopGenerationModal: React.FC<{
                 disabled={selectedOrders.length === 0 || generating}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: selectedOrders.length > 0 ? '#3b82f6' : '#e5e7eb',
+                  backgroundColor: selectedOrders.length > 0 ? 'var(--color-primary)' : '#e5e7eb',
                   color: selectedOrders.length > 0 ? 'white' : '#9ca3af',
                   border: 'none',
                   borderRadius: '6px',

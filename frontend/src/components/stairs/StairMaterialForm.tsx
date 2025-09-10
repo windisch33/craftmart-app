@@ -5,6 +5,7 @@ import stairProductService, {
   type StairMaterial, 
   type CreateStairMaterialRequest 
 } from '../../services/stairProductService';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface StairMaterialFormProps {
   material?: StairMaterial | null;
@@ -96,12 +97,13 @@ const StairMaterialForm: React.FC<StairMaterialFormProps> = ({ material, onClose
     }
   };
 
+  const titleId = 'stair-material-form-title';
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <AccessibleModal isOpen={true} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
         <div className="modal-header">
-          <h2>{material ? 'Edit Stair Material' : 'Add Stair Material'}</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <h2 id={titleId}>{material ? 'Edit Stair Material' : 'Add Stair Material'}</h2>
+          <button className="close-btn" onClick={onClose} aria-label="Close dialog">×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -172,8 +174,7 @@ const StairMaterialForm: React.FC<StairMaterialFormProps> = ({ material, onClose
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

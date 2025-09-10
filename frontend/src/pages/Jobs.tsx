@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import jobService from '../services/jobService';
 import salesmanService from '../services/salesmanService';
 import type { Job } from '../services/jobService';
@@ -18,9 +18,12 @@ import JobsErrorBanner from './jobs/JobsErrorBanner';
 import JobsGrid from './jobs/JobsGrid';
 import JobsEmptyState from './jobs/JobsEmptyState';
 import NextStageConfirmModal from './jobs/NextStageConfirmModal';
+import { useToast } from '../components/common/ToastProvider';
 
 const Jobs: React.FC = () => {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { showToast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,9 +47,35 @@ const Jobs: React.FC = () => {
     sortOrder: 'desc'
   });
 
-  // Load recent jobs on mount
+  // Load recent jobs / restore state on mount
   useEffect(() => {
-    loadRecentJobs();
+    // Restore search from URL if present (read directly from window to avoid deps)
+    const q = new URLSearchParams(window.location.search).get('q') || '';
+    if (q) {
+      setSearchTerm(q);
+      setIsSearching(true);
+      (async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const filters = {
+            searchTerm: q,
+            searchField: 'all',
+            searchOperator: 'contains',
+            sortBy: 'updated_at',
+            sortOrder: 'desc' as const
+          };
+          const searchResults = await jobService.getAllJobs(filters);
+          setJobs(searchResults);
+    } catch (_err) {
+      setError('Failed to load jobs');
+    } finally {
+      setLoading(false);
+    }
+      })();
+    } else {
+      loadRecentJobs();
+    }
     loadSalesmen();
   }, []);
 
@@ -85,6 +114,11 @@ const Jobs: React.FC = () => {
 
   const handleSearch = async (query: string) => {
     setSearchTerm(query);
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (query.trim()) p.set('q', query); else p.delete('q');
+      return p;
+    });
     
     if (!query.trim()) {
       // If search is cleared, show recent jobs again
@@ -138,6 +172,15 @@ const Jobs: React.FC = () => {
 
       const filteredJobs = await jobService.getAllJobs(filters);
       setJobs(filteredJobs);
+
+      // Persist filters in URL
+      const p = new URLSearchParams(searchParams);
+      // basic fields
+      if (filterCriteria.status.length) p.set('status', filterCriteria.status.join(',')); else p.delete('status');
+      if (filterCriteria.salesman.length) p.set('salesman', filterCriteria.salesman.join(',')); else p.delete('salesman');
+      if (filterCriteria.sortBy) p.set('sortBy', filterCriteria.sortBy); else p.delete('sortBy');
+      if (filterCriteria.sortOrder) p.set('sortOrder', filterCriteria.sortOrder); else p.delete('sortOrder');
+      setSearchParams(p);
     } catch (err) {
       setError('Failed to apply filters');
       console.error('Error applying filters:', err);
@@ -198,9 +241,11 @@ const Jobs: React.FC = () => {
       }
       
       setShowJobForm(false);
+      showToast('Job created successfully', { type: 'success' });
     } catch (err) {
       console.error('Error creating job:', err);
       setError('Failed to create job');
+      showToast('Failed to create job', { type: 'error' });
     } finally {
       setJobFormLoading(false);
     }
@@ -211,6 +256,7 @@ const Jobs: React.FC = () => {
   };
 
   const handleViewPDF = (jobId: number, jobTitle: string) => {
+    // If project info is available in future, include it in title.
     setPdfPreview({ jobId, jobTitle });
   };
 
@@ -236,9 +282,11 @@ const Jobs: React.FC = () => {
       }
       
       setConfirmNextStage(null);
+      showToast(`Moved job to ${nextStatus}`, { type: 'success' });
     } catch (err) {
       console.error('Error updating job status:', err);
       setError('Failed to update job status');
+      showToast('Failed to update job status', { type: 'error' });
     }
   };
 
@@ -280,13 +328,13 @@ const Jobs: React.FC = () => {
       
       if (response.ok) {
         const result = await response.json();
-        alert(result.message || 'PDF cache cleared successfully');
+        showToast(result.message || 'PDF cache cleared successfully', { type: 'success' });
       } else {
-        alert('Failed to clear PDF cache');
+        showToast('Failed to clear PDF cache', { type: 'error' });
       }
     } catch (error) {
       console.error('Error clearing PDF cache:', error);
-      alert('Failed to clear PDF cache');
+      showToast('Failed to clear PDF cache', { type: 'error' });
     }
   };
 
@@ -311,6 +359,7 @@ const Jobs: React.FC = () => {
       />
 
       {/* Large Search Bar */}
+      <div className="sticky-controls">
       <JobsSearchSection
         searchTerm={searchTerm}
         onSearch={handleSearch}
@@ -318,6 +367,7 @@ const Jobs: React.FC = () => {
         showAdvancedFilters={showAdvancedFilters}
         onToggleAdvancedFilters={() => setShowAdvancedFilters(!showAdvancedFilters)}
       />
+      </div>
 
       {/* Advanced Filters Panel */}
       <JobsAdvancedFiltersPanel

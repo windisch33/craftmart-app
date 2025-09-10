@@ -5,6 +5,7 @@ import stairProductService, {
   type StairBoardType, 
   type CreateBoardTypeRequest 
 } from '../../services/stairProductService';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface BoardTypeFormProps {
   boardType?: StairBoardType | null;
@@ -125,12 +126,13 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
     }
   };
 
+  const titleId = 'board-type-form-title';
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <AccessibleModal isOpen={true} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
         <div className="modal-header">
-          <h2>{boardType ? 'Edit Board Type & Pricing' : 'Add Board Type & Pricing'}</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <h2 id={titleId}>{boardType ? 'Edit Board Type & Pricing' : 'Add Board Type & Pricing'}</h2>
+          <button className="close-btn" onClick={onClose} aria-label="Close dialog">×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -348,8 +350,7 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

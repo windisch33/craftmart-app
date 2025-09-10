@@ -47,9 +47,9 @@
 }
 
 .nav-link--active {
-  background-color: #eff6ff;
-  color: #1e40af;
-  border-color: #bfdbfe;
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-800);
+  border-color: var(--color-primary-300);
 }
 
 .nav-link--inactive {

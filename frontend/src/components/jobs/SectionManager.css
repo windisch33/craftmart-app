@@ -113,8 +113,8 @@
 }
 
 .quick-add-btn:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
   transform: translateY(-1px);
 }
 

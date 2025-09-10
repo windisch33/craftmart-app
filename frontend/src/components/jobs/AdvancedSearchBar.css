@@ -39,7 +39,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid #f3f4f6;
-  border-top: 2px solid #3b82f6;
+  border-top: 2px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -61,8 +61,8 @@
 }
 
 .search-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .search-input:disabled {
@@ -112,15 +112,15 @@
 }
 
 .advanced-toggle-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   background: #f8fafc;
 }
 
 .advanced-toggle-btn.active {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .advanced-toggle-btn:disabled {
@@ -176,8 +176,8 @@
 .field-select:focus,
 .operator-select:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
 }
 
 .field-select:disabled,
@@ -218,9 +218,9 @@
 }
 
 .preset-btn:hover {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .preset-btn:disabled {

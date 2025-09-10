@@ -15,11 +15,13 @@ import Reports from './pages/Reports';
 import Login from './pages/Login';
 import Users from './pages/Users';
 import './styles/App.css';
+import { ToastProvider } from './components/common/ToastProvider';
 
 function App() {
   return (
     <AuthProvider>
       <MobileProvider>
+        <ToastProvider>
         <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -48,6 +50,7 @@ function App() {
           } />
         </Routes>
         </Router>
+        </ToastProvider>
       </MobileProvider>
     </AuthProvider>
   );

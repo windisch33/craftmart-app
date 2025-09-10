@@ -40,6 +40,9 @@ interface JobData {
   salesman_email: string;
   salesman_phone: string;
   
+  // Project info
+  project_name?: string;
+  
   // Sections with items
   sections: Array<{
     id: number;
@@ -729,6 +732,7 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         
         <div class="job-details">
             <div class="section-title">Job: ${jobData.title}</div>
+            ${jobData.project_name ? `<div><strong>Project:</strong> ${jobData.project_name}</div>` : ''}
             ${jobData.job_location ? `<div><strong>Directions:</strong><br>${jobData.job_location}</div>` : ''}
         </div>
     </div>
@@ -850,10 +854,12 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
              c.name as customer_name, c.address, c.city, c.state, c.zip_code,
              c.phone, c.mobile, c.email, c.accounting_email,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
-             s.email as salesman_email, s.phone as salesman_phone
+             s.email as salesman_email, s.phone as salesman_phone,
+             p.name as project_name
       FROM jobs j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
+      LEFT JOIN projects p ON j.project_id = p.id
       WHERE j.id = $1
     `, [jobId]);
 
@@ -939,10 +945,17 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
   }
 };
 
-export const getJobPDFFilename = (jobData: { id: number; status: string; customer_name: string }): string => {
+export const getJobPDFFilename = (jobData: { id: number; status: string; customer_name: string; project_name?: string | null }): string => {
   const status = jobData.status.toUpperCase();
-  const customerName = jobData.customer_name.replace(/[^a-zA-Z0-9]/g, '_');
-  return `CraftMart_${status}_${jobData.id}_${customerName}.pdf`;
+  const safe = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '_');
+  const parts = [
+    'CraftMart',
+    status,
+    String(jobData.id),
+    jobData.project_name ? safe(jobData.project_name) : undefined,
+    safe(jobData.customer_name)
+  ].filter(Boolean) as string[];
+  return parts.join('_') + '.pdf';
 };
 
 // ============================================

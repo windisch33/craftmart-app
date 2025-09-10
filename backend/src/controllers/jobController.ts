@@ -987,9 +987,10 @@ export const generateJobPDFEndpoint = async (req: Request, res: Response, next: 
     
     // Get basic job info for filename
     const jobResult = await pool.query(`
-      SELECT j.id, j.status, c.name as customer_name
+      SELECT j.id, j.status, c.name as customer_name, p.name as project_name
       FROM jobs j 
       LEFT JOIN customers c ON j.customer_id = c.id 
+      LEFT JOIN projects p ON j.project_id = p.id
       WHERE j.id = $1
     `, [id]);
 

@@ -40,3 +40,34 @@
 - Copy `.env.example` to `.env` (frontend and backend) and set secrets locally.
 - Never commit secrets; use env vars and Docker secrets.
 - Verify CORS, auth headers, and rate limits in `backend/` before exposing endpoints.
+
+## PDF Changes: Rebuild & Cache
+- Backend template lives in `backend/src/services/pdfService.ts`.
+- After changing PDF HTML/SQL:
+  - Rebuild/restart backend: `docker compose down && docker compose up --build -d`
+  - Clear PDF cache: Jobs page “Clear PDF Cache” or API:
+    - `DELETE /api/jobs/cache/pdf` (all) or `DELETE /api/jobs/:jobId/cache/pdf` (one).
+- Verify filename and content reflect updates (project name appears in header and filename).
+
+## Toasts (UI Feedback)
+- Global provider: `ToastProvider` wraps the app in `frontend/src/App.tsx`.
+- Use in components:
+  - `import { useToast } from '../components/common/ToastProvider'`
+  - `const { showToast } = useToast();`
+  - `showToast('Saved successfully', { type: 'success' });`
+- Types: `type?: 'success' | 'error' | 'info'`, `duration?: number` (ms). Click toast to dismiss.
+
+## Accessible Modals
+- Component: `frontend/src/components/common/AccessibleModal.tsx`
+- Features: `role="dialog"`, `aria-modal="true"`, Escape-to-close, focus trap, backdrop close, focus restore.
+- Usage:
+  - Wrap modal content: `<AccessibleModal isOpen onClose labelledBy overlayClassName contentClassName>...`.
+  - Provide a heading with matching `id` and pass as `labelledBy`.
+  - Add `aria-label="Close dialog"` to close buttons.
+- Refactored modals:
+  - Job Detail, Project Detail, Project Form, Job Form, Job PDF Preview, Next Stage Confirm, Customer Jobs, Users Reset Password, Stair Configurator, Stair Special Parts Form, Stair Board Type Form, Stair Material Form.
+
+## Theme Migration (Primary Color)
+- Primary color lives in `frontend/src/styles/variables.css` (`--color-primary-*`, `--gradient-primary`).
+- We migrated many pages/components to consume the theme tokens; see `THEME_MIGRATION.md` for progress and remaining files.
+- To change theme globally: edit the primary ramp in `variables.css`, then hard refresh or rebuild.

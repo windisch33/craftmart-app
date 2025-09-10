@@ -19,7 +19,7 @@
 .gradient-title {
   font-size: 3rem;
   font-weight: bold;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -58,14 +58,14 @@
 }
 
 .quick-add-btn {
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
   color: white;
   padding: 12px 24px;
   border-radius: 12px;
   border: none;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+  box-shadow: 0 4px 14px 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
 }
 
 .stats-grid {
@@ -109,7 +109,7 @@
   border-radius: 50%;
 }
 
-.stat-dot--blue { background-color: #3b82f6; }
+.stat-dot--blue { background-color: var(--color-primary); }
 .stat-dot--green { background-color: #10b981; }
 .stat-dot--amber { background-color: #f59e0b; }
 .stat-dot--purple { background-color: #8b5cf6; }
@@ -162,7 +162,7 @@
 }
 
 .stat-icon--blue {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
 }
 
 .stat-icon--green {
@@ -229,7 +229,7 @@
 }
 
 .view-all-btn {
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: 500;
   font-size: 14px;
   border: none;

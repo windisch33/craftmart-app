@@ -17,6 +17,7 @@ import StairSpecialPartsForm from '../components/stairs/StairSpecialPartsForm';
 import QuickPricer from '../components/stairs/QuickPricer';
 import { SelectableList } from '../components/common/SelectableList';
 import { AlertTriangleIcon } from '../components/common/icons';
+import EmptyState from '../components/common/EmptyState';
 import '../styles/common.css';
 import './Products.css';
 
@@ -529,14 +530,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading handrail products...</div>
-            ) : (
+            ) : handrailProducts.length ? (
               <SelectableList
                 items={handrailProducts}
                 columns={handrailColumns}
                 getItemId={(product) => product.id}
                 onEdit={handleEditHandrail}
                 onDelete={handleDeleteHandrails}
-                emptyMessage="No handrail products found. Create your first handrail product to get started."
+              />
+            ) : (
+              <EmptyState
+                title="No handrail products yet"
+                description="Create your first handrail product to get started."
+                action={{ label: 'Add Handrail Product', onClick: handleCreateHandrail }}
               />
             )}
           </div>
@@ -556,14 +562,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading landing tread products...</div>
-            ) : (
+            ) : landingTreadProducts.length ? (
               <SelectableList
                 items={landingTreadProducts}
                 columns={landingTreadColumns}
                 getItemId={(product) => product.id}
                 onEdit={handleEditLandingTread}
                 onDelete={handleDeleteLandingTreads}
-                emptyMessage="No landing tread products found. Create your first landing tread to get started."
+              />
+            ) : (
+              <EmptyState
+                title="No landing treads yet"
+                description="Add landing treads to price and manage inventory."
+                action={{ label: 'Add Landing Tread', onClick: handleCreateLandingTread }}
               />
             )}
           </div>
@@ -583,14 +594,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading rail parts products...</div>
-            ) : (
+            ) : railPartsProducts.length ? (
               <SelectableList
                 items={railPartsProducts}
                 columns={railPartsColumns}
                 getItemId={(product) => product.id}
                 onEdit={handleEditRailParts}
                 onDelete={handleDeleteRailParts}
-                emptyMessage="No rail parts products found. Create your first rail parts to get started."
+              />
+            ) : (
+              <EmptyState
+                title="No rail parts yet"
+                description="Create rail parts to complete quotes and orders."
+                action={{ label: 'Add Rail Parts', onClick: handleCreateRailParts }}
               />
             )}
           </div>
@@ -610,14 +626,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading materials...</div>
-            ) : (
+            ) : materials.length ? (
               <SelectableList
                 items={materials}
                 columns={materialColumns}
                 getItemId={(material) => material.id}
                 onEdit={handleEditMaterial}
                 onDelete={handleDeleteMaterials}
-                emptyMessage="No materials found. Create your first material to get started."
+              />
+            ) : (
+              <EmptyState
+                title="No materials yet"
+                description="Add materials to price products accurately."
+                action={{ label: 'Add Material', onClick: handleCreateMaterial }}
               />
             )}
           </div>
@@ -641,14 +662,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading stair materials...</div>
-            ) : (
+            ) : stairMaterials.length ? (
               <SelectableList
                 items={stairMaterials}
                 columns={stairMaterialColumns}
                 getItemId={(material) => material.id}
                 onEdit={handleEditStairMaterial}
                 onDelete={handleDeleteStairMaterials}
-                emptyMessage="No stair materials configured."
+              />
+            ) : (
+              <EmptyState
+                title="No stair materials yet"
+                description="Add stair material multipliers for accurate pricing."
+                action={{ label: 'Add Stair Material', onClick: handleCreateStairMaterial }}
               />
             )}
           </div>
@@ -671,14 +697,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading pricing configuration...</div>
-            ) : (
+            ) : boardTypes.length ? (
               <SelectableList
                 items={boardTypes}
                 columns={boardTypeColumns}
                 getItemId={(boardType) => boardType.id}
                 onEdit={handleEditBoardType}
                 onDelete={handleDeleteBoardTypes}
-                emptyMessage="No pricing configuration found."
+              />
+            ) : (
+              <EmptyState
+                title="No stair pricing rules yet"
+                description="Define board types and simplified pricing rules."
+                action={{ label: 'Add Board Type', onClick: handleCreateBoardType }}
               />
             )}
           </div>
@@ -700,14 +731,19 @@ const Products: React.FC = () => {
 
             {loading ? (
               <div className="loading-spinner">Loading special parts...</div>
-            ) : (
+            ) : specialParts.length ? (
               <SelectableList
                 items={specialParts}
                 columns={specialPartsColumns}
                 getItemId={(specialPart) => specialPart.id}
                 onEdit={handleEditSpecialParts}
                 onDelete={handleDeleteSpecialParts}
-                emptyMessage="No special parts found. Create your first special part to get started."
+              />
+            ) : (
+              <EmptyState
+                title="No special parts yet"
+                description="Add special parts for non-standard components."
+                action={{ label: 'Add Special Part', onClick: handleCreateSpecialParts }}
               />
             )}
           </div>

@@ -23,7 +23,7 @@
 }
 
 /* Gradient Text */
-.gradient-title {
+.gradient-title, .page-title {
   font-size: var(--text-5xl);
   font-weight: var(--font-bold);
   background: linear-gradient(to right, var(--color-primary), #8b5cf6);
@@ -55,13 +55,14 @@
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
-  color: var(--color-white);
+  background: var(--gradient-primary) !important;
+  color: var(--color-white) !important;
   box-shadow: var(--shadow-md);
+  border: none !important;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-hover);
+  background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover)) !important;
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
@@ -96,6 +97,24 @@
   background-color: var(--color-background-secondary);
 }
 
+/* Sticky controls for search/filters bars */
+.sticky-controls {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #ffffff;
+  border-bottom: 1px solid var(--color-gray-100);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+/* Simple breadcrumb style */
+.breadcrumb {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
 .btn-success {
   background-color: var(--color-success);
   color: var(--color-white);
@@ -112,6 +131,16 @@
   background-color: var(--color-danger);
   color: var(--color-white);
   box-shadow: var(--shadow-md);
+}
+
+/* Common override: info-styled action buttons adopt primary color */
+.action-btn-info {
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+.action-btn-info:hover {
+  background-color: var(--color-primary) !important;
+  color: var(--color-white) !important;
 }
 
 /* Form Elements */
@@ -560,12 +589,12 @@
 }
 
 .action-button.edit {
-  background: #3b82f6;
+  background: var(--gradient-primary);
   color: white;
 }
 
 .action-button.edit:hover {
-  background: #2563eb;
+  background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
 }
 
 .action-button.delete {
@@ -596,8 +625,8 @@
 }
 
 .search-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 20%, transparent);
 }
 
 .search-icon {
@@ -637,36 +666,79 @@
 }
 
 /* Modal Styles */
-.modal-overlay {
+/*
+  Modal Overlay (shared)
+  Apply overlay improvements and subtle blur across all modal overlays in app
+*/
+.modal-overlay,
+.job-detail-overlay,
+.job-form-overlay,
+.pdf-preview-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.55);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
+  animation: overlayFadeIn 150ms ease-out;
 }
 
-.modal {
-  background-color: white;
-  border-radius: 16px;
-  padding: 32px;
+/*
+  Modal Content (shared)
+  Target legacy .modal and newer content classes used by AccessibleModal
+*/
+.modal,
+.modal-content,
+.job-detail-modal,
+.job-form-modal,
+.pdf-preview-modal,
+.customer-jobs-modal,
+.stair-configurator {
+  background-color: var(--color-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
   width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.25);
+  animation: modalEnter 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Large content helper for project/job detail style dialogs */
+.modal-large {
+  max-width: min(960px, 95vw);
+}
+
+/* Default sizes where not explicitly set by component styles */
+.modal-content:not(.modal-large):not(.pdf-preview-modal),
+.modal:not(.modal-large) {
+  max-width: min(640px, 95vw);
+}
+
+/* Sticky header/footer chrome with subtle dividers */
 .modal-header {
-  margin-bottom: 24px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: inherit;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .modal-title {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 600;
+  letter-spacing: 0.2px;
   color: #1f2937;
   margin: 0;
 }
@@ -676,6 +748,70 @@
   gap: 12px;
   margin-top: 32px;
   justify-content: flex-end;
+}
+
+.modal-body {
+  overflow: auto;
+  padding: 16px 20px;
+}
+
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: inherit;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 12px 16px;
+}
+
+/* Close buttons (shared) */
+.modal-close,
+.close-btn,
+.user-form-close,
+.job-form-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.modal-close:hover,
+.close-btn:hover,
+.user-form-close:hover,
+.job-form-close:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+/* Focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* PDF preview sizing */
+.pdf-preview-modal {
+  max-width: min(1100px, 98vw);
+}
+.pdf-iframe {
+  height: calc(80vh - 60px);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+}
+
+/* Subtle entrance/exit motion */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalEnter {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 /* Mobile Card Stacking */

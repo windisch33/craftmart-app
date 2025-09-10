@@ -98,7 +98,7 @@ const Reports: React.FC = () => {
               value={reportType}
               onChange={(e) => setReportType(e.target.value)}
               style={inputStyle}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
             >
               <option value="sales">Sales Report</option>
@@ -118,7 +118,7 @@ const Reports: React.FC = () => {
               value={dateRange.start}
               onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
               style={inputStyle}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
             />
           </div>
@@ -132,7 +132,7 @@ const Reports: React.FC = () => {
               value={dateRange.end}
               onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
               style={inputStyle}
-              onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
             />
           </div>
@@ -186,7 +186,7 @@ const Reports: React.FC = () => {
               title: 'Quarterly Tax',
               description: 'Q1 2024 tax summary',
               iconElement: <ClipboardIcon />,
-              color: '#3b82f6',
+              color: 'var(--color-primary)',
               action: 'Generate Now'
             },
             {
@@ -281,7 +281,7 @@ const Reports: React.FC = () => {
               <p style={{fontSize: '14px', color: '#6b7280', margin: 0}}>Previously generated reports</p>
             </div>
           </div>
-          <button style={{color: '#3b82f6', fontWeight: '500', fontSize: '14px', border: 'none', background: 'none', cursor: 'pointer'}}>
+          <button style={{color: 'var(--color-primary)', fontWeight: '500', fontSize: '14px', border: 'none', background: 'none', cursor: 'pointer'}}>
             View all
           </button>
         </div>
@@ -332,7 +332,7 @@ const Reports: React.FC = () => {
                 </span>
                 <button style={{
                   padding: '8px 12px',
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: 'var(--color-primary)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
@@ -340,8 +340,8 @@ const Reports: React.FC = () => {
                   fontWeight: '500',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
-                }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}>
+                }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'}
+                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}>
                   Download
                 </button>
               </div>

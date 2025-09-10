@@ -5,6 +5,10 @@ import UserForm from '../components/users/UserForm';
 import './Users.css';
 import '../styles/common.css';
 import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, ClockIcon, CalendarIcon, EditIcon, KeyIcon } from '../components/common/icons';
+import AccessibleModal from '../components/common/AccessibleModal';
+import EmptyState from '../components/common/EmptyState';
+import { formatDate } from '../utils/format';
+import { useToast } from '../components/common/ToastProvider';
 
 const Users: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +24,7 @@ const Users: React.FC = () => {
   // Password reset modal state
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<number | null>(null);
+  const { showToast } = useToast();
 
   // Load all users on component mount
   useEffect(() => {
@@ -97,8 +102,10 @@ const Users: React.FC = () => {
       
       setIsFormOpen(false);
       setEditingUser(null);
+      showToast(editingUser ? 'User updated' : 'User created successfully', { type: 'success' });
     } catch (err: any) {
-      throw err; // Let the form handle the error
+      showToast(err?.message || 'Failed to save user', { type: 'error' });
+      throw err; // Let the form handle the error for field-level display
     }
   };
 
@@ -115,8 +122,9 @@ const Users: React.FC = () => {
       await authService.resetUserPassword(resetPasswordUserId, newPassword);
       setIsResetPasswordOpen(false);
       setResetPasswordUserId(null);
-      alert('Password reset successfully');
+      showToast('Password reset successfully', { type: 'success' });
     } catch (err: any) {
+      showToast(err?.message || 'Failed to reset password', { type: 'error' });
       throw err; // Let the modal handle the error
     }
   };
@@ -178,13 +186,12 @@ const Users: React.FC = () => {
       )}
 
       {users.length === 0 ? (
-        <div className="empty-customers">
-          <div className="empty-icon"><SearchIcon /></div>
-          <h2 className="empty-title">No users found</h2>
-          <p className="empty-desc">
-            Try adjusting your search terms or add a new user.
-          </p>
-        </div>
+        <EmptyState
+          icon={<SearchIcon />}
+          title="No users found"
+          description="Try adjusting your search terms or add a new user."
+          action={{ label: 'Add User', onClick: handleAddUser }}
+        />
       ) : (
         <div className="customers-grid">
           {users.map(user => (
@@ -209,12 +216,12 @@ const Users: React.FC = () => {
                 {user.last_login && (
                   <div className="contact-item">
                     <span className="contact-icon"><ClockIcon /></span>
-                    <span>Last login: {new Date(user.last_login).toLocaleDateString()}</span>
+                    <span>Last login: {formatDate(user.last_login)}</span>
                   </div>
                 )}
                 <div className="contact-item">
                   <span className="contact-icon"><CalendarIcon /></span>
-                  <span>Created: {new Date(user.created_at).toLocaleDateString()}</span>
+                  <span>Created: {formatDate(user.created_at)}</span>
                 </div>
               </div>
 
@@ -249,40 +256,38 @@ const Users: React.FC = () => {
 
       {/* Password Reset Modal */}
       {isResetPasswordOpen && (
-        <div className="modal-overlay" onClick={() => setIsResetPasswordOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Reset Password</h2>
-              <button className="modal-close" onClick={() => setIsResetPasswordOpen(false)}>×</button>
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              const newPassword = formData.get('newPassword') as string;
-              handleResetPasswordSubmit(newPassword);
-            }}>
-              <div className="form-group">
-                <label htmlFor="newPassword">New Password</label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  name="newPassword"
-                  required
-                  minLength={8}
-                  placeholder="Enter new password (min 8 characters)"
-                />
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsResetPasswordOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Reset Password
-                </button>
-              </div>
-            </form>
+        <AccessibleModal isOpen={true} onClose={() => setIsResetPasswordOpen(false)} labelledBy="reset-password-title" overlayClassName="modal-overlay" contentClassName="modal-content">
+          <div className="modal-header">
+            <h2 id="reset-password-title">Reset Password</h2>
+            <button className="modal-close" onClick={() => setIsResetPasswordOpen(false)} aria-label="Close dialog">×</button>
           </div>
-        </div>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const newPassword = formData.get('newPassword') as string;
+            handleResetPasswordSubmit(newPassword);
+          }}>
+            <div className="form-group">
+              <label htmlFor="newPassword">New Password</label>
+              <input
+                type="password"
+                id="newPassword"
+                name="newPassword"
+                required
+                minLength={8}
+                placeholder="Enter new password (min 8 characters)"
+              />
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setIsResetPasswordOpen(false)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Reset Password
+              </button>
+            </div>
+          </form>
+        </AccessibleModal>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 :root {
   /* Color Palette */
+  /* Primary: Classic Blue ramp */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -56,8 +57,9 @@
   --color-black: #000000;
 
   /* Semantic Colors */
-  --color-primary: var(--color-primary-500);
-  --color-primary-hover: var(--color-primary-600);
+  /* Boldest feel: use deepest steps as semantic primary */
+  --color-primary: var(--color-primary-800);
+  --color-primary-hover: var(--color-primary-900);
   --color-secondary: var(--color-gray-600);
   --color-secondary-hover: var(--color-gray-700);
   --color-success: var(--color-success-500);
@@ -120,7 +122,7 @@
   --shadow-hover: 0 10px 60px -15px rgba(0, 0, 0, 0.3);
 
   /* Focus ring shadows */
-  --shadow-focus-primary: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  --shadow-focus-primary: 0 0 0 3px rgba(30, 58, 138, 0.2);
   --shadow-focus-danger: 0 0 0 3px rgba(239, 68, 68, 0.1);
 
   /* Typography Scale */

@@ -6,6 +6,8 @@ import { SelectableList } from '../components/common/SelectableList';
 import './Salesmen.css';
 import '../styles/common.css';
 import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, PhoneIcon, RefreshIcon } from '../components/common/icons';
+import StatusBadge from '../components/common/StatusBadge';
+import { useToast } from '../components/common/ToastProvider';
 
 const SalesmenBasic: React.FC = () => {
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
@@ -15,6 +17,7 @@ const SalesmenBasic: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSalesman, setEditingSalesman] = useState<Salesman | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadSalesmen();
@@ -38,6 +41,7 @@ const SalesmenBasic: React.FC = () => {
     setIsRefreshing(true);
     await loadSalesmen();
     setIsRefreshing(false);
+    showToast('Salesmen list refreshed', { type: 'success' });
   };
 
   const handleSearch = async (query: string) => {
@@ -66,8 +70,10 @@ const SalesmenBasic: React.FC = () => {
       // Remove deleted salesmen from local state
       const deletedIds = salesmenToDelete.map(s => s.id);
       setSalesmen(salesmen.filter(salesman => !deletedIds.includes(salesman.id)));
+      showToast(`${salesmenToDelete.length} salesman(s) deleted`, { type: 'success' });
     } catch (err: any) {
       setError(err.message || 'Failed to delete salesmen');
+      showToast(err?.message || 'Failed to delete salesmen', { type: 'error' });
     }
   };
 
@@ -87,17 +93,23 @@ const SalesmenBasic: React.FC = () => {
   };
 
   const handleSaveSalesman = async (salesmanData: CreateSalesmanData) => {
-    if (editingSalesman) {
-      // Update existing salesman
-      const updatedSalesman = await salesmanService.updateSalesman(editingSalesman.id, {
-        ...salesmanData,
-        is_active: editingSalesman.is_active
-      });
-      setSalesmen(salesmen.map(s => s.id === editingSalesman.id ? updatedSalesman : s));
-    } else {
-      // Create new salesman
-      const newSalesman = await salesmanService.createSalesman(salesmanData);
-      setSalesmen([newSalesman, ...salesmen]);
+    try {
+      if (editingSalesman) {
+        const updatedSalesman = await salesmanService.updateSalesman(editingSalesman.id, {
+          ...salesmanData,
+          is_active: editingSalesman.is_active
+        });
+        setSalesmen(salesmen.map(s => s.id === editingSalesman.id ? updatedSalesman : s));
+        showToast('Salesman updated', { type: 'success' });
+      } else {
+        const newSalesman = await salesmanService.createSalesman(salesmanData);
+        setSalesmen([newSalesman, ...salesmen]);
+        showToast('Salesman created successfully', { type: 'success' });
+      }
+      setIsFormOpen(false);
+      setEditingSalesman(null);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to save salesman', { type: 'error' });
     }
   };
 
@@ -133,16 +145,7 @@ const SalesmenBasic: React.FC = () => {
       label: 'Status',
       width: '15%',
       render: (salesman: Salesman) => (
-        <span style={{
-          padding: '4px 12px',
-          borderRadius: '20px',
-          fontSize: '12px',
-          fontWeight: 500,
-          backgroundColor: salesman.is_active ? '#dcfce7' : '#fee2e2',
-          color: salesman.is_active ? '#166534' : '#991b1b'
-        }}>
-          {salesman.is_active ? 'Active' : 'Inactive'}
-        </span>
+        <StatusBadge text={salesman.is_active ? 'Active' : 'Inactive'} variant={salesman.is_active ? 'success' : 'danger'} />
       )
     },
     {

@@ -90,7 +90,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   const statusOptions = [
     { value: 'quote', label: 'Quotes', color: '#f59e0b' },
-    { value: 'order', label: 'Orders', color: '#3b82f6' },
+    { value: 'order', label: 'Orders', color: 'var(--color-primary)' },
     { value: 'invoice', label: 'Invoices', color: '#10b981' }
   ];
 

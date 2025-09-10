@@ -7,6 +7,7 @@ import type { Salesman } from '../../services/salesmanService';
 import '../../styles/common.css';
 import './JobDetail.css';
 import DetailHeader from './job-detail/DetailHeader';
+import AccessibleModal from '../common/AccessibleModal';
 import LoadingState from './job-detail/LoadingState';
 import ErrorState from './job-detail/ErrorState';
 import Summary from './job-detail/Summary';
@@ -58,9 +59,10 @@ interface JobDetailProps {
   jobId: number;
   isOpen: boolean;
   onClose: () => void;
+  projectName?: string;
 }
 
-const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
+const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectName }) => {
   const [job, setJob] = useState<JobWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -385,7 +387,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
       case 'quote':
         return { bg: '#fef3c7', color: '#92400e', border: '#fbbf24' };
       case 'order':
-        return { bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' };
+        return { bg: 'var(--color-primary-100)', color: 'var(--color-primary-800)', border: 'var(--color-primary)' };
       case 'invoice':
         return { bg: '#d1fae5', color: '#065f46', border: '#10b981' };
       default:
@@ -393,11 +395,18 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
     }
   };
 
+  const titleId = 'job-detail-title';
+
   if (!isOpen) return null;
 
   return (
-    <div className="job-detail-overlay">
-      <div className="job-detail-modal">
+    <AccessibleModal
+      isOpen={isOpen}
+      onClose={onClose}
+      labelledBy={titleId}
+      overlayClassName="job-detail-overlay"
+      contentClassName="job-detail-modal"
+    >
         {/* Header */}
         <DetailHeader
           isEditing={isEditing}
@@ -405,6 +414,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
           isSaving={isSaving}
           onToggleEdit={handleEditToggle}
           onClose={onClose}
+          titleId={titleId}
         />
 
         {/* Content */}
@@ -415,8 +425,11 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
 
           {job && !loading && !error && (
             <>
+              {projectName && (
+                <div className="breadcrumb">Projects / {projectName} / {getJobNumber(job)}</div>
+              )}
               {/* Job Summary */}
-              <Summary job={job} getJobNumber={getJobNumber} getStatusColor={getStatusColor} />
+              <Summary job={job} getJobNumber={getJobNumber} getStatusColor={getStatusColor} projectName={projectName} />
 
                 {/* Job Information - Edit/View Toggle */}
                 {isEditing && editJobData ? (
@@ -458,8 +471,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose }) => {
             onSaveChanges={handleSaveChanges}
           />
         )}
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

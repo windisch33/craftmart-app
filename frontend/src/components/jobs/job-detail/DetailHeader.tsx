@@ -7,6 +7,7 @@ type DetailHeaderProps = {
   isSaving: boolean;
   onToggleEdit: () => void;
   onClose: () => void;
+  titleId?: string;
 };
 
 const DetailHeader: React.FC<DetailHeaderProps> = ({
@@ -15,10 +16,11 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
   isSaving,
   onToggleEdit,
   onClose,
+  titleId,
 }) => (
   <div className="job-detail-header">
     <div className="header-content">
-      <h2>Job Details</h2>
+      <h2 id={titleId}>Job Details</h2>
       <div className="header-actions">
         <button
           className="edit-toggle-btn"
@@ -35,6 +37,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
           className="close-btn"
           onClick={onClose}
           disabled={loading}
+          aria-label="Close dialog"
         >
           ×
         </button>
@@ -44,4 +47,3 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
 );
 
 export default DetailHeader;
-

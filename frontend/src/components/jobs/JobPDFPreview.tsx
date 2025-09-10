@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DownloadIcon, PrintIcon, WarningIcon } from '../common/icons';
 import './JobPDFPreview.css';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface JobPDFPreviewProps {
   jobId: number;
@@ -198,11 +199,12 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
 
   if (!isOpen) return null;
 
+  const titleId = 'job-pdf-preview-title';
+
   return (
-    <div className="pdf-preview-overlay">
-      <div className="pdf-preview-modal">
+    <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="pdf-preview-overlay" contentClassName="pdf-preview-modal">
         <div className="pdf-preview-header">
-          <h2>Job PDF Preview</h2>
+          <h2 id={titleId}>Job PDF Preview</h2>
           <div className="pdf-preview-actions">
             <label className="pdf-pricing-toggle">
               <input
@@ -235,6 +237,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
               className="pdf-preview-close"
               onClick={onClose}
               title="Close preview"
+              aria-label="Close dialog"
             >
               ×
             </button>
@@ -267,8 +270,7 @@ const JobPDFPreview: React.FC<JobPDFPreviewProps> = ({
             />
           )}
         </div>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

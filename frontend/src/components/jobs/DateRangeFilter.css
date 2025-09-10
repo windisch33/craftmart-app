@@ -53,7 +53,7 @@
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #3b82f6;
+  accent-color: var(--color-primary);
 }
 
 .radio-item input[type="radio"]:disabled {
@@ -114,8 +114,8 @@
 
 .date-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 20%, transparent);
 }
 
 .date-input:disabled {
@@ -167,11 +167,11 @@
 }
 
 .preset-btn:hover {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 2px 4px color-mix(in oklab, var(--color-primary) 25%, transparent);
 }
 
 .preset-btn:active {
@@ -193,8 +193,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px;
-  background: #dbeafe;
-  border: 1px solid #93c5fd;
+  background: var(--color-primary-100);
+  border: 1px solid var(--color-primary-300);
   border-radius: 8px;
   gap: 8px;
 }
@@ -212,7 +212,7 @@
 
 .range-text {
   font-size: 14px;
-  color: #1e40af;
+  color: var(--color-primary-800);
   font-weight: 500;
   display: flex;
   flex-direction: column;
@@ -221,7 +221,7 @@
 
 .range-type {
   font-size: 12px;
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: 400;
   font-style: italic;
 }
@@ -229,7 +229,7 @@
 .clear-range-btn {
   background: none;
   border: none;
-  color: #1e40af;
+  color: var(--color-primary-800);
   font-size: 18px;
   cursor: pointer;
   padding: 4px;
@@ -243,7 +243,7 @@
 }
 
 .clear-range-btn:hover {
-  background: #1e40af;
+  background: var(--color-primary-800);
   color: white;
 }
 
@@ -284,7 +284,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid #f3f4f6;
-  border-top: 2px solid #3b82f6;
+  border-top: 2px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   z-index: 1;

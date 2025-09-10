@@ -92,7 +92,7 @@
 .job-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .job-header {
@@ -242,12 +242,12 @@ span.status-badge {
 }
 
 .action-btn-info {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .action-btn-info:hover {
-  background-color: #3b82f6;
+  background-color: var(--color-primary);
   color: white;
 }
 

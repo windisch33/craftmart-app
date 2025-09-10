@@ -5,6 +5,7 @@ import type { Job } from '../../services/jobService';
 import type { Customer } from '../../services/customerService';
 import './CustomerJobs.css';
 import { AlertTriangleIcon } from '../common/icons';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface CustomerJobsProps {
   customer: Customer | null;
@@ -47,25 +48,20 @@ const CustomerJobs: React.FC<CustomerJobsProps> = ({ customer, isOpen, onClose }
     onClose();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+  const titleId = 'customer-jobs-title';
 
   if (!isOpen || !customer) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleBackdropClick}>
-      <div className="customer-jobs-modal">
+    <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="customer-jobs-modal">
         <div className="modal-header">
           <div className="modal-title-section">
-            <h2 className="modal-title">Jobs for {customer.name}</h2>
+            <h2 className="modal-title" id={titleId}>Jobs for {customer.name}</h2>
             <p className="modal-subtitle">
               {customer.city && customer.state ? `${customer.city}, ${customer.state}` : 'No location'}
             </p>
           </div>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
           </button>
         </div>
@@ -146,8 +142,7 @@ const CustomerJobs: React.FC<CustomerJobsProps> = ({ customer, isOpen, onClose }
             Close
           </button>
         </div>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

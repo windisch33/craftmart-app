@@ -5,6 +5,8 @@ import SalesmanForm from '../components/salesmen/SalesmanForm';
 import './Salesmen.css';
 import '../styles/common.css';
 import { UsersIcon, AlertTriangleIcon, SearchIcon, MailIcon, PhoneIcon, DollarIcon, EditIcon } from '../components/common/icons';
+import EmptyState from '../components/common/EmptyState';
+import { useToast } from '../components/common/ToastProvider';
 
 const Salesmen: React.FC = () => {
   const [salesmen, setSalesmen] = useState<Salesman[]>([]);
@@ -14,6 +16,7 @@ const Salesmen: React.FC = () => {
   // const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSalesman, setEditingSalesman] = useState<Salesman | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadSalesmen();
@@ -72,15 +75,23 @@ const Salesmen: React.FC = () => {
   };
 
   const handleSaveSalesman = async (salesmanData: CreateSalesmanData) => {
-    if (editingSalesman) {
-      const updatedSalesman = await salesmanService.updateSalesman(editingSalesman.id, {
-        ...salesmanData,
-        is_active: editingSalesman.is_active
-      });
-      setSalesmen(salesmen.map(s => s.id === editingSalesman.id ? updatedSalesman : s));
-    } else {
-      const newSalesman = await salesmanService.createSalesman(salesmanData);
-      setSalesmen([newSalesman, ...salesmen]);
+    try {
+      if (editingSalesman) {
+        const updatedSalesman = await salesmanService.updateSalesman(editingSalesman.id, {
+          ...salesmanData,
+          is_active: editingSalesman.is_active
+        });
+        setSalesmen(salesmen.map(s => s.id === editingSalesman.id ? updatedSalesman : s));
+        showToast('Salesman updated', { type: 'success' });
+      } else {
+        const newSalesman = await salesmanService.createSalesman(salesmanData);
+        setSalesmen([newSalesman, ...salesmen]);
+        showToast('Salesman created successfully', { type: 'success' });
+      }
+      setIsFormOpen(false);
+      setEditingSalesman(null);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to save salesman', { type: 'error' });
     }
   };
 
@@ -108,7 +119,7 @@ const Salesmen: React.FC = () => {
         </button>
       </div>
 
-      <div className="search-section">
+      <div className="search-section sticky-controls">
         <div className="search-container-large">
           <div className="search-icon-large"><SearchIcon /></div>
           <input
@@ -132,13 +143,12 @@ const Salesmen: React.FC = () => {
       )}
 
       {salesmen.length === 0 ? (
-        <div className="empty-customers">
-          <div className="empty-icon"><SearchIcon /></div>
-          <h2 className="empty-title">No salesmen found</h2>
-          <p className="empty-desc">
-            Try adjusting your search terms or add a new salesman.
-          </p>
-        </div>
+        <EmptyState
+          icon={<SearchIcon />}
+          title="No salesmen found"
+          description="Try adjusting your search terms or add a new salesman."
+          action={{ label: 'Add Salesman', onClick: handleAddSalesman }}
+        />
       ) : (
         <div className="customers-grid">
           {salesmen.map(salesman => (

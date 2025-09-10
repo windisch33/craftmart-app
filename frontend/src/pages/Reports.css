@@ -46,8 +46,8 @@
 }
 
 .date-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .report-type-tabs {
@@ -74,7 +74,7 @@
 
 .report-tab.active {
   background-color: white;
-  color: #3b82f6;
+  color: var(--color-primary);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
@@ -123,7 +123,7 @@
 }
 
 .quick-report-icon--sales {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
 }
 
 .quick-report-icon--tax {

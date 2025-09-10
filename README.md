@@ -199,6 +199,21 @@ craftmart-app/
 └── docker-compose.yml         # Multi-container orchestration
 ```
 
+## 🎨 Theming
+- Primary color, gradients, and focus rings are defined in `frontend/src/styles/variables.css`.
+- Most UI uses CSS variables (`--color-primary`, `--color-primary-hover`, `--gradient-primary`).
+- To change the app’s look:
+  1) Edit the primary ramp and semantic tokens in `variables.css` (see THEME_MIGRATION.md presets)
+  2) Hard refresh the browser (Ctrl/Cmd+Shift+R) or run `cd frontend && npm run build`
+- Reference: `THEME_MIGRATION.md` for progress, remaining files, and ready-to-paste color presets.
+
+## 🧩 Accessibility
+- Modals use a shared, accessible wrapper (`AccessibleModal`):
+  - Traps focus, restores focus on close, Escape to close, backdrop click optional
+  - Applies `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`
+  - Refactored: Job Detail, Project Detail, Project Form, Job Form, PDF Preview, Next Stage Confirm, Customer Jobs, Users Reset Password, Stair forms
+  - See AGENTS.md for usage details
+
 ## 🗄️ Database Schema
 
 ### **Core Tables**

@@ -6,7 +6,10 @@ import customerService from '../services/customerService';
 import ProjectList from '../components/projects/ProjectList';
 import ProjectForm from '../components/projects/ProjectForm';
 import ProjectDetail from '../components/projects/ProjectDetail';
+import EmptyState from '../components/common/EmptyState';
 import { SearchIcon, FolderIcon, AlertTriangleIcon } from '../components/common/icons';
+import { useSearchParams } from 'react-router-dom';
+import { useToast } from '../components/common/ToastProvider';
 
 const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -15,13 +18,20 @@ const Projects: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [, setSearchParams] = useSearchParams();
   
   // Modal states
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q') || '';
+    if (q) {
+      setSearchTerm(q);
+      setIsSearching(!!q.trim());
+    }
     loadProjects();
     loadCustomers();
   }, []);
@@ -52,7 +62,11 @@ const Projects: React.FC = () => {
   const handleSearch = (query: string) => {
     setSearchTerm(query);
     setIsSearching(!!query.trim());
-    // Search functionality will be implemented here if needed
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (query.trim()) p.set('q', query); else p.delete('q');
+      return p;
+    });
   };
 
   const handleCreateProject = async (projectData: { customer_id: number; name: string }) => {
@@ -60,9 +74,11 @@ const Projects: React.FC = () => {
       await projectService.createProject(projectData);
       await loadProjects();
       setShowProjectForm(false);
+      showToast('Project created successfully', { type: 'success' });
     } catch (err: any) {
       console.error('Error creating project:', err);
       setError(err.message || 'Failed to create project');
+      showToast(err.message || 'Failed to create project', { type: 'error' });
     }
   };
 
@@ -71,9 +87,11 @@ const Projects: React.FC = () => {
       await projectService.updateProject(id, projectData);
       await loadProjects();
       setEditingProject(null);
+      showToast('Project updated', { type: 'success' });
     } catch (err: any) {
       console.error('Error updating project:', err);
       setError(err.message || 'Failed to update project');
+      showToast(err.message || 'Failed to update project', { type: 'error' });
     }
   };
 
@@ -85,9 +103,11 @@ const Projects: React.FC = () => {
     try {
       await projectService.deleteProject(id);
       await loadProjects();
+      showToast('Project deleted', { type: 'success' });
     } catch (err: any) {
       console.error('Error deleting project:', err);
       setError(err.message || 'Failed to delete project');
+      showToast(err.message || 'Failed to delete project', { type: 'error' });
     }
   };
 
@@ -153,7 +173,7 @@ const Projects: React.FC = () => {
       </div>
 
       {/* Search Section */}
-      <div className="search-section">
+      <div className="search-section sticky-controls">
         <div className="search-container-large">
           <div className="search-icon-large"><SearchIcon /></div>
           <input
@@ -184,14 +204,23 @@ const Projects: React.FC = () => {
       )}
 
       {/* Projects List */}
-      <ProjectList
-        projects={filteredProjects}
-        isSearching={isSearching}
-        onViewProject={handleViewProject}
-        onEditProject={handleEditProjectClick}
-        onDeleteProject={handleDeleteProject}
-        onCreateProject={() => setShowProjectForm(true)}
-      />
+      {filteredProjects.length > 0 ? (
+        <ProjectList
+          projects={filteredProjects}
+          isSearching={isSearching}
+          onViewProject={handleViewProject}
+          onEditProject={handleEditProjectClick}
+          onDeleteProject={handleDeleteProject}
+          onCreateProject={() => setShowProjectForm(true)}
+        />
+      ) : (
+        <EmptyState
+          icon={<FolderIcon />}
+          title={isSearching ? 'No projects found' : 'No projects yet'}
+          description={isSearching ? 'Try adjusting your search terms or create a new project.' : 'Create your first project to start organizing jobs by customer.'}
+          action={!isSearching ? { label: 'Create Project', onClick: () => setShowProjectForm(true) } : undefined}
+        />
+      )}
 
       {/* Project Form Modal */}
       {showProjectForm && (

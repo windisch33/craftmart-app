@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Project } from '../../services/projectService';
 import type { Customer } from '../../services/customerService';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface ProjectFormProps {
   project?: Project | null;
@@ -83,22 +84,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+  const titleId = 'project-form-title';
 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleBackdropClick}>
-      <div className="modal-content">
+    <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
         <div className="modal-header">
-          <h2 className="modal-title">
+          <h2 className="modal-title" id={titleId}>
             {project ? 'Edit Project' : 'Create New Project'}
           </h2>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
           </button>
         </div>
@@ -187,8 +183,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

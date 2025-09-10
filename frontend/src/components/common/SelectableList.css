@@ -94,12 +94,12 @@
 }
 
 .row-action-button.edit {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .row-action-button.edit:hover {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .row-action-button.delete {

@@ -6,6 +6,7 @@ import stairProductService, {
   type StairMaterial,
   type CreateSpecialPartRequest 
 } from '../../services/stairProductService';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface StairSpecialPartsFormProps {
   specialPart?: StairSpecialPart | null;
@@ -137,22 +138,22 @@ const StairSpecialPartsForm: React.FC<StairSpecialPartsFormProps> = ({ specialPa
 
   const selectedMaterial = materials.find(m => m.mat_seq_n === formData.mat_seq_n);
 
+  const titleId = 'stair-special-parts-title';
+
   if (dataLoading) {
     return (
-      <div className="modal-overlay">
-        <div className="modal-content">
-          <div className="loading-spinner">Loading materials...</div>
-        </div>
-      </div>
+      <AccessibleModal isOpen={true} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
+        <h2 id={titleId} style={{ position: 'absolute', left: -9999 }}>Loading</h2>
+        <div className="loading-spinner">Loading materials...</div>
+      </AccessibleModal>
     );
   }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <AccessibleModal isOpen={true} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
         <div className="modal-header">
-          <h2>{specialPart ? 'Edit Special Part' : 'Add Special Part'}</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <h2 id={titleId}>{specialPart ? 'Edit Special Part' : 'Add Special Part'}</h2>
+          <button className="close-btn" onClick={onClose} aria-label="Close dialog">×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -332,8 +333,7 @@ const StairSpecialPartsForm: React.FC<StairSpecialPartsFormProps> = ({ specialPa
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

@@ -37,7 +37,7 @@ ul, ol {
 
 /* Focus outline for accessibility */
 *:focus {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 

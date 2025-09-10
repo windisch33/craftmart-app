@@ -47,7 +47,7 @@
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -107,8 +107,8 @@
 .salesman-form-field input:focus,
 .salesman-form-field textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .salesman-form-field input.error,
@@ -172,19 +172,19 @@
 
 .submit-button {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 14px color-mix(in oklab, var(--color-primary) 30%, transparent);
 }
 
 .submit-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(to right, var(--color-primary), var(--color-primary-hover));
+  box-shadow: 0 6px 20px color-mix(in oklab, var(--color-primary) 45%, transparent);
   transform: translateY(-1px);
 }
 

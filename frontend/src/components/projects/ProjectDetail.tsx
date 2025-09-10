@@ -8,6 +8,7 @@ import JobDetail from '../jobs/JobDetail';
 import JobPDFPreview from '../jobs/JobPDFPreview';
 import { StairConfigurationProvider } from '../../contexts/StairConfigurationContext';
 import { ClipboardIcon, AlertTriangleIcon, FolderIcon, ArrowRightIcon, FileIcon } from '../common/icons';
+import AccessibleModal from '../common/AccessibleModal';
 
 interface ProjectDetailProps {
   projectId: number;
@@ -109,7 +110,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
   };
 
   const handleViewPDF = (jobId: number, jobTitle: string) => {
-    setPdfPreview({ jobId, jobTitle });
+    const titleWithProject = project ? `${project.name} — ${jobTitle}` : jobTitle;
+    setPdfPreview({ jobId, jobTitle: titleWithProject });
   };
 
   const handleNextStage = async (job: Job) => {
@@ -130,11 +132,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+  const titleId = 'project-detail-title';
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -152,11 +150,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleBackdropClick}>
-      <div className="modal-content modal-large">
+    <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content modal-large">
         <div className="modal-header">
           <div className="modal-title-section">
-            <h2 className="modal-title">
+            <h2 className="modal-title" id={titleId}>
               <FolderIcon /> {project?.name || 'Loading...'}
             </h2>
             {project && (
@@ -168,7 +165,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
               </p>
             )}
           </div>
-          <button className="modal-close" onClick={onClose}>
+          <button className="modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
           </button>
         </div>
@@ -301,7 +298,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
             Close
           </button>
         </div>
-      </div>
+      
 
       {/* Job Creation Modal */}
       {showJobForm && (
@@ -319,6 +316,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
             jobId={selectedJob.jobId}
             isOpen={true}
             onClose={() => setSelectedJob(null)}
+            projectName={project?.name}
           />
         </StairConfigurationProvider>
       )}
@@ -332,7 +330,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
           onClose={() => setPdfPreview(null)}
         />
       )}
-    </div>
+    </AccessibleModal>
   );
 };
 

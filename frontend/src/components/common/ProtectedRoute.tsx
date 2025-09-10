@@ -23,7 +23,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
     width: '128px',
     height: '128px',
     border: '2px solid transparent',
-    borderTop: '2px solid #3b82f6',
+    borderTop: '2px solid var(--color-primary)',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite'
   };

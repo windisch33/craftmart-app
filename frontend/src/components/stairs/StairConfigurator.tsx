@@ -20,6 +20,7 @@ import SpecialPartsAndNotes from './configurator/SpecialPartsAndNotes';
 import PriceSummary from './configurator/PriceSummary';
 import { generateTreadsFromBulkConfig, validateTreadConfiguration, initializeTreads } from './configurator/utils';
 import type { StairConfiguratorProps, FormData, FormErrors } from './configurator/types';
+import AccessibleModal from '../common/AccessibleModal';
 
 const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   jobId,
@@ -417,12 +418,13 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   };
 
 
+  const titleId = 'stair-configurator-title';
+
   return (
-    <div className="modal-overlay">
-      <div className="stair-configurator">
+    <AccessibleModal isOpen={true} onClose={onCancel} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="stair-configurator">
         <div className="modal-header">
-          <h2>Stair Configurator</h2>
-          <button className="close-btn" onClick={onCancel}>×</button>
+          <h2 id={titleId}>Stair Configurator</h2>
+          <button className="close-btn" onClick={onCancel} aria-label="Close dialog">×</button>
         </div>
 
         <div className="modal-body">
@@ -535,8 +537,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
             Cancel
           </button>
         </div>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 };
 
