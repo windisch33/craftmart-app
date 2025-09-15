@@ -198,9 +198,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                     <strong>Job Items:</strong> {project.jobs?.length || 0}
                   </div>
                   <div>
-                    <strong>Total Value:</strong> {jobsService.formatCurrency(project.total_value || 0)}
-                  </div>
-                  <div>
                     <strong>Created:</strong> {formatDate(project.created_at)}
                   </div>
                 </div>
@@ -318,12 +315,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                   <ClipboardIcon width={48} height={48} style={{ opacity: 0.5 }} />
                   <h3>No job items in this job yet</h3>
                   <p>Create your first job item to get started.</p>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={() => setShowJobForm(true)}
-                  >
-                    <ClipboardIcon /> Create First Job Item
-                  </button>
                 </div>
               )}
             </>
@@ -354,6 +345,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
             isOpen={true}
             onClose={() => setSelectedJob(null)}
             projectName={project?.name}
+            currentProject={project}
           />
         </StairConfigurationProvider>
       )}

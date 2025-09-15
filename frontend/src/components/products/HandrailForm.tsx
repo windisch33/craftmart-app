@@ -11,8 +11,7 @@ interface HandrailFormProps {
 const HandrailForm: React.FC<HandrailFormProps> = ({ product, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
-    cost_per_6_inches: '',
-    labor_install_cost: ''
+    cost_per_6_inches: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +20,7 @@ const HandrailForm: React.FC<HandrailFormProps> = ({ product, onClose }) => {
     if (product) {
       setFormData({
         name: product.name,
-        cost_per_6_inches: product.cost_per_6_inches?.toString() || '',
-        labor_install_cost: product.labor_install_cost?.toString() || ''
+        cost_per_6_inches: product.cost_per_6_inches?.toString() || ''
       });
     }
   }, [product]);
@@ -47,20 +45,14 @@ const HandrailForm: React.FC<HandrailFormProps> = ({ product, onClose }) => {
       }
 
       const costPer6Inches = parseFloat(formData.cost_per_6_inches);
-      const laborCost = parseFloat(formData.labor_install_cost);
 
       if (isNaN(costPer6Inches) || costPer6Inches < 0) {
         throw new Error('Cost per 6" must be a valid positive number');
       }
 
-      if (isNaN(laborCost) || laborCost < 0) {
-        throw new Error('Labor/install cost must be a valid positive number');
-      }
-
       const requestData: CreateHandrailProductRequest | UpdateHandrailProductRequest = {
         name: formData.name.trim(),
-        cost_per_6_inches: costPer6Inches,
-        labor_install_cost: laborCost
+        cost_per_6_inches: costPer6Inches
       };
 
       if (product) {
@@ -160,50 +152,17 @@ const HandrailForm: React.FC<HandrailFormProps> = ({ product, onClose }) => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="labor_install_cost" className="form-label">
-                  Labor/Install Cost *
-                </label>
-                <div className="currency-input-group">
-                  <span className="currency-symbol">$</span>
-                  <input
-                    type="number"
-                    id="labor_install_cost"
-                    name="labor_install_cost"
-                    value={formData.labor_install_cost}
-                    onChange={handleInputChange}
-                    className="form-input currency-input"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    required
-                    disabled={loading}
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
           {/* Price Preview */}
-          {formData.cost_per_6_inches && formData.labor_install_cost && (
+          {formData.cost_per_6_inches && (
             <div className="price-preview">
               <h4>Pricing Preview (for 12 feet with Pine material):</h4>
               <div className="price-breakdown">
-                <div className="price-item">
+                <div className="price-item total">
                   <span>Material Cost:</span>
                   <span>{formatCurrency((parseFloat(formData.cost_per_6_inches) * 24).toString())}</span>
-                </div>
-                <div className="price-item">
-                  <span>Labor Cost:</span>
-                  <span>{formatCurrency(formData.labor_install_cost)}</span>
-                </div>
-                <div className="price-item total">
-                  <span>Total:</span>
-                  <span>
-                    {formatCurrency(
-                      (parseFloat(formData.cost_per_6_inches) * 24 + parseFloat(formData.labor_install_cost)).toString()
-                    )}
-                  </span>
                 </div>
               </div>
             </div>

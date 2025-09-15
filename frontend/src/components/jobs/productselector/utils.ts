@@ -58,6 +58,9 @@ export const calculateLaborPrice = (product: Product | null, formData: ProductFo
   try {
     if (!formData.includeLabor) return 0;
 
+    // Handrail products don't have labor costs
+    if (product?.product_type === 'handrail') return 0;
+
     if (!product || !product.labor_install_cost) return 0;
 
     const laborCost = Number(product.labor_install_cost) || 0;
@@ -117,3 +120,17 @@ export const calculateSectionTotal = (items: any[]): number => {
     return total + ((item.unit_price || 0) * (item.quantity || 1));
   }, 0);
 };
+
+// Handrail length validation utilities
+export const isValidHandrailLength = (inches: number): boolean => {
+  return inches >= 6 && inches <= 240 && inches % 6 === 0;
+};
+
+export const roundToNearestSixInches = (inches: number): number => {
+  if (inches < 6) return 6;
+  if (inches > 240) return 240;
+  return Math.round(inches / 6) * 6;
+};
+
+// Note: formatLengthDisplay and generateHandrailLengthOptions functions removed
+// as they are no longer needed with the simplified datalist implementation

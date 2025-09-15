@@ -53,8 +53,8 @@ export const calculateHandrailPrice = (
     lengthInches,
     product.cost_per_6_inches,
     material.multiplier,
-    product.labor_install_cost || 0,
-    includeLabor
+    0, // Handrails no longer have labor costs
+    false // Never include labor for handrails
   );
 };
 

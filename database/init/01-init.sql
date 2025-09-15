@@ -199,7 +199,6 @@ CREATE TABLE IF NOT EXISTS handrail_products (
     id SERIAL PRIMARY KEY,
     product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
     cost_per_6_inches DECIMAL(8,2) NOT NULL CHECK (cost_per_6_inches >= 0),
-    labor_install_cost DECIMAL(8,2) NOT NULL CHECK (labor_install_cost >= 0),
     UNIQUE(product_id)
 );
 
@@ -266,10 +265,10 @@ INSERT INTO products (name, product_type) VALUES
 ('Decorative Carved Handrail', 'handrail')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO handrail_products (product_id, cost_per_6_inches, labor_install_cost) VALUES
-(1, 25.00, 150.00),
-(2, 30.00, 175.00),
-(3, 45.00, 200.00)
+INSERT INTO handrail_products (product_id, cost_per_6_inches) VALUES
+(1, 25.00),
+(2, 30.00),
+(3, 45.00)
 ON CONFLICT DO NOTHING;
 
 -- Insert sample landing tread product

@@ -742,12 +742,12 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         <tr>
             <th>Sales Rep.</th>
             <th>Contact Person</th>
-            <th>Print Date</th>
+            <th>Date Created</th>
         </tr>
         <tr>
             <td>${salesmanName}</td>
             <td>${jobData.customer_name.split(' ')[0] || 'CUSTOMER'}</td>
-            <td>${formatDate(new Date().toISOString())}</td>
+            <td>${formatDate(jobData.created_at)}</td>
         </tr>
         <tr>
             <th>Delivery Date</th>

@@ -1,11 +1,12 @@
 import React from 'react';
-import { EyeIcon, PencilIcon } from '../../common/icons';
+import { EyeIcon, PencilIcon, CopyIcon } from '../../common/icons';
 
 type DetailHeaderProps = {
   isEditing: boolean;
   loading: boolean;
   isSaving: boolean;
   onToggleEdit: () => void;
+  onCopy: () => void;
   onClose: () => void;
   titleId?: string;
 };
@@ -15,6 +16,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
   loading,
   isSaving,
   onToggleEdit,
+  onCopy,
   onClose,
   titleId,
 }) => (
@@ -32,6 +34,14 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({
           ) : (
             <><PencilIcon width={16} height={16} /> Edit</>
           )}
+        </button>
+        <button
+          className="copy-btn"
+          onClick={onCopy}
+          disabled={loading || isSaving}
+          title="Copy job item"
+        >
+          <CopyIcon width={16} height={16} /> Copy
         </button>
         <button
           className="close-btn"

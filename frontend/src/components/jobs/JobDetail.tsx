@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import jobService from '../../services/jobService';
 import salesmanService from '../../services/salesmanService';
+import projectService from '../../services/projectService';
+import { useToast } from '../common/ToastProvider';
 import type { JobWithDetails, QuoteItem } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
+import type { Project } from '../../services/projectService';
 // Removed unused icons import
 import '../../styles/common.css';
 import './JobDetail.css';
@@ -12,6 +16,7 @@ import LoadingState from './job-detail/LoadingState';
 import ErrorState from './job-detail/ErrorState';
 import Summary from './job-detail/Summary';
 import EditJobForm from './job-detail/EditJobForm';
+import CopyJobModal from './job-detail/CopyJobModal';
 import JobInfoGrid from './job-detail/JobInfoGrid';
 import SectionsBlock from './job-detail/SectionsBlock';
 import TotalsPanel from './job-detail/TotalsPanel';
@@ -60,14 +65,22 @@ interface JobDetailProps {
   isOpen: boolean;
   onClose: () => void;
   projectName?: string;
+  currentProject?: Project;
 }
 
-const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectName }) => {
+const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectName, currentProject }) => {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [job, setJob] = useState<JobWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Copy job state
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
+  const [isCopying, setIsCopying] = useState(false);
   
   // Edit form state
   const [editJobData, setEditJobData] = useState<EditableJobData | null>(null);
@@ -333,6 +346,105 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
     setValidationErrors({});
   };
 
+  // Copy job handlers
+  const handleCopyJob = async () => {
+    try {
+      // Load available projects for the modal
+      const projects = await projectService.getAllProjects();
+      setAvailableProjects(projects);
+      setShowCopyModal(true);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      showToast('Failed to load projects for copy', { type: 'error' });
+    }
+  };
+
+  const handleConfirmCopy = async (targetProjectId: number | null, newTitle: string) => {
+    if (!job) return;
+
+    try {
+      setIsCopying(true);
+      
+      // Determine the final project ID - either the target or current project
+      // Note: job.job_id is the actual database field name (maps to project)
+      const finalProjectId = targetProjectId || currentProject?.id || job.job_id;
+      
+      if (!finalProjectId) {
+        throw new Error('No valid project ID found for copy operation');
+      }
+
+      // Create a copy of the job data
+      const copyData = {
+        customer_id: job.customer_id,
+        salesman_id: job.salesman_id,
+        title: newTitle,
+        description: job.description,
+        status: 'quote' as const, // Always start as quote
+        delivery_date: job.delivery_date,
+        job_location: job.job_location,
+        order_designation: job.order_designation,
+        model_name: job.model_name,
+        installer: job.installer,
+        terms: job.terms,
+        project_id: finalProjectId
+      };
+
+      // Create the new job
+      const newJob = await jobService.createJob(copyData);
+
+      // Copy all sections and items
+      for (const section of job.sections || []) {
+        const newSection = await jobService.createJobSection(newJob.id, {
+          name: section.name,
+          display_order: section.display_order
+        });
+
+        // Copy all items in this section
+        if (section.items) {
+          for (const item of section.items) {
+            await jobService.addQuoteItem(newJob.id, newSection.id, {
+              part_number: item.part_number,
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              is_taxable: item.is_taxable
+              // Note: stair configurations will need to be handled separately if needed
+            });
+          }
+        }
+      }
+
+      setShowCopyModal(false);
+      setIsCopying(false);
+      
+      // Show success message
+      const targetProject = targetProjectId ? 
+        availableProjects.find(p => p.id === targetProjectId) : currentProject;
+      const message = targetProjectId ? 
+        `Job item copied to "${targetProject?.name}"` : 
+        'Job item copied successfully';
+      
+      showToast(message, { type: 'success' });
+
+      // Navigate to the new job
+      if (targetProjectId && targetProjectId !== currentProject?.id) {
+        // Navigate to different project with the new job selected
+        navigate('/projects', { 
+          state: { selectedJobId: newJob.id } 
+        });
+      } else {
+        // Stay in current project, close current job detail and open new one
+        onClose();
+        // The parent component should handle opening the new job detail
+      }
+      
+    } catch (error) {
+      console.error('Error copying job:', error);
+      setIsCopying(false);
+      showToast('Failed to copy job item', { type: 'error' });
+    }
+  };
+
   // Helper functions for managing sections and items
   const addNewSection = () => {
     const newSection: EditableSection = {
@@ -400,6 +512,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
   if (!isOpen) return null;
 
   return (
+    <>
     <AccessibleModal
       isOpen={isOpen}
       onClose={onClose}
@@ -413,6 +526,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
           loading={loading}
           isSaving={isSaving}
           onToggleEdit={handleEditToggle}
+          onCopy={handleCopyJob}
           onClose={onClose}
           titleId={titleId}
         />
@@ -472,6 +586,20 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
           />
         )}
     </AccessibleModal>
+
+    {/* Copy Job Modal */}
+    {job && (
+      <CopyJobModal
+        isOpen={showCopyModal}
+        onClose={() => setShowCopyModal(false)}
+        onConfirm={handleConfirmCopy}
+        job={job}
+        currentProject={currentProject}
+        availableProjects={availableProjects}
+        isLoading={isCopying}
+      />
+    )}
+    </>
   );
 };
 

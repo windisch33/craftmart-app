@@ -2,6 +2,7 @@ import React from 'react';
 import type { Product } from '../../../services/productService';
 import type { Material } from '../../../services/materialService';
 import type { ProductFormData } from './types';
+import HandrailLengthInput from './HandrailLengthInput';
 
 interface ProductSelectorFormProps {
   formData: ProductFormData;
@@ -22,6 +23,7 @@ interface ProductSelectorFormProps {
   onShowAddFormChange: (show: boolean) => void;
   onEditingItemChange: (item: any | null) => void;
   onAddItem: () => void;
+  onAddAndContinue: () => void;
   onResetForm: () => void;
 }
 
@@ -44,6 +46,7 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
   onShowAddFormChange,
   onEditingItemChange,
   onAddItem,
+  onAddAndContinue,
   onResetForm
 }) => {
   const getProductsByType = (type: string) => {
@@ -182,8 +185,8 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
               id="quantity"
               value={formData.quantity}
               onChange={(e) => onFormChange('quantity', parseFloat(e.target.value) || 0)}
-              min="0.01"
-              step="0.01"
+              min="1"
+              step="1"
               disabled={addingItem}
               required
             />
@@ -191,23 +194,35 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
 
           {isHandrailProduct && (
             <div className="form-field">
-              <label htmlFor="length">Length (inches)</label>
-              <input
-                type="number"
-                id="length"
-                value={formData.lengthInches}
-                onChange={(e) => onFormChange('lengthInches', parseFloat(e.target.value) || 0)}
-                min="0"
-                step="0.25"
-                disabled={addingItem}
-                placeholder="Total length"
-              />
+              <label htmlFor="length">
+                Length {selectedProduct?.product_type === 'handrail' ? '(6" increments)' : '(inches)'}
+              </label>
+              {selectedProduct?.product_type === 'handrail' ? (
+                <HandrailLengthInput
+                  value={formData.lengthInches}
+                  onChange={(value) => onFormChange('lengthInches', value)}
+                  disabled={addingItem}
+                />
+              ) : (
+                <input
+                  type="number"
+                  id="length"
+                  value={formData.lengthInches}
+                  onChange={(e) => onFormChange('lengthInches', parseFloat(e.target.value) || 0)}
+                  min="0"
+                  step="0.25"
+                  disabled={addingItem}
+                  placeholder="Total length"
+                />
+              )}
             </div>
           )}
         </div>
 
-        {/* Labor Option */}
-        {selectedProduct && selectedProduct.labor_install_cost !== undefined && (
+        {/* Labor Option - exclude for handrail products */}
+        {selectedProduct && 
+         selectedProduct.labor_install_cost !== undefined && 
+         selectedProduct.product_type !== 'handrail' && (
           <div className="labor-section">
             <label className="checkbox-label">
               <input
@@ -310,6 +325,16 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
           >
             Cancel
           </button>
+          {!editingItem && (
+            <button
+              type="button"
+              onClick={onAddAndContinue}
+              disabled={addingItem || !isFormValid()}
+              className="add-continue-btn"
+            >
+              {addingItem ? 'Adding...' : 'Add & Continue'}
+            </button>
+          )}
           <button
             type="button"
             onClick={onAddItem}

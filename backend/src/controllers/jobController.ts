@@ -589,10 +589,25 @@ export const deleteJobSection = async (req: Request, res: Response, next: NextFu
 export const addQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId, sectionId } = req.params;
-    const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true, stair_configuration } = req.body;
+    const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true, stair_configuration, product_id, length_inches } = req.body;
     
     if (!description) {
       return res.status(400).json({ error: 'Description is required' });
+    }
+    
+    // Validate handrail length if this is a handrail product
+    if (product_id && length_inches !== undefined) {
+      // Check if this is a handrail product by querying the products table
+      const productResult = await pool.query('SELECT product_type FROM products WHERE id = $1', [product_id]);
+      
+      if (productResult.rows.length > 0 && productResult.rows[0].product_type === 'handrail') {
+        // Validate length is in 6" increments
+        if (length_inches % 6 !== 0 || length_inches < 6 || length_inches > 240) {
+          return res.status(400).json({ 
+            error: 'Handrail length must be in 6" increments between 6" and 240"' 
+          });
+        }
+      }
     }
     
     const lineTotal = quantity * unit_price;
@@ -720,7 +735,22 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
 export const updateQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { itemId } = req.params;
-    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration, stair_config_id } = req.body;
+    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration, stair_config_id, product_id, length_inches } = req.body;
+    
+    // Validate handrail length if this is a handrail product
+    if (product_id && length_inches !== undefined) {
+      // Check if this is a handrail product by querying the products table
+      const productResult = await pool.query('SELECT product_type FROM products WHERE id = $1', [product_id]);
+      
+      if (productResult.rows.length > 0 && productResult.rows[0].product_type === 'handrail') {
+        // Validate length is in 6" increments
+        if (length_inches % 6 !== 0 || length_inches < 6 || length_inches > 240) {
+          return res.status(400).json({ 
+            error: 'Handrail length must be in 6" increments between 6" and 240"' 
+          });
+        }
+      }
+    }
     
     // Calculate new line total if quantity or unit_price changed
     let lineTotal: number | undefined;

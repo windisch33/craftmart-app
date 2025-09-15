@@ -19,7 +19,8 @@ import {
   calculateMaterialPrice,
   calculateLaborPrice,
   getCalculatedUnitPrice,
-  buildItemDescription
+  buildItemDescription,
+  isValidHandrailLength
 } from './productselector/utils';
 
 
@@ -93,7 +94,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   };
 
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (keepFormOpen = false) => {
     if (!validateForm()) return;
 
     if (!selectedProduct && !formData.customDescription.trim()) {
@@ -160,9 +161,38 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         }
       }
 
-      resetForm();
-      setShowAddForm(false);
-      setEditingItem(null);
+      if (keepFormOpen) {
+        // Preserve product/material selections, reset only quantity and length
+        const preservedData = {
+          productId: formData.productId,
+          materialId: formData.materialId,
+          includeLabor: formData.includeLabor,
+          isTaxable: formData.isTaxable,
+        };
+
+        setFormData({
+          ...preservedData,
+          customDescription: '',
+          quantity: 1,
+          lengthInches: 0,
+          customUnitPrice: 0,
+          useCustomPrice: false,
+        });
+
+        // Set focus to quantity field for quick entry
+        setTimeout(() => {
+          const quantityField = document.getElementById('quantity');
+          if (quantityField) {
+            quantityField.focus();
+            quantityField.select();
+          }
+        }, 100);
+      } else {
+        resetForm();
+        setShowAddForm(false);
+        setEditingItem(null);
+      }
+      
       calculateSectionTotal();
     } catch (error) {
       console.error('Error adding/updating item:', error);
@@ -170,6 +200,10 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     } finally {
       setAddingItem(false);
     }
+  };
+
+  const handleAddAndContinue = async () => {
+    await handleAddItem(true);
   };
 
   const handleEditItem = async (item: QuoteItem) => {
@@ -322,6 +356,21 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
       alert('Unit price cannot be negative');
       return false;
     }
+    
+    // Validate handrail length is in 6" increments
+    if (selectedProduct?.product_type === 'handrail') {
+      if (formData.lengthInches === 0) {
+        alert('Please enter a length for the handrail');
+        return false;
+      }
+      if (!isValidHandrailLength(formData.lengthInches)) {
+        alert(`Handrail length must be in 6" increments between 6" and 240".
+               Entered: ${formData.lengthInches}"
+               Valid range: 6", 12", 18", 24", ... up to 240"`);
+        return false;
+      }
+    }
+    
     // For custom descriptions, require custom pricing
     if (!selectedProduct && !formData.useCustomPrice) {
       alert('Custom items require custom pricing. Please check "Use custom pricing"');
@@ -609,6 +658,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           onShowAddFormChange={setShowAddForm}
           onEditingItemChange={setEditingItem}
           onAddItem={handleAddItem}
+          onAddAndContinue={handleAddAndContinue}
           onResetForm={resetForm}
         />
       )}

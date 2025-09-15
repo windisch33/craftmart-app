@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Project as Job } from '../../services/projectService';
 import type { Customer } from '../../services/customerService';
 import AccessibleModal from '../common/AccessibleModal';
+import CustomerForm from '../customers/CustomerForm';
 
 interface ProjectFormProps {
   project?: Job | null;
@@ -9,6 +10,7 @@ interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { customer_id?: number; name: string }) => void;
+  onCustomerCreate?: (customerData: any) => Promise<void>;
 }
 
 const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -16,7 +18,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   customers,
   isOpen,
   onClose,
-  onSubmit
+  onSubmit,
+  onCustomerCreate
 }) => {
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -24,6 +27,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
 
   useEffect(() => {
     if (project) {
@@ -84,106 +88,140 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }
   };
 
+  const handleCustomerCreate = async (customerData: any) => {
+    if (onCustomerCreate) {
+      try {
+        const newCustomer = await onCustomerCreate(customerData);
+        // If the parent returns the created customer, select it automatically
+        if (newCustomer && newCustomer.id) {
+          setFormData(prev => ({ ...prev, customer_id: newCustomer.id.toString() }));
+        }
+        setShowCustomerForm(false);
+      } catch (error) {
+        console.error('Error creating customer:', error);
+      }
+    }
+  };
+
   const titleId = 'project-form-title';
 
   if (!isOpen) return null;
 
   return (
-    <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
-        <div className="modal-header">
-          <h2 className="modal-title" id={titleId}>
-            {project ? 'Edit Job' : 'Create New Job'}
-          </h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close dialog">
-            ✕
-          </button>
-        </div>
+    <>
+      <AccessibleModal isOpen={isOpen} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
+          <div className="modal-header">
+            <h2 className="modal-title" id={titleId}>
+              {project ? 'Edit Job' : 'Create New Job'}
+            </h2>
+            <button className="modal-close" onClick={onClose} aria-label="Close dialog">
+              ✕
+            </button>
+          </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            {/* Customer Selection - only for new jobs */}
-            {!project && (
+          <form onSubmit={handleSubmit}>
+            <div className="modal-body">
+              {/* Customer Selection - only for new jobs */}
+              {!project && (
+                <div className="form-group">
+                  <label htmlFor="customer_id" className="form-label">
+                    Customer <span className="required">*</span>
+                  </label>
+                  <div className="select-with-add">
+                    <select
+                      id="customer_id"
+                      value={formData.customer_id}
+                      onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
+                      className={`form-control ${errors.customer_id ? 'error' : ''}`}
+                      disabled={loading}
+                    >
+                      <option value="">Select a customer...</option>
+                      {customers.map(customer => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name}
+                          {customer.city && customer.state && ` (${customer.city}, ${customer.state})`}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="add-button"
+                      onClick={() => setShowCustomerForm(true)}
+                      disabled={loading}
+                    >
+                      + New
+                    </button>
+                  </div>
+                  {errors.customer_id && (
+                    <span className="error-message">{errors.customer_id}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Job Name */}
               <div className="form-group">
-                <label htmlFor="customer_id" className="form-label">
-                  Customer <span className="required">*</span>
+                <label htmlFor="name" className="form-label">
+                  Job Name <span className="required">*</span>
                 </label>
-                <select
-                  id="customer_id"
-                  value={formData.customer_id}
-                  onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                  className={`form-control ${errors.customer_id ? 'error' : ''}`}
+                <input
+                  type="text"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className={`form-control ${errors.name ? 'error' : ''}`}
+                  placeholder="Enter job name..."
                   disabled={loading}
-                >
-                  <option value="">Select a customer...</option>
-                  {customers.map(customer => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name}
-                      {customer.city && customer.state && ` (${customer.city}, ${customer.state})`}
-                    </option>
-                  ))}
-                </select>
-                {errors.customer_id && (
-                  <span className="error-message">{errors.customer_id}</span>
+                  autoFocus
+                />
+                {errors.name && (
+                  <span className="error-message">{errors.name}</span>
                 )}
               </div>
-            )}
 
-            {/* Job Name */}
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                Job Name <span className="required">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`form-control ${errors.name ? 'error' : ''}`}
-                placeholder="Enter job name..."
-                disabled={loading}
-                autoFocus
-              />
-              {errors.name && (
-                <span className="error-message">{errors.name}</span>
+              {/* Customer Info Display - for editing mode */}
+              {project && (
+                <div className="form-group">
+                  <label className="form-label">Customer</label>
+                  <div className="readonly-field">
+                    {project.customer_name}
+                    {project.customer_city && project.customer_state && 
+                      ` (${project.customer_city}, ${project.customer_state})`
+                    }
+                  </div>
+                  <small className="help-text">
+                    Customer cannot be changed after job creation
+                  </small>
+                </div>
               )}
             </div>
 
-            {/* Customer Info Display - for editing mode */}
-            {project && (
-              <div className="form-group">
-                <label className="form-label">Customer</label>
-                <div className="readonly-field">
-                  {project.customer_name}
-                  {project.customer_city && project.customer_state && 
-                    ` (${project.customer_city}, ${project.customer_state})`
-                  }
-                </div>
-                <small className="help-text">
-                  Customer cannot be changed after job creation
-                </small>
-              </div>
-            )}
-          </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : (project ? 'Update Job' : 'Create Job')}
+              </button>
+            </div>
+          </form>
+      </AccessibleModal>
 
-          <div className="modal-footer">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : (project ? 'Update Job' : 'Create Job')}
-            </button>
-          </div>
-        </form>
-    </AccessibleModal>
+      {/* Customer Creation Modal */}
+      <CustomerForm
+        isOpen={showCustomerForm}
+        onClose={() => setShowCustomerForm(false)}
+        onSave={handleCustomerCreate}
+      />
+    </>
   );
 };
 

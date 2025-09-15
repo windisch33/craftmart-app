@@ -99,6 +99,19 @@ const Projects: React.FC = () => {
     }
   };
 
+  const handleCustomerCreate = async (customerData: any) => {
+    try {
+      const newCustomer = await customerService.createCustomer(customerData);
+      setCustomers(prev => [...prev, newCustomer]);
+      showToast('Customer created successfully', { type: 'success' });
+      return newCustomer; // Return the created customer for auto-selection
+    } catch (err: any) {
+      console.error('Error creating customer:', err);
+      showToast(err.message || 'Failed to create customer', { type: 'error' });
+      throw err; // Re-throw to let ProjectForm handle the error state
+    }
+  };
+
   const handleEditProject = async (id: number, projectData: { name: string }) => {
     try {
       await jobsService.updateProject(id, projectData);
@@ -278,6 +291,7 @@ const Projects: React.FC = () => {
             (data) => handleEditProject(editingProject.id, data) : 
             (data) => handleCreateProject({ customer_id: Number(data.customer_id), name: data.name })
           }
+          onCustomerCreate={handleCustomerCreate}
         />
       )}
 
@@ -297,6 +311,7 @@ const Projects: React.FC = () => {
             jobId={jobDetail.jobId}
             isOpen={true}
             onClose={() => setJobDetail(null)}
+            currentProject={selectedProject || undefined}
           />
         </StairConfigurationProvider>
       )}

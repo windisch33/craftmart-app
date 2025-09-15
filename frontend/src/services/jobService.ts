@@ -6,7 +6,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 export interface Job {
   id: number;
   customer_id: number;
-  project_id?: number;
+  project_id?: number; // Legacy/compatibility
+  job_id?: number; // Actual database field name
   salesman_id?: number;
   title: string;
   description?: string;
@@ -64,6 +65,7 @@ export interface JobWithDetails extends Job {
 
 export interface CreateJobData {
   customer_id: number;
+  project_id?: number;
   salesman_id?: number;
   title: string;
   description?: string;
@@ -218,13 +220,7 @@ class JobService {
 
   async createJob(data: CreateJobData): Promise<Job> {
     try {
-      // Back-compat mapping: allow callers to pass project_id (maps to job_id)
-      const payload: any = { ...data };
-      if (payload.project_id && !payload.job_id) {
-        payload.job_id = payload.project_id;
-        delete payload.project_id;
-      }
-      const response = await axios.post(`${API_BASE_URL}/api/job-items`, payload, {
+      const response = await axios.post(`${API_BASE_URL}/api/job-items`, data, {
         headers: this.getAuthHeaders()
       });
       return response.data;

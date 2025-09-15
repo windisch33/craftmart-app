@@ -152,7 +152,8 @@ export const calculateLinearProductPrice = async (
   const basePrice = (product.cost_per_6_inches || 0) * lengthIn6InchIncrements * materialMultiplier;
   const subtotal = basePrice * linearProductFormData.quantity;
   
-  const laborCost = linearProductFormData.includeLabor 
+  // Only include labor cost for landing_tread products, not handrails
+  const laborCost = linearProductFormData.includeLabor && type === 'landing_tread'
     ? (product.labor_install_cost || 0) * linearProductFormData.quantity 
     : 0;
 
@@ -169,7 +170,7 @@ export const calculateLinearProductPrice = async (
       costPer6Inches: product.cost_per_6_inches,
       materialMultiplier,
       basePrice,
-      laborCostPerUnit: product.labor_install_cost
+      laborCostPerUnit: type === 'landing_tread' ? product.labor_install_cost : 0
     }
   };
 };

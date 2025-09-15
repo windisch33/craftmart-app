@@ -8,13 +8,12 @@ export const getAllProducts = async (req: Request, res: Response, next: NextFunc
     let query = `
       SELECT p.*, 
              hp.cost_per_6_inches as handrail_cost_per_6_inches, 
-             hp.labor_install_cost as handrail_labor_cost,
              ltp.cost_per_6_inches as landing_tread_cost_per_6_inches,
              ltp.labor_install_cost as landing_tread_labor_cost,
              rpp.base_price as rail_parts_base_price,
              rpp.labor_install_cost as rail_parts_labor_cost,
              COALESCE(hp.cost_per_6_inches, ltp.cost_per_6_inches) as cost_per_6_inches,
-             COALESCE(hp.labor_install_cost, ltp.labor_install_cost, rpp.labor_install_cost) as labor_install_cost,
+             COALESCE(ltp.labor_install_cost, rpp.labor_install_cost) as labor_install_cost,
              rpp.base_price
       FROM products p
       LEFT JOIN handrail_products hp ON p.id = hp.product_id AND p.product_type = 'handrail'
@@ -45,13 +44,12 @@ export const getProductById = async (req: Request, res: Response, next: NextFunc
     const result = await pool.query(`
       SELECT p.*, 
              hp.cost_per_6_inches as handrail_cost_per_6_inches, 
-             hp.labor_install_cost as handrail_labor_cost,
              ltp.cost_per_6_inches as landing_tread_cost_per_6_inches,
              ltp.labor_install_cost as landing_tread_labor_cost,
              rpp.base_price as rail_parts_base_price,
              rpp.labor_install_cost as rail_parts_labor_cost,
              COALESCE(hp.cost_per_6_inches, ltp.cost_per_6_inches) as cost_per_6_inches,
-             COALESCE(hp.labor_install_cost, ltp.labor_install_cost, rpp.labor_install_cost) as labor_install_cost,
+             COALESCE(ltp.labor_install_cost, rpp.labor_install_cost) as labor_install_cost,
              rpp.base_price
       FROM products p
       LEFT JOIN handrail_products hp ON p.id = hp.product_id AND p.product_type = 'handrail'
@@ -73,18 +71,18 @@ export const getProductById = async (req: Request, res: Response, next: NextFunc
 // Create handrail product
 export const createHandrailProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, cost_per_6_inches, labor_install_cost } = req.body;
+    const { name, cost_per_6_inches } = req.body;
     
     // Validation
-    if (!name || !cost_per_6_inches || labor_install_cost === undefined) {
+    if (!name || !cost_per_6_inches) {
       return res.status(400).json({ 
-        error: 'Name, cost_per_6_inches, and labor_install_cost are required' 
+        error: 'Name and cost_per_6_inches are required' 
       });
     }
     
-    if (cost_per_6_inches < 0 || labor_install_cost < 0) {
+    if (cost_per_6_inches < 0) {
       return res.status(400).json({ 
-        error: 'Cost and labor values must be non-negative' 
+        error: 'Cost must be non-negative' 
       });
     }
     
@@ -103,8 +101,8 @@ export const createHandrailProduct = async (req: Request, res: Response, next: N
       
       // Create handrail-specific data
       const handrailResult = await client.query(
-        'INSERT INTO handrail_products (product_id, cost_per_6_inches, labor_install_cost) VALUES ($1, $2, $3) RETURNING *',
-        [productId, cost_per_6_inches, labor_install_cost]
+        'INSERT INTO handrail_products (product_id, cost_per_6_inches) VALUES ($1, $2) RETURNING *',
+        [productId, cost_per_6_inches]
       );
       
       await client.query('COMMIT');
@@ -112,8 +110,7 @@ export const createHandrailProduct = async (req: Request, res: Response, next: N
       // Return combined data
       const result = {
         ...productResult.rows[0],
-        cost_per_6_inches: handrailResult.rows[0].cost_per_6_inches,
-        labor_install_cost: handrailResult.rows[0].labor_install_cost
+        cost_per_6_inches: handrailResult.rows[0].cost_per_6_inches
       };
       
       res.status(201).json(result);
@@ -132,18 +129,18 @@ export const createHandrailProduct = async (req: Request, res: Response, next: N
 export const updateHandrailProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { name, cost_per_6_inches, labor_install_cost } = req.body;
+    const { name, cost_per_6_inches } = req.body;
     
     // Validation
-    if (!name || !cost_per_6_inches || labor_install_cost === undefined) {
+    if (!name || !cost_per_6_inches) {
       return res.status(400).json({ 
-        error: 'Name, cost_per_6_inches, and labor_install_cost are required' 
+        error: 'Name and cost_per_6_inches are required' 
       });
     }
     
-    if (cost_per_6_inches < 0 || labor_install_cost < 0) {
+    if (cost_per_6_inches < 0) {
       return res.status(400).json({ 
-        error: 'Cost and labor values must be non-negative' 
+        error: 'Cost must be non-negative' 
       });
     }
     
@@ -164,8 +161,8 @@ export const updateHandrailProduct = async (req: Request, res: Response, next: N
       
       // Update handrail-specific data
       const handrailResult = await client.query(
-        'UPDATE handrail_products SET cost_per_6_inches = $1, labor_install_cost = $2 WHERE product_id = $3 RETURNING *',
-        [cost_per_6_inches, labor_install_cost, id]
+        'UPDATE handrail_products SET cost_per_6_inches = $1 WHERE product_id = $2 RETURNING *',
+        [cost_per_6_inches, id]
       );
       
       await client.query('COMMIT');
@@ -173,8 +170,7 @@ export const updateHandrailProduct = async (req: Request, res: Response, next: N
       // Return combined data
       const result = {
         ...productResult.rows[0],
-        cost_per_6_inches: handrailResult.rows[0].cost_per_6_inches,
-        labor_install_cost: handrailResult.rows[0].labor_install_cost
+        cost_per_6_inches: handrailResult.rows[0].cost_per_6_inches
       };
       
       res.json(result);

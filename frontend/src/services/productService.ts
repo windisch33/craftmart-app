@@ -11,20 +11,18 @@ export interface Product {
   created_at: string;
   updated_at: string;
   cost_per_6_inches?: number;
-  labor_install_cost?: number;
+  labor_install_cost?: number; // Only for landing_tread and rail_parts
   base_price?: number;
 }
 
 export interface CreateHandrailProductRequest {
   name: string;
   cost_per_6_inches: number;
-  labor_install_cost: number;
 }
 
 export interface UpdateHandrailProductRequest {
   name: string;
   cost_per_6_inches: number;
-  labor_install_cost: number;
 }
 
 export interface CreateLandingTreadProductRequest {
