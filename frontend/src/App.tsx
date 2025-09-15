@@ -8,7 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Products from './pages/Products';
 import Salesmen from './pages/Salesmen';
-import Jobs from './pages/Jobs';
+// import Jobs from './pages/Jobs';
 import Projects from './pages/Projects';
 import Shops from './pages/Shops';
 import Reports from './pages/Reports';
@@ -37,8 +37,7 @@ function App() {
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/salesmen" element={<Salesmen />} />
-                      {/* Job Items and Jobs (project-level) routes */}
-                      <Route path="/job-items" element={<Jobs />} />
+                      {/* Jobs (parent-level) route */}
                       <Route path="/jobs" element={<Projects />} />
                       <Route path="/shops" element={<Shops />} />
                       <Route path="/reports" element={<Reports />} />

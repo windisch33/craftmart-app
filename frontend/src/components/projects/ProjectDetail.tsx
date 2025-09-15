@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { projectService } from '../../services/projectService';
-import type { Project } from '../../services/projectService';
-import type { Job } from '../../services/jobService';
+import { jobsService } from '../../services/jobsService';
+import type { Project as ParentJob } from '../../services/projectService';
+import type { Job as JobItem } from '../../services/jobService';
 import jobService from '../../services/jobService';
 import JobForm from '../jobs/JobForm';
 import JobDetail from '../jobs/JobDetail';
@@ -21,7 +21,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
   isOpen,
   onClose
 }) => {
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<ParentJob | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -29,12 +29,16 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
   const [showJobForm, setShowJobForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState<{ jobId: number } | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ jobId: number; jobTitle: string } | null>(null);
+  // Local status filter for job items list: all | quote | order | invoice
+  const [statusFilter, setStatusFilter] = useState<'all' | 'quote' | 'order' | 'invoice'>('all');
+  // Hover state to add subtle elevation on job cards
+  const [hoveredJobId, setHoveredJobId] = useState<number | null>(null);
 
   const loadProject = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const projectData = await projectService.getProjectById(projectId);
+      const projectData = await jobsService.getProjectById(projectId);
       setProject(projectData);
     } catch (err: any) {
       setError(err.message || 'Failed to load job');
@@ -114,7 +118,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
     setPdfPreview({ jobId, jobTitle: titleWithProject });
   };
 
-  const handleNextStage = async (job: Job) => {
+  const handleNextStage = async (job: JobItem) => {
     if (!confirm(`Move job "${job.title}" to the next stage?`)) {
       return;
     }
@@ -142,7 +146,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
     });
   };
 
-  const getJobNumber = (job: Job) => {
+  const getJobNumber = (job: JobItem) => {
     const statusWord = job.status.charAt(0).toUpperCase() + job.status.slice(1);
     return `${statusWord} #${job.id.toString().padStart(4, '0')}`;
   };
@@ -194,7 +198,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                     <strong>Job Items:</strong> {project.jobs?.length || 0}
                   </div>
                   <div>
-                    <strong>Total Value:</strong> {projectService.formatCurrency(project.total_value || 0)}
+                    <strong>Total Value:</strong> {jobsService.formatCurrency(project.total_value || 0)}
                   </div>
                   <div>
                     <strong>Created:</strong> {formatDate(project.created_at)}
@@ -202,22 +206,55 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                 </div>
               </div>
 
-              {/* Job Items Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              {/* Job Items Header + Filter */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0 }}>Job Items in this Job</h3>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => setShowJobForm(true)}
-                >
-                  <ClipboardIcon /> Create Job Item
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <select
+                    aria-label="Filter job items by status"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="select"
+                    style={{ minWidth: 160 }}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="quote">Quotes</option>
+                    <option value="order">Orders</option>
+                    <option value="invoice">Invoices</option>
+                  </select>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => setShowJobForm(true)}
+                  >
+                    <ClipboardIcon /> Create Job Item
+                  </button>
+                </div>
               </div>
 
               {/* Jobs List */}
               {project.jobs && project.jobs.length > 0 ? (
                 <div className="jobs-grid">
-                  {project.jobs.map(job => (
-                    <div key={job.id} className="job-card">
+                  {(project.jobs as JobItem[]).filter(j => statusFilter === 'all' ? true : j.status === statusFilter).map(job => (
+                    <div
+                      key={job.id}
+                      className="job-card"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleViewJob(job.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleViewJob(job.id); }}
+                      onMouseEnter={() => setHoveredJobId(job.id)}
+                      onMouseLeave={() => setHoveredJobId(null)}
+                      style={{
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        backgroundColor: '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'box-shadow 160ms ease, transform 160ms ease',
+                        boxShadow: hoveredJobId === job.id ? '0 8px 20px rgba(2, 6, 23, 0.10)' : '0 1px 2px rgba(2, 6, 23, 0.05)',
+                        transform: hoveredJobId === job.id ? 'translateY(-2px)' : 'translateY(0)'
+                      }}
+                    >
                       <div className="job-header">
                         <div className="job-info">
                           <span className="job-number">{getJobNumber(job)}</span>
@@ -251,14 +288,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                       <div className="job-actions">
                         <button 
                           className="action-btn"
-                          onClick={() => handleViewJob(job.id)}
+                          onClick={(e) => { e.stopPropagation(); handleViewJob(job.id); }}
                           title="View Details"
                         >
                           👁 Details
                         </button>
                         <button 
                           className="action-btn"
-                          onClick={() => handleViewPDF(job.id, job.title)}
+                          onClick={(e) => { e.stopPropagation(); handleViewPDF(job.id, job.title); }}
                           title="View PDF"
                         >
                           <FileIcon /> PDF
@@ -266,7 +303,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                         {job.status !== 'invoice' && (
                           <button 
                             className="action-btn action-btn-warning"
-                            onClick={() => handleNextStage(job)}
+                            onClick={(e) => { e.stopPropagation(); handleNextStage(job); }}
                             title="Next Stage"
                           >
                             <ArrowRightIcon width={16} height={16} /> Next

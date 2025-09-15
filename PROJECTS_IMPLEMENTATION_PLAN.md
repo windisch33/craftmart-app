@@ -1,12 +1,12 @@
-# Jobs (Projects) Implementation Plan
+# Jobs (Parent) Implementation Plan — Current Status
 
-Naming note: In current architecture, “Projects” are called Jobs (project-level) and stored in the `jobs` table; individual “Jobs” are called Job Items and stored in `job_items`.
+Naming note: The UI now uses “Jobs” for the parent container (stored in the `jobs` table). Item-level records remain “Job Items” (stored in `job_items`). The standalone Job Items page has been removed; `/jobs` is the single entry point.
 
-## Overview
-- Jobs (project-level) page replaces Job Items page as the main entry point
-- All Job Items must belong to a Job (no standalone job items)
-- Jobs (project-level) are simple: just customer + name
-- Jobs remain unchanged except for required project_id
+## Overview (Updated)
+- Jobs page (`/jobs`) is the main entry point (Job Items page removed)
+- All Job Items belong to a Job (parent); creation flows live in Jobs and Job Detail
+- Jobs are simple: customer + name (plus computed aggregates)
+- Frontend naming aligns with UI: a `jobsService` alias re-exports the legacy `projectService`
 
 ## Database Changes
 
@@ -103,9 +103,9 @@ export interface Project {
 ```
 
 ### 5. Routing Updates (frontend)
-- `/jobs` - list all Jobs (project-level)
-- `/jobs/:id` - open job detail (modal) listing its job items
-- `/job-items` - Job Items overview (search/filter)
+- `/jobs` - list all Jobs (parent-level)
+- Job Detail opens as a modal from the grid or deep link state
+- `/job-items` - removed
 
 ## Implementation Steps
 
@@ -173,8 +173,14 @@ export interface Project {
 - `frontend/src/components/jobs/JobForm.tsx` - remove customer selection, add project context
 - `frontend/src/services/jobService.ts` - update Job interface with project_id
 
-### Deleted Files
-- `frontend/src/pages/Jobs.tsx` - remove after full Projects cutover (kept during transition)
+### Deleted Files (Completed)
+- `frontend/src/pages/Jobs.tsx` and `frontend/src/pages/jobs/*` — removed with Job Items page
+- `frontend/src/components/customers/CustomerJobs.tsx` — legacy modal removed
+
+### Frontend Enhancements (Completed)
+- Added deep-link handling to open Job Detail from Customers navigation
+- Added Jobs header action for “Clear PDF Cache” (DELETE /api/job-items/cache/pdf)
+- Introduced `.page-actions` for consistent header button alignment
 
 ## Notes
 - Maintain backward compatibility during migration; Jobs routes/pages remain functional until cutover.

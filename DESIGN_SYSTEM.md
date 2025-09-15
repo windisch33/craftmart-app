@@ -70,6 +70,26 @@ A modern, professional interface design system implementing clean minimalism, gl
 />
 ```
 
+### Page Header Pattern
+- Container: `.page-header` with title group on the left and actions on the right.
+- Title group: `.page-title-section` includes the page title and optional subtitle.
+- Actions: use the shared `.page-actions` class for right‑aligned, consistently spaced buttons.
+
+Example (structure)
+```
+<div className="page-header">
+  <div className="page-title-section">
+    <h1 className="gradient-title">Jobs</h1>
+    <p className="page-subtitle">Manage customer jobs and their items</p>
+  </div>
+  <div className="page-actions">
+    <button className="btn btn-secondary">Secondary</button>
+    <button className="btn btn-primary">Primary</button>
+  </div>
+  
+</div>
+```
+
 ## ✨ Modern Design Trends
 
 ### Glassmorphism Effects

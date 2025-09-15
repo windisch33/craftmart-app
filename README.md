@@ -211,8 +211,26 @@ craftmart-app/
 - Modals use a shared, accessible wrapper (`AccessibleModal`):
   - Traps focus, restores focus on close, Escape to close, backdrop click optional
   - Applies `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`
-  - Refactored: Job Detail, Project Detail, Project Form, Job Form, PDF Preview, Next Stage Confirm, Customer Jobs, Users Reset Password, Stair forms
+  - Refactored: Job Detail, Project Detail, Job Form, PDF Preview, Next Stage Confirm, Users Reset Password, Stair forms
   - See AGENTS.md for usage details
+
+## 🧹 Repo Housekeeping
+
+- Place ad‑hoc backend scripts under `backend/scripts/` (a README is included) to keep the repo organized and avoid mixing production code with local tooling.
+- Runtime directories like `backend/uploads/` and `backend/temp/` are git‑ignored; avoid committing generated artifacts.
+- The standalone Job Items page and its associated page components have been removed; use the Jobs page (`/jobs`) for all job workflows.
+
+## 🔄 Recent Navigation & Terminology Updates
+
+- “Projects” are referred to as Jobs in the UI (parent-level container stored in the `jobs` table). Item-level records remain “Job Items” (stored in `job_items`).
+- The standalone Job Items page has been removed. The Jobs page (`/jobs`) is now the single entry point for job workflows.
+- Customers page: clicking a customer navigates to `/jobs?q=<Customer Name>` to view that customer’s jobs.
+- Jobs page header includes a “Clear PDF Cache” button (calls `DELETE /api/job-items/cache/pdf`).
+- Common header action alignment: pages use a shared `.page-actions` class for right‑aligned header buttons.
+
+Developer notes:
+- A frontend service alias `jobsService` now re-exports the legacy `projectService` to reflect the UI naming.
+- We removed the legacy Customer Jobs modal and the old Job Items page files and route.
 
 ## 🗄️ Database Schema
 

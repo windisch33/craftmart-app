@@ -113,10 +113,12 @@ const Salesmen: React.FC = () => {
           <h1 className="gradient-title">Salesmen</h1>
           <p className="page-subtitle">Manage your sales team</p>
         </div>
-        <button onClick={handleAddSalesman} className="btn btn-primary">
-          <span className="nav-icon"><UsersIcon /></span>
-          Add Salesman
-        </button>
+        <div className="page-actions">
+          <button onClick={handleAddSalesman} className="btn btn-primary">
+            <span className="nav-icon"><UsersIcon /></span>
+            Add Salesman
+          </button>
+        </div>
       </div>
 
       <div className="search-section sticky-controls">

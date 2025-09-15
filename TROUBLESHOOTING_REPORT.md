@@ -1,15 +1,27 @@
-# Projects Implementation Troubleshooting Report
+# Troubleshooting Report
 
-## Issue Summary
-During implementation of the Projects feature based on `PROJECTS_IMPLEMENTATION_PLAN.md`, the application began showing a blank white screen when navigating to the Projects page. The issue was systematically debugged through multiple approaches.
+## Recent Issues & Resolutions
 
-## Timeline of Implementation and Issues
+### React render loop in QuickPricer (Maximum update depth exceeded)
+- Symptom: Console error from `QuickPricer.tsx:127` due to `useEffect` calling `setState` on every render.
+- Root cause: Tread validation effect wrote `hasLandingTread` unconditionally, retriggering dependencies.
+- Fix: Guard state update — only update when computed value actually changes.
 
-### Initial Implementation (Successful)
-1. ✅ Created database migrations (`16-add-projects.sql`)
-2. ✅ Created backend controllers and routes
-3. ✅ Created frontend services and components
-4. ✅ Modified navigation (sidebar and App.tsx routing)
+### Vite 500 on `/src/pages/Projects.tsx`
+- Symptom: `net::ERR_ABORTED 500` loading the module during dev.
+- Root cause: Type conflicts and duplicate identifiers during rename work (e.g., `Job` type name used for both parent and item-level).
+- Fixes: 
+  - Disambiguated types (`ParentJob` vs `JobItem`) in `ProjectDetail.tsx`.
+  - Removed duplicate `showToast` declarations.
+  - Verified with `tsc -b` and hot reloaded cleanly.
+
+## Projects/Jobs Implementation Notes
+
+### Current State (Post-Refactor)
+- Jobs (`/jobs`) is the single entry point; the Job Items page and route are removed.
+- The Customers page navigates to `/jobs?q=<Customer>` to view that customer’s jobs.
+- Jobs header includes “Clear PDF Cache”.
+- A `jobsService` alias re-exports `projectService` to align naming.
 
 ### Issue Discovery
 - **Problem**: App showed blank white screen when clicking Projects in sidebar

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import customerService from '../services/customerService';
 import type { Customer, CreateCustomerRequest } from '../services/customerService';
 import CustomerForm from '../components/customers/CustomerForm';
-import CustomerJobs from '../components/customers/CustomerJobs';
 import './Customers.css';
 import '../styles/common.css';
 import { UsersIcon, SearchIcon, AlertTriangleIcon, MailIcon, PhoneIcon, MobileIcon, BriefcaseIcon, EditIcon } from '../components/common/icons';
@@ -20,9 +20,8 @@ const Customers: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   
-  // CustomerJobs modal state
-  const [isJobsModalOpen, setIsJobsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  // Removed legacy CustomerJobs modal; navigation goes to Jobs page
+  const navigate = useNavigate();
   const { showToast } = useToast();
 
   // Load recent customers on component mount
@@ -78,10 +77,7 @@ const Customers: React.FC = () => {
     setIsFormOpen(false);
     setEditingCustomer(null);
   };
-  const handleCloseJobsModal = () => {
-    setIsJobsModalOpen(false);
-    setSelectedCustomer(null);
-  };
+  // Removed legacy CustomerJobs modal handler
 
   const handleSaveCustomer = async (customerData: CreateCustomerRequest) => {
     try {
@@ -108,13 +104,9 @@ const Customers: React.FC = () => {
     try {
       // Fetch customer by ID to trigger visit tracking
       await customerService.getCustomerById(customer.id);
-      // Open the customer jobs modal
-      setSelectedCustomer(customer);
-      setIsJobsModalOpen(true);
-      // Refresh the list if needed
-      if (!isSearching) {
-        await loadRecentCustomers();
-      }
+      // Navigate to Jobs overview filtered by this customer (show jobs, not job items)
+      const q = encodeURIComponent(customer.name);
+      navigate(`/jobs?q=${q}`);
     } catch (err) {
       console.error('Error viewing customer:', err);
       showToast('Failed to open customer details', { type: 'error' });
@@ -150,10 +142,12 @@ const Customers: React.FC = () => {
           <h1 className="gradient-title">Customers</h1>
           <p className="page-subtitle">Search and manage your client relationships</p>
         </div>
-        <button className="btn btn-primary" onClick={handleAddCustomer}>
-          <span className="nav-icon"><UsersIcon /></span>
-          Add Customer
-        </button>
+        <div className="page-actions">
+          <button className="btn btn-primary" onClick={handleAddCustomer}>
+            <span className="nav-icon"><UsersIcon /></span>
+            Add Customer
+          </button>
+        </div>
       </div>
 
       {/* Large Search Bar */}
@@ -265,12 +259,7 @@ const Customers: React.FC = () => {
         onSave={handleSaveCustomer}
       />
 
-      {/* Customer Jobs Modal */}
-      <CustomerJobs
-        customer={selectedCustomer}
-        isOpen={isJobsModalOpen}
-        onClose={handleCloseJobsModal}
-      />
+      {/* Customer Jobs modal removed; navigation opens Jobs view */}
     </div>
   );
 };

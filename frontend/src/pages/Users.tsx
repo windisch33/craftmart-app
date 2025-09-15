@@ -151,10 +151,12 @@ const Users: React.FC = () => {
           <h1 className="gradient-title">Users</h1>
           <p className="page-subtitle">Manage system users and permissions</p>
         </div>
-        <button className="btn btn-primary" onClick={handleAddUser}>
-          <span className="nav-icon"><UsersIcon /></span>
-          Add User
-        </button>
+        <div className="page-actions">
+          <button className="btn btn-primary" onClick={handleAddUser}>
+            <span className="nav-icon"><UsersIcon /></span>
+            Add User
+          </button>
+        </div>
       </div>
 
       {/* Large Search Bar */}

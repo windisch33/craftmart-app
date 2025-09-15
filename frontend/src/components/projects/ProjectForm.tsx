@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import type { Project } from '../../services/projectService';
+import type { Project as Job } from '../../services/projectService';
 import type { Customer } from '../../services/customerService';
 import AccessibleModal from '../common/AccessibleModal';
 
 interface ProjectFormProps {
-  project?: Project | null;
+  project?: Job | null;
   customers: Customer[];
   isOpen: boolean;
   onClose: () => void;

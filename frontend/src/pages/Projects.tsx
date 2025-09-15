@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { projectService } from '../services/projectService';
-import type { Project } from '../services/projectService';
+import { jobsService } from '../services/jobsService';
+import type { Project as Job } from '../services/projectService';
 import type { Customer } from '../services/customerService';
 import customerService from '../services/customerService';
 import ProjectList from '../components/projects/ProjectList';
 import ProjectForm from '../components/projects/ProjectForm';
 import ProjectDetail from '../components/projects/ProjectDetail';
+import JobDetail from '../components/jobs/JobDetail';
+import { StairConfigurationProvider } from '../contexts/StairConfigurationContext';
 import EmptyState from '../components/common/EmptyState';
 import { SearchIcon, FolderIcon, AlertTriangleIcon } from '../components/common/icons';
 import { useSearchParams } from 'react-router-dom';
@@ -16,7 +18,7 @@ const Projects: React.FC = () => {
   useEffect(() => {
     document.title = 'Jobs — CraftMart';
   }, []);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Job[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +28,9 @@ const Projects: React.FC = () => {
   
   // Modal states
   const [showProjectForm, setShowProjectForm] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [editingProject, setEditingProject] = useState<Job | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Job | null>(null);
+  const [jobDetail, setJobDetail] = useState<{ jobId: number } | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -39,12 +42,22 @@ const Projects: React.FC = () => {
     loadProjects();
     loadCustomers();
   }, []);
+  
+  // Open Job Detail if navigated with a selected job in location state
+  useEffect(() => {
+    const state = (window.history.state && (window.history.state as any).usr) as { selectedJobId?: number } | null;
+    if (state?.selectedJobId) {
+      setJobDetail({ jobId: state.selectedJobId });
+      // Clear the state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, []);
 
   const loadProjects = async () => {
     try {
       setLoading(true);
       setError(null);
-      const projectsData = await projectService.getAllProjects();
+      const projectsData = await jobsService.getAllProjects();
       setProjects(projectsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load projects');
@@ -75,7 +88,7 @@ const Projects: React.FC = () => {
 
   const handleCreateProject = async (projectData: { customer_id: number; name: string }) => {
     try {
-      await projectService.createProject(projectData);
+      await jobsService.createProject(projectData);
       await loadProjects();
       setShowProjectForm(false);
       showToast('Job created successfully', { type: 'success' });
@@ -88,7 +101,7 @@ const Projects: React.FC = () => {
 
   const handleEditProject = async (id: number, projectData: { name: string }) => {
     try {
-      await projectService.updateProject(id, projectData);
+      await jobsService.updateProject(id, projectData);
       await loadProjects();
       setEditingProject(null);
       showToast('Job updated', { type: 'success' });
@@ -105,7 +118,7 @@ const Projects: React.FC = () => {
     }
 
     try {
-      await projectService.deleteProject(id);
+      await jobsService.deleteProject(id);
       await loadProjects();
       showToast('Job deleted', { type: 'success' });
     } catch (err: any) {
@@ -115,11 +128,11 @@ const Projects: React.FC = () => {
     }
   };
 
-  const handleViewProject = (project: Project) => {
+  const handleViewProject = (project: Job) => {
     setSelectedProject(project);
   };
 
-  const handleEditProjectClick = (project: Project) => {
+  const handleEditProjectClick = (project: Job) => {
     setEditingProject(project);
     setShowProjectForm(true);
   };
@@ -131,6 +144,27 @@ const Projects: React.FC = () => {
 
   const handleCloseProjectDetail = () => {
     setSelectedProject(null);
+  };
+
+  // Clear PDF cache (moved from Job Items page)
+  const handleClearPDFCache = async () => {
+    try {
+      const response = await fetch('/api/job-items/cache/pdf', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        showToast(result.message || 'PDF cache cleared successfully', { type: 'success' });
+      } else {
+        showToast('Failed to clear PDF cache', { type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error clearing PDF cache:', error);
+      showToast('Failed to clear PDF cache', { type: 'error' });
+    }
   };
 
   if (loading && projects.length === 0) {
@@ -160,11 +194,18 @@ const Projects: React.FC = () => {
     <div className="container">
       {/* Header */}
       <div className="page-header">
-        <div className="header-content">
-          <div className="header-title-section">
-            <h1 className="page-title">Jobs</h1>
-            <p className="page-subtitle">Manage customer jobs and their items</p>
-          </div>
+        <div className="page-title-section">
+          <h1 className="page-title">Jobs</h1>
+          <p className="page-subtitle">Manage customer jobs and their items</p>
+        </div>
+        <div className="page-actions">
+          <button 
+            className="btn btn-secondary"
+            onClick={handleClearPDFCache}
+            title="Clear cached Job PDFs"
+          >
+            Clear PDF Cache
+          </button>
           <button 
             className="btn btn-primary"
             onClick={() => setShowProjectForm(true)}
@@ -247,6 +288,17 @@ const Projects: React.FC = () => {
           isOpen={true}
           onClose={handleCloseProjectDetail}
         />
+      )}
+
+      {/* Job Detail Modal (deep link support) */}
+      {jobDetail && (
+        <StairConfigurationProvider>
+          <JobDetail
+            jobId={jobDetail.jobId}
+            isOpen={true}
+            onClose={() => setJobDetail(null)}
+          />
+        </StairConfigurationProvider>
       )}
     </div>
   );

@@ -1,13 +1,13 @@
 import React from 'react';
-import { projectService } from '../../services/projectService';
-import type { Project } from '../../services/projectService';
+import { jobsService } from '../../services/jobsService';
+import type { Project as Job } from '../../services/projectService';
 import { FolderIcon, EditIcon, TrashIcon, EyeIcon } from '../common/icons';
 
 interface ProjectListProps {
-  projects: Project[];
+  projects: Job[];
   isSearching: boolean;
-  onViewProject: (project: Project) => void;
-  onEditProject: (project: Project) => void;
+  onViewProject: (project: Job) => void;
+  onEditProject: (project: Job) => void;
   onDeleteProject: (id: number) => void;
   onCreateProject: () => void;
 }
@@ -74,7 +74,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
             {(project.total_value || 0) > 0 && (
               <div className="contact-item">
                 <span className="contact-icon">$</span>
-                <span>{projectService.formatCurrency(project.total_value || 0)}</span>
+                <span>{jobsService.formatCurrency(project.total_value || 0)}</span>
               </div>
             )}
             <div className="contact-item">

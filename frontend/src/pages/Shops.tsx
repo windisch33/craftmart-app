@@ -144,13 +144,15 @@ const Shops: React.FC = () => {
           <h1 className="gradient-title">Shops</h1>
           <p className="page-subtitle">Manage production floor and cut sheets</p>
         </div>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setShowGenerationModal(true)}
-        >
-          <span className="nav-icon"><FactoryIcon /></span>
-          Generate Shops
-        </button>
+        <div className="page-actions">
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowGenerationModal(true)}
+          >
+            <span className="nav-icon"><FactoryIcon /></span>
+            Generate Shops
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters */}
