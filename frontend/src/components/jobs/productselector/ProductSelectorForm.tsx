@@ -195,26 +195,13 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
           {isHandrailProduct && (
             <div className="form-field">
               <label htmlFor="length">
-                Length {selectedProduct?.product_type === 'handrail' ? '(6" increments)' : '(inches)'}
+                Length (6" increments)
               </label>
-              {selectedProduct?.product_type === 'handrail' ? (
-                <HandrailLengthInput
-                  value={formData.lengthInches}
-                  onChange={(value) => onFormChange('lengthInches', value)}
-                  disabled={addingItem}
-                />
-              ) : (
-                <input
-                  type="number"
-                  id="length"
-                  value={formData.lengthInches}
-                  onChange={(e) => onFormChange('lengthInches', parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="0.25"
-                  disabled={addingItem}
-                  placeholder="Total length"
-                />
-              )}
+              <HandrailLengthInput
+                value={formData.lengthInches}
+                onChange={(value) => onFormChange('lengthInches', value)}
+                disabled={addingItem}
+              />
             </div>
           )}
         </div>

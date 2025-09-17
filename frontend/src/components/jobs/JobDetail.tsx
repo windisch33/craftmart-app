@@ -4,9 +4,11 @@ import jobService from '../../services/jobService';
 import salesmanService from '../../services/salesmanService';
 import projectService from '../../services/projectService';
 import { useToast } from '../common/ToastProvider';
-import type { JobWithDetails, QuoteItem } from '../../services/jobService';
+import type { JobWithDetails, QuoteItem, CreateQuoteItemData } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
 import type { Project } from '../../services/projectService';
+import stairConfigService from '../../services/stairConfigService';
+import type { StairConfigurationDetails } from '../../types/stairTypes';
 // Removed unused icons import
 import '../../styles/common.css';
 import './JobDetail.css';
@@ -22,6 +24,90 @@ import SectionsBlock from './job-detail/SectionsBlock';
 import TotalsPanel from './job-detail/TotalsPanel';
 import FooterActions from './job-detail/FooterActions';
 import JobDetailErrorBoundary from './job-detail/JobDetailErrorBoundary';
+
+const isPresent = (value: unknown): boolean => value !== null && value !== undefined;
+
+const buildStairConfigurationCopyPayload = (config: StairConfigurationDetails) => {
+  const configName = config.config_name ?? (config as any).configName;
+  const floorToFloor = Number(config.floor_to_floor ?? (config as any).floorToFloor ?? 0);
+  const numRisers = Number(config.num_risers ?? (config as any).numRisers ?? 0);
+  const riserHeight = config.riser_height ?? (config as any).riserHeight ?? undefined;
+  const treadMaterialId = config.tread_material_id ?? (config as any).treadMaterialId;
+  const riserMaterialId = config.riser_material_id ?? (config as any).riserMaterialId;
+  const stringerMaterialId = config.stringer_material_id ?? (config as any).stringerMaterialId;
+
+  const buildStringer = (
+    width?: number | null,
+    thickness?: number | null,
+    materialId?: number | null
+  ) => {
+    if (!isPresent(width) && !isPresent(thickness) && !isPresent(materialId)) {
+      return undefined;
+    }
+
+    return {
+      width: isPresent(width) ? Number(width) : undefined,
+      thickness: isPresent(thickness) ? Number(thickness) : undefined,
+      materialId: isPresent(materialId) ? Number(materialId) : undefined,
+    };
+  };
+
+  const individualStringers = {
+    left: buildStringer(config.left_stringer_width, config.left_stringer_thickness, config.left_stringer_material_id),
+    right: buildStringer(config.right_stringer_width, config.right_stringer_thickness, config.right_stringer_material_id),
+    center: buildStringer(config.center_stringer_width, config.center_stringer_thickness, config.center_stringer_material_id),
+  } as const;
+
+  const hasIndividualStringers = Boolean(
+    individualStringers.left || individualStringers.right || individualStringers.center
+  );
+
+  const items = (config.items || []).map((item: any) => {
+    const width = item.stairWidth ?? item.width;
+    const totalWidth = item.totalWidth ?? item.length ?? undefined;
+
+    return {
+      itemType: item.itemType ?? item.item_type ?? 'tread',
+      riserNumber: item.riserNumber ?? item.riser_number ?? null,
+      treadType: item.treadType ?? item.tread_type ?? 'box',
+      stairWidth: isPresent(width) ? Number(width) : 0,
+      totalWidth: isPresent(totalWidth) ? Number(totalWidth) : undefined,
+      boardTypeId: item.boardTypeId ?? item.board_type_id ?? undefined,
+      materialId: item.materialId ?? item.material_id ?? treadMaterialId,
+      specialPartId: item.specialPartId ?? item.special_part_id ?? undefined,
+      quantity: Number(item.quantity ?? 1),
+      unitPrice: Number(item.unitPrice ?? item.unit_price ?? 0),
+      laborPrice: Number(item.laborPrice ?? item.labor_price ?? 0),
+      totalPrice: Number(item.totalPrice ?? item.total_price ?? 0),
+      notes: item.notes ?? undefined,
+    };
+  });
+
+  return {
+    configName: configName ?? 'Stair Configuration',
+    floorToFloor,
+    numRisers,
+    riserHeight: isPresent(riserHeight) ? Number(riserHeight) : undefined,
+    treadMaterialId,
+    riserMaterialId,
+    treadSize: config.tread_size ?? (config as any).treadSize ?? '',
+    roughCutWidth: Number(config.rough_cut_width ?? (config as any).roughCutWidth ?? 0),
+    noseSize: Number(config.nose_size ?? (config as any).noseSize ?? 0),
+    stringerType: config.stringer_type ?? (config as any).stringerType ?? undefined,
+    stringerMaterialId,
+    numStringers: Number(config.num_stringers ?? (config as any).numStringers ?? 0),
+    centerHorses: Number(config.center_horses ?? (config as any).centerHorses ?? 0),
+    fullMitre: Boolean(config.full_mitre ?? (config as any).fullMitre ?? false),
+    bracketType: config.bracket_type ?? (config as any).bracketType ?? undefined,
+    subtotal: Number(config.subtotal ?? (config as any).subtotal ?? 0),
+    laborTotal: Number(config.labor_total ?? (config as any).laborTotal ?? 0),
+    taxAmount: Number(config.tax_amount ?? (config as any).taxAmount ?? 0),
+    totalAmount: Number(config.total_amount ?? (config as any).totalAmount ?? 0),
+    specialNotes: config.special_notes ?? (config as any).specialNotes ?? undefined,
+    items,
+    individualStringers: hasIndividualStringers ? individualStringers : undefined,
+  };
+};
 
 interface EditableJobData {
   title: string;
@@ -392,6 +478,36 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
       // Create the new job
       const newJob = await jobService.createJob(copyData);
 
+      // Preload stair configurations referenced by quote items so we can clone them
+      const stairConfigIds = new Set<number>();
+      (job.sections || []).forEach(section => {
+        (section.items || []).forEach(item => {
+          if (item.stair_config_id) {
+            stairConfigIds.add(item.stair_config_id);
+          }
+        });
+      });
+
+      const stairConfigsById = new Map<number, StairConfigurationDetails>();
+      if (stairConfigIds.size > 0) {
+        try {
+          const configs = await Promise.all(
+            Array.from(stairConfigIds).map(async (configId) => {
+              const config = await stairConfigService.getStairConfiguration(configId);
+              return config;
+            })
+          );
+          configs.forEach((config) => {
+            if (config?.id) {
+              stairConfigsById.set(config.id, config);
+            }
+          });
+        } catch (stairError) {
+          console.error('Error loading stair configurations for copy:', stairError);
+          throw new Error('Failed to load stair configuration details for copy.');
+        }
+      }
+
       // Copy all sections and items
       for (const section of job.sections || []) {
         const newSection = await jobService.createJobSection(newJob.id, {
@@ -402,14 +518,25 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
         // Copy all items in this section
         if (section.items) {
           for (const item of section.items) {
-            await jobService.addQuoteItem(newJob.id, newSection.id, {
+            const payload: CreateQuoteItemData = {
               part_number: item.part_number,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
               is_taxable: item.is_taxable
-              // Note: stair configurations will need to be handled separately if needed
-            });
+            };
+
+            if (item.stair_config_id) {
+              const sourceConfig = stairConfigsById.get(item.stair_config_id);
+              if (!sourceConfig) {
+                throw new Error(`Unable to locate stair configuration ${item.stair_config_id} for copy.`);
+              }
+
+              payload.part_number = 'STAIR-CONFIG';
+              payload.stair_configuration = buildStairConfigurationCopyPayload(sourceConfig);
+            }
+
+            await jobService.addQuoteItem(newJob.id, newSection.id, payload);
           }
         }
       }

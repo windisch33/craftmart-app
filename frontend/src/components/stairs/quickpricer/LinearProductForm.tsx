@@ -2,6 +2,7 @@ import React from 'react';
 import type { Product } from '../../../services/productService';
 import type { Material } from '../../../services/materialService';
 import type { LinearProductFormData, ProductType } from './types';
+import HandrailLengthInput from '../../jobs/productselector/HandrailLengthInput';
 
 interface LinearProductFormProps {
   productType: ProductType;
@@ -56,13 +57,10 @@ const LinearProductForm: React.FC<LinearProductFormProps> = ({
 
       <div className="form-row">
         <div className="form-group">
-          <label>Length (inches)</label>
-          <input
-            type="number"
+          <label>Length (6" increments)</label>
+          <HandrailLengthInput
             value={formData.length}
-            onChange={(e) => setFormData(prev => ({ ...prev, length: Number(e.target.value) }))}
-            step="0.25"
-            min="1"
+            onChange={(value) => setFormData(prev => ({ ...prev, length: value }))}
           />
         </div>
         <div className="form-group">

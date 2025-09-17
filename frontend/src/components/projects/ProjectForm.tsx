@@ -10,7 +10,7 @@ interface ProjectFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: { customer_id?: number; name: string }) => void;
-  onCustomerCreate?: (customerData: any) => Promise<void>;
+  onCustomerCreate?: (customerData: any) => Promise<Customer>;
 }
 
 const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -89,17 +89,21 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   };
 
   const handleCustomerCreate = async (customerData: any) => {
-    if (onCustomerCreate) {
-      try {
-        const newCustomer = await onCustomerCreate(customerData);
-        // If the parent returns the created customer, select it automatically
-        if (newCustomer && newCustomer.id) {
-          setFormData(prev => ({ ...prev, customer_id: newCustomer.id.toString() }));
-        }
-        setShowCustomerForm(false);
-      } catch (error) {
-        console.error('Error creating customer:', error);
+    if (!onCustomerCreate) {
+      throw new Error('Customer creation is not available in this context');
+    }
+
+    try {
+      const newCustomer = await onCustomerCreate(customerData);
+
+      if (newCustomer?.id) {
+        setFormData(prev => ({ ...prev, customer_id: newCustomer.id.toString() }));
       }
+
+      setShowCustomerForm(false);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      throw error;
     }
   };
 

@@ -34,7 +34,7 @@ const HandrailLengthInput: React.FC<HandrailLengthInputProps> = ({
 
   const handleInputBlur = () => {
     const numericValue = parseFloat(inputValue) || 0;
-    
+
     if (numericValue === 0) {
       setInputValue('0');
       onChange(0);
@@ -42,15 +42,23 @@ const HandrailLengthInput: React.FC<HandrailLengthInputProps> = ({
     }
 
     if (numericValue % 6 !== 0 || numericValue < 6 || numericValue > 240) {
-      const rounded = Math.round(numericValue / 6) * 6;
+      const rounded = Math.ceil(numericValue / 6) * 6;
       const finalValue = Math.max(6, Math.min(240, rounded));
       setWarningMessage(`Length adjusted from ${numericValue}" to ${finalValue}"`);
       setShowWarning(true);
       setInputValue(finalValue.toString());
       onChange(finalValue);
-      
+
       // Hide warning after 3 seconds
       setTimeout(() => setShowWarning(false), 3000);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleInputBlur();
+      // Blur the input to show the change has been applied
+      e.currentTarget.blur();
     }
   };
 
@@ -61,6 +69,7 @@ const HandrailLengthInput: React.FC<HandrailLengthInputProps> = ({
         value={inputValue}
         onChange={handleInputChange}
         onBlur={handleInputBlur}
+        onKeyPress={handleKeyPress}
         onFocus={(e) => e.target.select()}
         onClick={(e) => e.currentTarget.select()}
         min="6"

@@ -228,10 +228,10 @@ Add-on components for stairs.
 ```
 
 ### stair_configurations
-Saved stair configurations for jobs.
+Saved stair configurations tied to job items.
 ```sql
 - id: SERIAL PRIMARY KEY
-- job_id: INTEGER REFERENCES jobs(id)
+- job_item_id: INTEGER REFERENCES job_items(id)
 - config_name: VARCHAR(100)
 - floor_to_floor: DECIMAL(6,2)
 - num_risers: INTEGER
@@ -351,7 +351,7 @@ CREATE INDEX idx_jobs_status ON jobs(status);
 CREATE INDEX idx_jobs_created_at ON jobs(created_at);
 CREATE INDEX idx_quote_items_job_id ON quote_items(job_id);
 CREATE INDEX idx_quote_items_section_id ON quote_items(section_id);
-CREATE INDEX idx_stair_configurations_job_id ON stair_configurations(job_id);
+CREATE INDEX idx_stair_configurations_job_item_id ON stair_configurations(job_item_id);
 CREATE INDEX idx_stair_config_items_config_id ON stair_config_items(config_id);
 CREATE INDEX idx_material_multipliers_active ON material_multipliers(is_active);
 CREATE INDEX idx_stair_pricing_board_type ON stair_pricing_simple(board_type_id);
