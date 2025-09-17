@@ -56,6 +56,7 @@ export interface QuoteItem {
   line_total: number;
   is_taxable: boolean;
   stair_config_id?: number;
+  stair_configuration?: any;
   created_at: string;
 }
 

@@ -401,14 +401,14 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
         
         onSave(tempConfig);
       } else {
-        // Normal mode: save directly to database
-      const savedConfig: StairConfiguration = {
-        id: initialConfig?.id ?? 0,
-        jobId: jobId || 0,
-        ...baseConfig
-      };
-      console.log('Passing configuration to parent for persistence via quote item:', savedConfig);
-      onSave(savedConfig);
+        // Normal mode: hand configuration to parent so it can persist alongside the quote item
+        const savedConfig: StairConfiguration = {
+          id: initialConfig?.id ?? 0,
+          jobId: jobId || 0,
+          ...baseConfig
+        };
+        console.log('Passing configuration to parent for persistence via quote item:', savedConfig);
+        onSave(savedConfig);
       }
     } catch (error) {
       console.error('Error saving configuration:', error);

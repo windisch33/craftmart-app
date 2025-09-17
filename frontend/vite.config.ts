@@ -12,5 +12,16 @@ export default defineConfig({
       'www.cmioe.com',
       'cmioe.com'
     ]
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    css: true,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    }
   }
 })

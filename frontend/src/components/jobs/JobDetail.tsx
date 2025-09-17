@@ -137,6 +137,8 @@ interface EditableItem {
   line_total: number;
   is_taxable: boolean;
   isNew?: boolean;
+  stair_configuration?: any;
+  stair_config_id?: number;
 }
 
 interface ValidationErrors {
@@ -153,6 +155,21 @@ interface JobDetailProps {
   projectName?: string;
   currentProject?: Project;
 }
+
+export const mapQuoteItemsToEditableItems = (items: QuoteItem[]): EditableItem[] => {
+  return items.map(item => ({
+    id: item.id,
+    part_number: item.part_number || '',
+    description: item.description,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    line_total: item.line_total,
+    is_taxable: item.is_taxable,
+    isNew: item.id <= 0,
+    stair_configuration: (item as any).stair_configuration,
+    stair_config_id: item.stair_config_id
+  }));
+};
 
 const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectName, currentProject }) => {
   const navigate = useNavigate();
@@ -600,20 +617,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
     const sectionIndex = editSections.findIndex(section => section.id === sectionId);
     if (sectionIndex !== -1) {
       const updatedSections = [...editSections];
-      // Convert QuoteItem[] to EditableItem[] for consistency
-      const editableItems = items.map(item => ({
-        id: item.id,
-        part_number: item.part_number || '',
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        line_total: item.line_total,
-        is_taxable: item.is_taxable,
-        isNew: item.id <= 0, // Negative IDs are new items
-        // Preserve stair configuration payload so saves can persist it
-        stair_configuration: (item as any).stair_configuration,
-        stair_config_id: (item as any).stair_config_id
-      }));
+      const editableItems = mapQuoteItemsToEditableItems(items);
       updatedSections[sectionIndex].items = editableItems;
       setEditSections(updatedSections);
     }
