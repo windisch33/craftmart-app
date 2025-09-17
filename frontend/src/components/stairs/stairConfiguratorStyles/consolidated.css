@@ -1,0 +1,174 @@
+/* Consolidated layout overrides */
+.consolidated-config {
+  display: grid;
+  gap: 1rem;
+  padding: 0.25rem;
+}
+
+.basic-config-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.basic-config-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 3fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.tread-configuration-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.materials-stringer-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.materials-stringer-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.stringer-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  align-items: start;
+}
+
+.stringer-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.stringer-section h5 {
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.stringer-fields {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.stringer-fields .form-group {
+  margin-bottom: 0;
+}
+
+.stringer-fields label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.stringer-fields input,
+.stringer-fields select {
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.stringer-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.stringer-checkbox input[type="checkbox"] {
+  margin: 0;
+  width: auto;
+}
+
+.bottom-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+}
+
+.bottom-section-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.config-section-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tread-calc-combined {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.5fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.calc-display-inline {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.calc-item-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.calc-item-compact .calc-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.calc-item-compact .calc-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.consolidated-config .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.consolidated-config .form-group label {
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.consolidated-config input,
+.consolidated-config select,
+.consolidated-config textarea {
+  padding: 0.6rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+}

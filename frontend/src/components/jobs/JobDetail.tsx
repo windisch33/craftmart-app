@@ -609,7 +609,10 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
         unit_price: item.unit_price,
         line_total: item.line_total,
         is_taxable: item.is_taxable,
-        isNew: item.id <= 0 // Negative IDs are new items
+        isNew: item.id <= 0, // Negative IDs are new items
+        // Preserve stair configuration payload so saves can persist it
+        stair_configuration: (item as any).stair_configuration,
+        stair_config_id: (item as any).stair_config_id
       }));
       updatedSections[sectionIndex].items = editableItems;
       setEditSections(updatedSections);

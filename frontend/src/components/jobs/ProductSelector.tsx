@@ -474,7 +474,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         console.log('Creating quote item with ID:', stairConfig.id);
         const sc: any = stairConfig as any;
         const stairItem: CreateQuoteItemData = {
-          part_number: `STAIR-${stairConfig.id || 'CONFIG'}`,
+          part_number: 'STAIR-CONFIG',
           description: sc.config_name || stairConfig.configName || 'Straight Staircase',
           quantity: 1,
           unit_price: sc.total_amount || stairConfig.totalAmount || 0,

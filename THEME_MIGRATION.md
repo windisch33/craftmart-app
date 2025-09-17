@@ -24,7 +24,7 @@ Completed (migrated to variables)
   - Shops: `pages/Shops.css` (partial), `pages/Shops.tsx` (inline styles migrated).
   - Dashboard: `pages/Dashboard.css` (gradient title, stat icons/dots, quick-add button, links).
   - Login: `pages/Login.css` (title gradient, input focus, button gradient/shadows).
-  - Stairs: `components/stairs/StairConfigurator.css` (steps, focus rings; partial), `components/stairs/QuickPricer.css` (primary button gradient/hover).
+  - Stairs: `components/stairs/stairConfiguratorStyles/*.css` (steps, focus rings; partial), `components/stairs/QuickPricer.css` (primary button gradient/hover).
   - PDF: `components/jobs/JobPDFPreview.css` (download button, spinner, close hover).
   - Header/Lists: `components/common/Header.css` (admin badge), `components/common/SelectableList.css` (row action edit).
 
@@ -76,11 +76,11 @@ frontend/src/components/stairs/QuickPricer.css:19:  background: linear-gradient(
 frontend/src/components/stairs/QuickPricer.css:116:  border-color: #3b82f6;
 frontend/src/components/stairs/QuickPricer.css:378:  border-top: 4px solid #3b82f6;
 frontend/src/components/stairs/QuickPricer.css:421:  border: 2px solid #bfdbfe;
-frontend/src/components/stairs/StairConfigurator.css:296:  border: 1px solid #bfdbfe;
-frontend/src/components/stairs/StairConfigurator.css:309:  color: #1e40af;
-frontend/src/components/stairs/StairConfigurator.css:537:  background-color: #3b82f6;
-frontend/src/components/stairs/StairConfigurator.css:542:  background-color: #2563eb;
-frontend/src/components/stairs/StairConfigurator.css:955:  border: 1px solid #bfdbfe;
+frontend/src/components/stairs/stairConfiguratorStyles/base.css:210:  background-color: #3b82f6;
+frontend/src/components/stairs/stairConfiguratorStyles/base.css:215:  background-color: #2563eb;
+frontend/src/components/stairs/stairConfiguratorStyles/treads.css:125:  border: 1px solid #bfdbfe;
+frontend/src/components/stairs/stairConfiguratorStyles/treads.css:138:  color: #1e40af;
+frontend/src/components/stairs/stairConfiguratorStyles/consolidated.css:135:  border: 1px solid #bfdbfe;
 frontend/src/components/stairs/StairForms.css:39:  border-left: 4px solid #3b82f6;
 frontend/src/pages/Customers.css:37:  border-color: #3b82f6;
 frontend/src/pages/Customers.css:73:  border-color: #3b82f6;

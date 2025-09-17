@@ -1,0 +1,222 @@
+/* Tread configuration and bulk controls */
+.bulk-controls {
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--color-primary);
+}
+
+.bulk-controls h4 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.bulk-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bulk-row label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin: 0;
+}
+
+.bulk-row select,
+.bulk-row input {
+  min-width: 120px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.treads-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.tread-config {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.tread-config:hover {
+  border-color: var(--color-primary);
+}
+
+.tread-header h5 {
+  margin: 0 0 0.75rem 0;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.tread-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.tread-controls .form-group {
+  margin-bottom: 0;
+}
+
+.tread-controls label {
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.tread-controls input,
+.tread-controls select {
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.tread-sizing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+.tread-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tread-input-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.tread-input-group input {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.tread-total-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 0.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.tread-total-display label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.total-size {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 0.25rem;
+}
+
+.tread-total-display small {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.tread-configuration-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.tread-type-section {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  flex: 1 1 calc(33.333% - 1rem);
+  min-width: 250px;
+}
+
+.tread-type-section h4 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-size: 1.125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tread-inputs {
+  display: grid;
+  gap: 1rem;
+  align-items: end;
+}
+
+.tread-inputs.two-column {
+  grid-template-columns: 2fr 3fr;
+}
+
+.tread-inputs.three-column {
+  grid-template-columns: 2fr 3fr 2fr;
+}
+
+.tread-validation {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1.5rem 0;
+}
+
+.tread-validation p {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.info-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
+.info-message.success {
+  color: #059669;
+}
+
+.info-message.error {
+  color: #dc2626;
+}
+
+/* Compact tread sizing grid (duplicate definition retained for cascade parity) */
+.tread-sizing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}

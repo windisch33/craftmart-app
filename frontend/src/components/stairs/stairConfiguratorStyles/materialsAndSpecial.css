@@ -1,0 +1,235 @@
+/* Materials, stringers, and special parts */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.special-parts-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h4 {
+  margin: 0;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.special-part-config {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.special-part-config select {
+  flex: 2;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.special-part-config input {
+  width: 80px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.price-breakdown {
+  background-color: #fafafa;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.config-summary {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.config-summary h4 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-item span:first-child {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.summary-item span:last-child {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.price-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.breakdown-section {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.breakdown-section h5 {
+  margin: 0 0 1rem 0;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.875rem;
+}
+
+.breakdown-item:last-child {
+  border-bottom: none;
+}
+
+.breakdown-item span:first-child {
+  color: #4b5563;
+}
+
+.breakdown-item span:last-child {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.price-totals {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #10b981;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.total-line:last-child {
+  border-bottom: none;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.total-line.total {
+  font-size: 1.125rem;
+  color: #059669;
+}
+
+/* Stringer configuration defaults */
+.stringer-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stringer-section {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.stringer-section h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.stringer-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stringer-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stringer-field-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.stringer-fields input,
+.stringer-fields select {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.stringer-checkbox {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stringer-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}

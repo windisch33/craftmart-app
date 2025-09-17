@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import './StairConfigurator.css';
+import './stairConfiguratorStyles/base.css';
+import './stairConfiguratorStyles/treads.css';
+import './stairConfiguratorStyles/materialsAndSpecial.css';
+import './stairConfiguratorStyles/consolidated.css';
+import './stairConfiguratorStyles/responsive.css';
 import stairService from '../../services/stairService';
 import { useStairConfiguration } from '../../contexts/StairConfigurationContext';
 import type { DraftStairConfiguration } from '../../contexts/StairConfigurationContext';
@@ -398,17 +402,13 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
         onSave(tempConfig);
       } else {
         // Normal mode: save directly to database
-        const configuration: Omit<StairConfiguration, 'id'> = {
-          jobId,
-          ...baseConfig
-        };
-
-        console.log('Saving configuration to database:', configuration);
-        console.log('Configuration items count:', configuration.items?.length || 0);
-        const savedConfig = await stairService.saveConfiguration(configuration);
-        console.log('Saved configuration with ID:', savedConfig.id);
-        console.log('Full saved configuration:', savedConfig);
-        onSave(savedConfig);
+      const savedConfig: StairConfiguration = {
+        id: initialConfig?.id ?? 0,
+        jobId: jobId || 0,
+        ...baseConfig
+      };
+      console.log('Passing configuration to parent for persistence via quote item:', savedConfig);
+      onSave(savedConfig);
       }
     } catch (error) {
       console.error('Error saving configuration:', error);

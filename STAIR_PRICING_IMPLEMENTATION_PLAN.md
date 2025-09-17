@@ -165,7 +165,7 @@ Implement a comprehensive stair pricing system for CraftMart that allows users t
 - [x] TypeScript interfaces and service layer
 
 ### 3.4 Styling ✅ **COMPLETED**
-- [x] Create `StairConfigurator.css` with comprehensive styling
+- [x] Create `stairConfiguratorStyles` bundle with comprehensive styling
 - [x] Mobile-responsive design (768px and 480px breakpoints)
 - [x] Consistent with existing UI patterns
 - [x] Professional gradient styling and modern components
