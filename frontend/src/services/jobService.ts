@@ -24,6 +24,8 @@ export interface Job {
   tax_rate: number;
   tax_amount: number;
   total_amount: number;
+  deposit_total?: number;
+  balance_due?: number;
   created_at: string;
   updated_at: string;
   
@@ -110,6 +112,33 @@ class JobService {
     };
   }
 
+  private mapJobRecord<T extends Partial<JobWithDetails>>(job: T): T {
+    if (!job) {
+      return job;
+    }
+
+    const coerceNumber = (value: any) => (value === null || value === undefined ? 0 : Number(value));
+
+    if ('subtotal' in job) job.subtotal = coerceNumber(job.subtotal ?? job.subtotal);
+    if ('labor_total' in job) job.labor_total = coerceNumber(job.labor_total ?? job.labor_total);
+    if ('tax_amount' in job) job.tax_amount = coerceNumber(job.tax_amount ?? job.tax_amount);
+    if ('total_amount' in job) job.total_amount = coerceNumber(job.total_amount ?? job.total_amount);
+    if ('tax_rate' in job) job.tax_rate = job.tax_rate === undefined || job.tax_rate === null ? 0 : Number(job.tax_rate);
+
+    if ('deposit_total' in job) {
+      job.deposit_total = coerceNumber(job.deposit_total);
+    }
+
+    if ('balance_due' in job) {
+      job.balance_due = coerceNumber(job.balance_due);
+    } else if ('total_amount' in job) {
+      const deposit = typeof job.deposit_total === 'number' ? job.deposit_total : 0;
+      job.balance_due = coerceNumber(job.total_amount) - deposit;
+    }
+
+    return job;
+  }
+
   // Job CRUD operations
   async getAllJobs(filters?: { 
     status?: string; 
@@ -164,7 +193,9 @@ class JobService {
       const response = await axios.get(`${API_BASE_URL}/api/job-items?${params.toString()}`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return Array.isArray(response.data)
+        ? response.data.map((job: Job) => this.mapJobRecord(job))
+        : [];
     } catch (error) {
       console.error('Error fetching jobs:', error);
       throw error;
@@ -176,7 +207,9 @@ class JobService {
       const response = await axios.get(`${API_BASE_URL}/api/job-items?recent=true`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return Array.isArray(response.data)
+        ? response.data.map((job: Job) => this.mapJobRecord(job))
+        : [];
     } catch (error) {
       console.error('Error fetching recent jobs:', error);
       throw error;
@@ -188,7 +221,9 @@ class JobService {
       const response = await axios.get(`${API_BASE_URL}/api/job-items?customer_id=${customerId}`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return Array.isArray(response.data)
+        ? response.data.map((job: Job) => this.mapJobRecord(job))
+        : [];
     } catch (error) {
       console.error('Error fetching jobs by customer:', error);
       throw error;
@@ -200,7 +235,7 @@ class JobService {
       const response = await axios.get(`${API_BASE_URL}/api/job-items/${id}`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return this.mapJobRecord(response.data);
     } catch (error) {
       console.error('Error fetching job:', error);
       throw error;
@@ -212,7 +247,19 @@ class JobService {
       const response = await axios.get(`${API_BASE_URL}/api/job-items/${id}/details`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      const job = this.mapJobRecord(response.data);
+      if (job.sections) {
+        job.sections = job.sections.map((section: JobSection) => ({
+          ...section,
+          items: section.items?.map((item: QuoteItem) => ({
+            ...item,
+            quantity: Number(item.quantity ?? 0),
+            unit_price: Number(item.unit_price ?? 0),
+            line_total: Number(item.line_total ?? (Number(item.quantity ?? 0) * Number(item.unit_price ?? 0)))
+          })) || []
+        }));
+      }
+      return job;
     } catch (error) {
       console.error('Error fetching job details:', error);
       throw error;
@@ -224,7 +271,7 @@ class JobService {
       const response = await axios.post(`${API_BASE_URL}/api/job-items`, data, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return this.mapJobRecord(response.data);
     } catch (error) {
       console.error('Error creating job:', error);
       throw error;
@@ -236,7 +283,7 @@ class JobService {
       const response = await axios.put(`${API_BASE_URL}/api/job-items/${id}`, data, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return this.mapJobRecord(response.data);
     } catch (error) {
       console.error('Error updating job:', error);
       throw error;

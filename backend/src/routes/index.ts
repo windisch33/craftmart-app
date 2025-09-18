@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth';
 import customerRoutes from './customers';
 import jobRoutes from './jobs';
+import depositRoutes from './deposits';
 import projectRoutes from './projects';
 import shopRoutes from './shops';
 import reportRoutes from './reports';
@@ -16,6 +17,7 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/customers', authenticateToken, customerRoutes);
+router.use('/deposits', authenticateToken, depositRoutes);
 // Jobs (project-level)
 router.use('/jobs', authenticateToken, projectRoutes);
 // Job Items

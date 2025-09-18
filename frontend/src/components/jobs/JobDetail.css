@@ -181,6 +181,21 @@
   flex-wrap: wrap;
 }
 
+.job-financial-chip {
+  background: #e2e8f0;
+  color: #1f2937;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.job-financial-chip--balance {
+  background: rgba(34, 197, 94, 0.15);
+  color: #166534;
+}
+
 .created-date {
   font-size: 14px;
   color: #6b7280;
@@ -425,6 +440,21 @@
 .total-line.grand-total span {
   font-weight: bold;
   color: #1f2937;
+}
+
+.total-line.payment-line span:last-child {
+  color: #b91c1c;
+}
+
+.total-line.balance-line {
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 12px;
+  font-size: 16px;
+}
+
+.total-line.balance-line span:last-child {
+  font-weight: bold;
+  color: #166534;
 }
 
 /* Footer */

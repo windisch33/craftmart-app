@@ -345,7 +345,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
             isOpen={true}
             onClose={() => setSelectedJob(null)}
             projectName={project?.name}
-            currentProject={project}
+            currentProject={project ?? undefined}
           />
         </StairConfigurationProvider>
       )}

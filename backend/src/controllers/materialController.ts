@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../config/database';
 
+const isDatabaseError = (error: unknown): error is { code?: string } => {
+  return typeof error === 'object' && error !== null && 'code' in error;
+};
+
 // Get all materials
 export const getAllMaterials = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -8,7 +12,7 @@ export const getAllMaterials = async (req: Request, res: Response, next: NextFun
       'SELECT * FROM materials WHERE is_active = true ORDER BY name ASC'
     );
     res.json(result.rows);
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
@@ -57,9 +61,9 @@ export const createMaterial = async (req: Request, res: Response, next: NextFunc
     );
     
     res.status(201).json(result.rows[0]);
-  } catch (error) {
+  } catch (error: unknown) {
     // Handle unique constraint violations
-    if (error.code === '23505') {
+    if (isDatabaseError(error) && error.code === '23505') {
       return res.status(409).json({ error: 'Material with this name already exists' });
     }
     next(error);
@@ -98,9 +102,9 @@ export const updateMaterial = async (req: Request, res: Response, next: NextFunc
     }
     
     res.json(result.rows[0]);
-  } catch (error) {
+  } catch (error: unknown) {
     // Handle unique constraint violations
-    if (error.code === '23505') {
+    if (isDatabaseError(error) && error.code === '23505') {
       return res.status(409).json({ error: 'Material with this name already exists' });
     }
     next(error);
@@ -134,7 +138,7 @@ export const deleteMaterial = async (req: Request, res: Response, next: NextFunc
     }
     
     res.json({ message: 'Material deleted successfully' });
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };

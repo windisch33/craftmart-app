@@ -80,10 +80,17 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
              CAST(j.tax_rate AS FLOAT) as tax_rate,
              c.name as customer_name, c.state as customer_state,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
-             (s.first_name || ' ' || s.last_name) as salesman_name
+             (s.first_name || ' ' || s.last_name) as salesman_name,
+             COALESCE(da.deposit_total, 0) AS deposit_total,
+             CAST(COALESCE(j.total_amount, 0) - COALESCE(da.deposit_total, 0) AS FLOAT) AS balance_due
       FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(amount), 0) AS deposit_total
+        FROM deposit_allocations da
+        WHERE da.job_item_id = j.id
+      ) da ON TRUE
     `;
     
     let queryParams: any[] = [];
@@ -312,10 +319,17 @@ export const getJobById = async (req: Request, res: Response, next: NextFunction
              c.phone, c.mobile, c.email, c.accounting_email,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              (s.first_name || ' ' || s.last_name) as salesman_name,
-             s.email as salesman_email, s.phone as salesman_phone
+             s.email as salesman_email, s.phone as salesman_phone,
+             COALESCE(da.deposit_total, 0) AS deposit_total,
+             CAST(COALESCE(j.total_amount, 0) - COALESCE(da.deposit_total, 0) AS FLOAT) AS balance_due
       FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(amount), 0) AS deposit_total
+        FROM deposit_allocations da
+        WHERE da.job_item_id = j.id
+      ) da ON TRUE
       WHERE j.id = $1
     `, [id]);
     
@@ -344,10 +358,17 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
              c.name as customer_name, c.address, c.city, c.state, c.zip_code,
              c.phone, c.mobile, c.email, c.accounting_email,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
-             s.email as salesman_email, s.phone as salesman_phone
+             s.email as salesman_email, s.phone as salesman_phone,
+             COALESCE(da.deposit_total, 0) AS deposit_total,
+             CAST(COALESCE(j.total_amount, 0) - COALESCE(da.deposit_total, 0) AS FLOAT) AS balance_due
       FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(amount), 0) AS deposit_total
+        FROM deposit_allocations da
+        WHERE da.job_item_id = j.id
+      ) da ON TRUE
       WHERE j.id = $1
     `, [id]);
 

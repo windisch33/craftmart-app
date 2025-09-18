@@ -124,7 +124,11 @@ class PDFCache {
         .filter(key => {
           // Extract jobId from cache key (format: job_123_hashvalue)
           const match = key.match(/^job_(\d+)_/);
-          return match && parseInt(match[1]) === jobId;
+          if (!match || match[1] === undefined) {
+            return false;
+          }
+
+          return Number.parseInt(match[1], 10) === jobId;
         });
       
       for (const key of keysToRemove) {
@@ -136,7 +140,11 @@ class PDFCache {
       const jobFiles = files.filter(file => {
         // Extract jobId from filename (format: job_123_hashvalue.pdf)
         const match = file.match(/^job_(\d+)_.*\.pdf$/);
-        return match && parseInt(match[1]) === jobId;
+        if (!match || match[1] === undefined) {
+          return false;
+        }
+
+        return Number.parseInt(match[1], 10) === jobId;
       });
       
       await Promise.all(

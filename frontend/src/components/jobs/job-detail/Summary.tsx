@@ -1,6 +1,7 @@
 import React from 'react';
 import type { JobWithDetails } from '../../../services/jobService';
 import { CalendarIcon } from '../../common/icons';
+import { formatCurrency } from '../../../utils/jobCalculations';
 
 type StatusColor = { bg: string; color: string };
 
@@ -33,6 +34,16 @@ const Summary: React.FC<SummaryProps> = ({ job, getJobNumber, getStatusColor, pr
           >
             {getJobNumber(job)}
           </div>
+          {typeof job.deposit_total === 'number' && job.deposit_total > 0 && (
+            <span className="job-financial-chip">
+              Payments: {formatCurrency(job.deposit_total)}
+            </span>
+          )}
+          {typeof job.balance_due === 'number' && (
+            <span className="job-financial-chip job-financial-chip--balance">
+              Balance: {formatCurrency(job.balance_due)}
+            </span>
+          )}
         </div>
       </div>
     </div>

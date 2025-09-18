@@ -1,0 +1,321 @@
+.deposits-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.deposits-page .actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  background: var(--color-primary-600, #1d4ed8);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-700, #1e40af);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  border: 1px solid var(--color-border, #d1d5db);
+  color: var(--color-text-strong, #111827);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-secondary:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--color-border-muted, #e5e7eb);
+  padding: 1rem;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 200px;
+}
+
+.filter label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.filter select {
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+  color: var(--color-text-strong, #111827);
+}
+
+.deposits-content {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+}
+
+.deposits-list {
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--color-border-muted, #e5e7eb);
+  overflow: hidden;
+}
+
+.deposits-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.deposits-loading svg {
+  animation: deposits-spin 1.2s linear infinite;
+}
+
+@keyframes deposits-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.deposits-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.deposits-table thead {
+  background: var(--color-slate-50, #f8fafc);
+}
+
+.deposits-table th,
+.deposits-table td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-muted, #e5e7eb);
+}
+
+.deposits-table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.deposits-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.deposits-row:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.deposits-row--active {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.15rem 0.65rem;
+  font-size: 0.8rem;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.status-pill--unallocated {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1d4ed8;
+}
+
+.status-pill--partial {
+  background: rgba(249, 115, 22, 0.15);
+  color: #c2410c;
+}
+
+.status-pill--allocated {
+  background: rgba(34, 197, 94, 0.18);
+  color: #15803d;
+}
+
+.deposit-detail {
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--color-border-muted, #e5e7eb);
+  min-height: 420px;
+  padding: 1.25rem;
+}
+
+.detail-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--color-text-muted, #6b7280);
+  gap: 0.75rem;
+  height: 100%;
+}
+
+.detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.detail-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.detail-card__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.detail-card__header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-strong, #111827);
+}
+
+.detail-card__header p {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.detail-grid dt {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: 0.25rem;
+}
+
+.detail-grid dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-strong, #111827);
+}
+
+.allocations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.allocations__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.allocations-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--color-border-muted, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.allocations-table th,
+.allocations-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-border-muted, #e5e7eb);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.allocations-table th {
+  background: var(--color-slate-50, #f8fafc);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.allocations__empty {
+  font-size: 0.95rem;
+  color: var(--color-text-muted, #6b7280);
+  padding: 0.5rem 0;
+}
+
+.detail-notes {
+  border-top: 1px solid var(--color-border-muted, #e5e7eb);
+  padding-top: 0.75rem;
+}
+
+.detail-notes h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detail-notes p {
+  margin: 0;
+  color: var(--color-text-muted, #6b7280);
+  line-height: 1.5;
+}
+
+@media (max-width: 1200px) {
+  .deposits-content {
+    grid-template-columns: 1fr;
+  }
+
+  .deposit-detail {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .deposits-page .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

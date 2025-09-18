@@ -21,6 +21,8 @@ interface JobData {
   tax_rate: number;
   tax_amount: number;
   total_amount: number;
+  deposit_total: number;
+  balance_due: number;
   created_at: string;
   
   // Customer info
@@ -59,6 +61,9 @@ interface JobData {
       line_total: number;
       is_taxable: boolean;
       stair_config_id?: number;
+      isStairConfig?: boolean;
+      stairConfigName?: string;
+      stairDetails?: string;
     }>;
   }>;
 }
@@ -72,7 +77,7 @@ interface StairConfigurationData {
   riser_height: number;
   tread_material_id: number;
   riser_material_id: number;
-  tread_size: string;
+  tread_size: string | null;
   rough_cut_width: number;
   nose_size: number;
   stringer_type: string;
@@ -80,11 +85,20 @@ interface StairConfigurationData {
   num_stringers: number;
   center_horses: number;
   full_mitre: boolean;
-  bracket_type: string;
-  special_notes: string;
-  tread_material_name: string;
-  riser_material_name: string;
-  stringer_material_name: string;
+  bracket_type: string | null;
+  special_notes: string | null;
+  tread_material_name: string | null;
+  riser_material_name: string | null;
+  stringer_material_name: string | null;
+  left_stringer_width?: number;
+  left_stringer_thickness?: number;
+  left_stringer_material_name?: string;
+  right_stringer_width?: number;
+  right_stringer_thickness?: number;
+  right_stringer_material_name?: string;
+  center_stringer_width?: number;
+  center_stringer_thickness?: number;
+  center_stringer_material_name?: string;
   items: Array<{
     id: number;
     config_id: number;
@@ -227,10 +241,10 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   const doubleOpenTreads = treadItems.filter(t => t.tread_type === 'double_open');
   
   // Get specific widths for each tread type
-  const boxWidth = boxTreads.length > 0 ? Math.round(boxTreads[0].width) : 42;
-  const openRightWidth = openRightTreads.length > 0 ? Math.round(openRightTreads[0].width) : 42;
-  const openLeftWidth = openLeftTreads.length > 0 ? Math.round(openLeftTreads[0].width) : 42;
-  const doubleOpenWidth = doubleOpenTreads.length > 0 ? Math.round(doubleOpenTreads[0].width) : 42;
+  const boxWidth = boxTreads.length > 0 ? Math.round(boxTreads[0]!.width) : 42;
+  const openRightWidth = openRightTreads.length > 0 ? Math.round(openRightTreads[0]!.width) : 42;
+  const openLeftWidth = openLeftTreads.length > 0 ? Math.round(openLeftTreads[0]!.width) : 42;
+  const doubleOpenWidth = doubleOpenTreads.length > 0 ? Math.round(doubleOpenTreads[0]!.width) : 42;
 
   let output = `Floor to Floor: ${Math.round(floor_to_floor)}\"<br>`;
   
@@ -239,7 +253,7 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   if (!rough_cut_width && tread_size) {
     // Try to extract from legacy tread_size format (e.g., "10.5x1.25")
     const match = tread_size.match(/^(\d+(?:\.\d+)?)/);
-    if (match) {
+    if (match && match[1]) {
       actualRoughCutWidth = parseFloat(match[1]);
     }
   }
@@ -367,6 +381,9 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
     : 'Not Assigned';
 
   const statusLabel = jobData.status.toUpperCase();
+  const totalAmountNumeric = Number(jobData.total_amount ?? 0);
+  const depositApplied = Number(jobData.deposit_total ?? 0);
+  const balanceDue = Number(jobData.balance_due ?? (totalAmountNumeric - depositApplied));
   
   // Process sections to handle stair configurations
   const processedSections = [];
@@ -379,10 +396,10 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         let configId = item.stair_config_id;
         
         // Try to extract config ID from part_number if not in stair_config_id column
-        if (!configId && item.part_number.match(/STAIR-([0-9]+)/)) {
+        if (!configId) {
           const match = item.part_number.match(/STAIR-([0-9]+)/);
-          if (match) {
-            configId = parseInt(match[1]);
+          if (match && match[1]) {
+            configId = Number.parseInt(match[1], 10);
           }
         }
         
@@ -658,7 +675,11 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             text-align: right;
             width: 40%;
         }
-        
+
+        .totals-value.negative {
+            color: #b91c1c;
+        }
+
         .total-row {
             font-weight: bold;
             background-color: #f3f4f6;
@@ -667,6 +688,16 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         .total-row td {
             border-top: 2px solid #3b82f6;
             font-size: 14px;
+        }
+
+        .deposit-row td {
+            background-color: #fef2f2;
+        }
+
+        .balance-row td {
+            border-top: 2px solid #d1d5db;
+            font-weight: bold;
+            background-color: #f8fafc;
         }
         
         .page-break {
@@ -816,6 +847,15 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
                 <td class="totals-label">Total</td>
                 <td class="totals-value">${formatCurrency(jobData.total_amount || 0)}</td>
             </tr>
+            ${depositApplied > 0 ? `
+            <tr class="deposit-row">
+                <td class="totals-label">Payments Applied</td>
+                <td class="totals-value negative">-${formatCurrency(depositApplied)}</td>
+            </tr>` : ''}
+            <tr class="balance-row">
+                <td class="totals-label">Balance Due</td>
+                <td class="totals-value">${formatCurrency(balanceDue)}</td>
+            </tr>
         </table>
     </div>
 
@@ -855,11 +895,18 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
              c.phone, c.mobile, c.email, c.accounting_email,
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              s.email as salesman_email, s.phone as salesman_phone,
-             p.name as project_name
+             p.name as project_name,
+             COALESCE(da.deposit_total, 0) AS deposit_total,
+             CAST(COALESCE(j.total_amount, 0) - COALESCE(da.deposit_total, 0) AS FLOAT) AS balance_due
       FROM job_items j 
       LEFT JOIN customers c ON j.customer_id = c.id 
       LEFT JOIN salesmen s ON j.salesman_id = s.id
       LEFT JOIN jobs p ON j.job_id = p.id
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(amount), 0) AS deposit_total
+        FROM deposit_allocations da
+        WHERE da.job_item_id = j.id
+      ) da ON TRUE
       WHERE j.id = $1
     `, [jobId]);
 

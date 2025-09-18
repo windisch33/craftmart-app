@@ -181,7 +181,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
 
         // Set focus to quantity field for quick entry
         setTimeout(() => {
-          const quantityField = document.getElementById('quantity');
+          const quantityField = document.getElementById('quantity') as HTMLInputElement | null;
           if (quantityField) {
             quantityField.focus();
             quantityField.select();

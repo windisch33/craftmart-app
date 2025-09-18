@@ -33,8 +33,13 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
 // Get project (row in table "jobs") by ID with all its job items
 export const getProjectById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const projectId = parseInt(req.params.id);
-    if (isNaN(projectId)) {
+    const rawProjectId = req.params.id;
+    if (typeof rawProjectId !== 'string') {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const projectId = Number.parseInt(rawProjectId, 10);
+    if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
     
@@ -84,7 +89,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
     };
 
     res.json(project);
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
@@ -94,15 +99,19 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
   try {
     const { customer_id, name } = req.body;
 
-    // Validate required fields
-    if (!customer_id || !name) {
+    const customerId = typeof customer_id === 'string'
+      ? Number.parseInt(customer_id, 10)
+      : Number(customer_id);
+    const nameValue = typeof name === 'string' ? name.trim() : '';
+
+    if (!Number.isInteger(customerId) || !nameValue) {
       return res.status(400).json({ error: 'Customer ID and name are required' });
     }
 
     // Verify customer exists
     const customerCheck = await pool.query(
       'SELECT id FROM customers WHERE id = $1',
-      [customer_id]
+      [customerId]
     );
 
     if (customerCheck.rows.length === 0) {
@@ -115,7 +124,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
       RETURNING *
     `;
 
-    const result = await pool.query(query, [customer_id, name.trim()]);
+    const result = await pool.query(query, [customerId, nameValue]);
     
     // Return project with customer info
     const newProject = result.rows[0];
@@ -131,7 +140,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
     `, [newProject.id]);
 
     res.status(201).json(projectWithCustomer.rows[0]);
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
@@ -139,13 +148,20 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
 // Update project (name only) in table "jobs"
 export const updateProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const projectId = parseInt(req.params.id);
-    if (isNaN(projectId)) {
+    const rawProjectId = req.params.id;
+    if (typeof rawProjectId !== 'string') {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const projectId = Number.parseInt(rawProjectId, 10);
+    if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
     const { name } = req.body;
 
-    if (!name) {
+    const nameValue = typeof name === 'string' ? name.trim() : '';
+
+    if (!nameValue) {
       return res.status(400).json({ error: 'Name is required' });
     }
 
@@ -156,7 +172,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
       RETURNING *
     `;
 
-    const result = await pool.query(query, [name.trim(), projectId]);
+    const result = await pool.query(query, [nameValue, projectId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
@@ -169,13 +185,13 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
         c.name as customer_name,
         c.city as customer_city,
         c.state as customer_state
-      FROM projects p
+      FROM jobs p
       JOIN customers c ON p.customer_id = c.id
       WHERE p.id = $1
     `, [projectId]);
 
     res.json(projectWithCustomer.rows[0]);
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
@@ -183,8 +199,13 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 // Delete project (only if no job items exist)
 export const deleteProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const projectId = parseInt(req.params.id);
-    if (isNaN(projectId)) {
+    const rawProjectId = req.params.id;
+    if (typeof rawProjectId !== 'string') {
+      return res.status(400).json({ error: 'Invalid project ID' });
+    }
+
+    const projectId = Number.parseInt(rawProjectId, 10);
+    if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
 
@@ -209,7 +230,7 @@ export const deleteProject = async (req: Request, res: Response, next: NextFunct
     }
 
     res.json({ message: 'Project deleted successfully' });
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };

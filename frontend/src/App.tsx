@@ -14,6 +14,7 @@ import Shops from './pages/Shops';
 import Reports from './pages/Reports';
 import Login from './pages/Login';
 import Users from './pages/Users';
+import Deposits from './pages/Deposits';
 import './styles/App.css';
 import { ToastProvider } from './components/common/ToastProvider';
 
@@ -37,6 +38,7 @@ function App() {
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/products" element={<Products />} />
                       <Route path="/salesmen" element={<Salesmen />} />
+                      <Route path="/deposits" element={<Deposits />} />
                       {/* Jobs (parent-level) route */}
                       <Route path="/jobs" element={<Projects />} />
                       <Route path="/shops" element={<Shops />} />

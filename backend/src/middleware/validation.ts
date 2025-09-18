@@ -49,12 +49,14 @@ export const validate = (
         value: detail.context?.value
       }));
 
+      const primaryMessage = validationErrors.length === 1
+        ? validationErrors[0]?.message ?? 'Validation failed'
+        : `${validationErrors.length} validation errors occurred`;
+
       return res.status(400).json({
         error: 'Validation failed',
         details: validationErrors,
-        message: validationErrors.length === 1 
-          ? validationErrors[0].message 
-          : `${validationErrors.length} validation errors occurred`
+        message: primaryMessage
       });
     }
 

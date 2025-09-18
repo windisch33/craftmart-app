@@ -218,6 +218,12 @@ export const RefreshIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const LoaderIcon: React.FC<IconProps> = (props) => (
+  <svg {...baseProps} {...props}>
+    <path d="M21 12a9 9 0 1 1-9-9" />
+  </svg>
+);
+
 export const ChevronRightIcon: React.FC<IconProps> = (props) => (
   <svg {...baseProps} {...props}>
     <polyline points="9 18 15 12 9 6" />

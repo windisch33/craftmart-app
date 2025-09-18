@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useMobile } from '../../hooks/useMobile';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
-import { HomeIcon, UsersIcon, WrenchIcon, FactoryIcon, BarChartIcon, HandshakeIcon, ShieldIcon, FolderIcon } from './icons';
+import { HomeIcon, UsersIcon, WrenchIcon, FactoryIcon, BarChartIcon, HandshakeIcon, ShieldIcon, FolderIcon, DollarIcon } from './icons';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
@@ -34,6 +34,12 @@ const Sidebar: React.FC = () => {
       path: '/products', 
       icon: <WrenchIcon />,
       ariaLabel: 'Navigate to Products page'
+    },
+    { 
+      name: 'Payments', 
+      path: '/deposits', 
+      icon: <DollarIcon />,
+      ariaLabel: 'Navigate to Payments page'
     },
     { 
       name: 'Shops', 

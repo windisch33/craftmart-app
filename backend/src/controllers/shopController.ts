@@ -14,11 +14,21 @@ export const getAllShops = async (req: Request, res: Response, next: NextFunctio
 
 export const getShopById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    const shop = await shopService.getShopById(parseInt(id));
+    const rawShopId = req.params.id;
+    if (typeof rawShopId !== 'string') {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shopId = Number.parseInt(rawShopId, 10);
+
+    if (!Number.isInteger(shopId)) {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shop = await shopService.getShopById(shopId);
     res.json(shop);
-  } catch (error: any) {
-    if (error.message === 'Shop not found') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Shop not found') {
       return res.status(404).json({ error: error.message });
     }
     next(error);
@@ -28,28 +38,52 @@ export const getShopById = async (req: Request, res: Response, next: NextFunctio
 export const createShop = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { job_id, cut_sheets, notes } = req.body;
+    const jobId = typeof job_id === 'string' ? Number.parseInt(job_id, 10) : Number(job_id);
+
+    if (!Number.isInteger(jobId)) {
+      return res.status(400).json({ error: 'job_id must be a valid number' });
+    }
+
+    const cutSheetsJson = cut_sheets ? JSON.stringify(cut_sheets) : null;
+    const notesValue = typeof notes === 'string' && notes.trim().length > 0 ? notes.trim() : null;
     
     const result = await pool.query(
       `INSERT INTO shops (job_id, cut_sheets, notes) 
        VALUES ($1, $2, $3) RETURNING *`,
-      [job_id, JSON.stringify(cut_sheets), notes]
+      [jobId, cutSheetsJson, notesValue]
     );
     
     res.status(201).json(result.rows[0]);
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
 
 export const updateShop = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const rawShopId = req.params.id;
+    if (typeof rawShopId !== 'string') {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shopId = Number.parseInt(rawShopId, 10);
+    if (!Number.isInteger(shopId)) {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
     const { job_id, cut_sheets, notes } = req.body;
+    const jobId = typeof job_id === 'string' ? Number.parseInt(job_id, 10) : Number(job_id);
+
+    if (!Number.isInteger(jobId)) {
+      return res.status(400).json({ error: 'job_id must be a valid number' });
+    }
+
+    const cutSheetsJson = cut_sheets ? JSON.stringify(cut_sheets) : null;
+    const notesValue = typeof notes === 'string' && notes.trim().length > 0 ? notes.trim() : null;
     
     const result = await pool.query(
       `UPDATE shops SET job_id = $1, cut_sheets = $2, notes = $3, updated_at = NOW()
        WHERE id = $4 RETURNING *`,
-      [job_id, JSON.stringify(cut_sheets), notes, id]
+      [jobId, cutSheetsJson, notesValue, shopId]
     );
     
     if (result.rows.length === 0) {
@@ -57,22 +91,32 @@ export const updateShop = async (req: Request, res: Response, next: NextFunction
     }
     
     res.json(result.rows[0]);
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
 
 export const deleteShop = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    const result = await pool.query('DELETE FROM shops WHERE id = $1 RETURNING id', [id]);
+    const rawShopId = req.params.id;
+    if (typeof rawShopId !== 'string') {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shopId = Number.parseInt(rawShopId, 10);
+
+    if (!Number.isInteger(shopId)) {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const result = await pool.query('DELETE FROM shops WHERE id = $1 RETURNING id', [shopId]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Shop not found' });
     }
     
     res.json({ message: 'Shop deleted successfully' });
-  } catch (error) {
+  } catch (error: unknown) {
     next(error);
   }
 };
@@ -108,17 +152,25 @@ export const generateShops = async (req: Request, res: Response, next: NextFunct
 
 export const updateShopStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const rawShopId = req.params.id;
+    if (typeof rawShopId !== 'string') {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shopId = Number.parseInt(rawShopId, 10);
+    if (!Number.isInteger(shopId)) {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
     const { status } = req.body;
     
     const validStatuses = ['generated', 'in_progress', 'completed'];
-    if (!validStatuses.includes(status)) {
+    if (typeof status !== 'string' || !validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') });
     }
 
-    await shopService.updateShopStatus(parseInt(id), status);
+    await shopService.updateShopStatus(shopId, status);
     res.json({ message: 'Shop status updated successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     next(error);
   }
 };
@@ -126,16 +178,24 @@ export const updateShopStatus = async (req: Request, res: Response, next: NextFu
 // PDF generation endpoints
 export const downloadShopPaper = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    const shopId = parseInt(id);
+    const rawShopId = req.params.id;
+    if (typeof rawShopId !== 'string') {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shopId = Number.parseInt(rawShopId, 10);
+
+    if (!Number.isInteger(shopId)) {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
 
     const pdfBuffer = await generateShopPaper(shopId);
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="ShopPaper_${shopId}.pdf"`);
     res.send(pdfBuffer);
-  } catch (error: any) {
-    if (error.message === 'Shop not found') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Shop not found') {
       return res.status(404).json({ error: error.message });
     }
     next(error);
@@ -144,16 +204,24 @@ export const downloadShopPaper = async (req: Request, res: Response, next: NextF
 
 export const downloadCutList = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
-    const shopId = parseInt(id);
+    const rawShopId = req.params.id;
+    if (typeof rawShopId !== 'string') {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
+
+    const shopId = Number.parseInt(rawShopId, 10);
+
+    if (!Number.isInteger(shopId)) {
+      return res.status(400).json({ error: 'Invalid shop ID' });
+    }
 
     const pdfBuffer = await generateCutList(shopId);
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="CutList_${shopId}.pdf"`);
     res.send(pdfBuffer);
-  } catch (error: any) {
-    if (error.message === 'Shop not found') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Shop not found') {
       return res.status(404).json({ error: error.message });
     }
     next(error);

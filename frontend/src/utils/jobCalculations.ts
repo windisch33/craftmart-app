@@ -42,8 +42,7 @@ export interface ItemCalculation {
 export const calculateHandrailPrice = (
   product: Product,
   material: Material,
-  lengthInches: number,
-  includeLabor: boolean = false
+  lengthInches: number
 ): number => {
   if (!product.cost_per_6_inches || product.product_type !== 'handrail') {
     return 0;
@@ -77,7 +76,7 @@ export const calculateItemTotal = (
   } else if (product && material) {
     // Calculate based on product and material
     if (product.product_type === 'handrail' && product.cost_per_6_inches) {
-      unitPrice = calculateHandrailPrice(product, material, lengthInches, false);
+      unitPrice = calculateHandrailPrice(product, material, lengthInches);
     } else {
       // For other product types, you might have different calculation logic
       // This is a placeholder - implement based on your specific product pricing
