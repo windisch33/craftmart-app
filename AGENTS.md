@@ -71,3 +71,29 @@
 - Primary color lives in `frontend/src/styles/variables.css` (`--color-primary-*`, `--gradient-primary`).
 - We migrated many pages/components to consume the theme tokens; see `THEME_MIGRATION.md` for progress and remaining files.
 - To change theme globally: edit the primary ramp in `variables.css`, then hard refresh or rebuild.
+
+## Shops (Cut Sheets)
+- UI: `frontend/src/pages/Shops.tsx` (list, generate, status, download).
+- API: `backend/src/routes/shops.ts` → controller/service in `backend/src/controllers/shopController.ts`, `backend/src/services/shopService.ts` and `backend/src/services/pdfService.ts`.
+- Database:
+  - Join table `shop_jobs` (migrations `database/migrations/20-*.sql`, `21-*.sql`).
+  - Tracking on `job_items`: `shops_run`, `shops_run_date` (migration `22-add-shops-run-to-job-items.sql`).
+- Generation rules (Shops.txt):
+  - Eligible jobs: status `order`; select all / individual / only unrun.
+  - Mark selected orders as `shops_run=true` on success; exclude invoiced.
+- PDFs (generated with Puppeteer in Docker):
+  - Shop Paper: quote‑like list of Rail parts and Stair configurations by job (no pricing); includes per‑job signature + warning block.
+  - Cut List: grouped by Job → Location → Stair; item labels `TREADS`/`RISERS`/`S4S`; dimensions in fractional inches; minimal header (no “OAK LIST”).
+- Dimension formulas:
+  - Treads: width = configuration rough_cut + nose; length base = stair span. Box: −1.25", Open (open_left/right): −0.625", Double‑open: 0.
+  - Risers: width = riser_height; length base = riser length. Box: −1.25", Open: −1.875", Double‑open: −2.5".
+  - S4S: width = riser_height − 1"; length follows double‑open > open > box.
+- Common tasks:
+  - Generate: `POST /api/shops/generate { orderIds: number[] }`
+  - List: `GET /api/shops`
+  - PDFs: `GET /api/shops/:id/cut-list`, `GET /api/shops/:id/shop-paper`
+  - Available orders: `GET /api/shops/available-orders?filter=unrun|all`
+- Notes:
+  - If login rate limiter blocks automated testing, wait or adjust `RATE_LIMIT_*` in `backend/.env`.
+  - Fraction precision defaults to 1/32; adjust in `pdfService.ts` if required.
+  - Material/grade wording can be mapped in `pdfService.ts` if business rules require legacy labels (e.g., “2nd Grade Oak”).
