@@ -1012,10 +1012,10 @@ export const getJobPDFFilename = (jobData: { id: number; status: string; custome
 interface ShopData {
   id: number;
   shop_number: string;
-  cut_sheets: any[];
+  cut_sheets: CutSheetItem[];
   generated_date: string;
   notes: string;
-  jobs?: any[];
+  jobs?: ShopJob[];
 }
 
 interface CutSheetItem {
@@ -1029,7 +1029,75 @@ interface CutSheetItem {
   stair_id: string;
   location: string;
   notes?: string;
+  job_id?: number;
+  job_title?: string;
 }
+
+interface ShopJob {
+  job_id: number;
+  order_number?: string | null;
+  job_title?: string | null;
+  lot_name?: string | null;
+  directions?: string | null;
+  customer_name: string;
+  customer_address?: string | null;
+  customer_city?: string | null;
+  customer_state?: string | null;
+  customer_zip?: string | null;
+  customer_phone?: string | null;
+  customer_fax?: string | null;
+  customer_cell?: string | null;
+  customer_email?: string | null;
+  contact_person?: string | null;
+  job_location?: string | null;
+  shop_date?: string | null;
+  delivery_date?: string | null;
+  oak_delivery_date?: string | null;
+  sales_rep_name?: string | null;
+  sales_rep_phone?: string | null;
+  sales_rep_email?: string | null;
+  order_designation?: string | null;
+  model_name?: string | null;
+  terms?: string | null;
+}
+
+const escapeHtml = (value: string): string => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+const formatDateDisplay = (value?: string | null): string => {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+};
+
+// Convert decimal inches to a fraction string (nearest 1/32)
+const toInchFraction = (value: number | string, denom: number = 32): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (!num || !Number.isFinite(num)) return '—';
+  const whole = Math.trunc(num);
+  const frac = Math.abs(num - whole);
+  const n = Math.round(frac * denom);
+  if (n === 0) return `${whole}`;
+  if (n === denom) return `${whole + 1}`;
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const g = gcd(n, denom);
+  const top = n / g;
+  const bottom = denom / g;
+  return whole > 0 ? `${whole} ${top}/${bottom}` : `${top}/${bottom}`;
+};
+
+const formatInches = (value: number | string | null | undefined): string => {
+  if (value === null || value === undefined) return '—';
+  return `${toInchFraction(value)}"`;
+};
 
 /**
  * Generate shop paper PDF (parts list with signature section)
@@ -1041,25 +1109,45 @@ export const generateShopPaper = async (shopId: number): Promise<Buffer> => {
     // Get shop data with associated job information
     const shopResult = await pool.query(`
       SELECT s.*,
-             json_agg(
-               json_build_object(
-                 'job_id', j.id,
-                 'job_title', j.title,
-                 'customer_name', c.name,
-                 'customer_address', c.address,
-                 'customer_city', c.city,
-                 'customer_state', c.state,
-                 'customer_zip', c.zip_code,
-                 'customer_phone', c.phone,
-                 'job_location', j.job_location,
-                 'delivery_date', j.delivery_date,
-                 'salesman_name', s2.first_name || ' ' || s2.last_name
-               )
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'job_id', ji.id,
+                   'order_number', '#' || ji.id::text,
+                   'job_title', COALESCE(sj.job_title, ji.title, 'Job ' || ji.id::text),
+                   'lot_name', proj.name,
+                   'directions', ji.description,
+                   'customer_name', COALESCE(sj.customer_name, c.name),
+                   'customer_address', c.address,
+                   'customer_city', c.city,
+                   'customer_state', c.state,
+                   'customer_zip', c.zip_code,
+                   'customer_phone', c.phone,
+                   'customer_fax', c.fax,
+                   'customer_cell', c.mobile,
+                   'customer_email', c.email,
+                   'contact_person', ji.installer,
+                   'job_location', COALESCE(sj.job_location, ji.job_location),
+                   'shop_date', TO_CHAR(s.generated_date::date, 'YYYY-MM-DD'),
+                   'delivery_date', COALESCE(TO_CHAR(sj.delivery_date, 'YYYY-MM-DD'), TO_CHAR(ji.delivery_date, 'YYYY-MM-DD')),
+                   'oak_delivery_date', NULL,
+                   'sales_rep_name', CASE WHEN s2.id IS NOT NULL THEN TRIM(BOTH ' ' FROM (COALESCE(s2.first_name, '') || ' ' || COALESCE(s2.last_name, ''))) ELSE NULL END,
+                   'sales_rep_phone', s2.phone,
+                   'sales_rep_email', s2.email,
+                   'order_designation', ji.order_designation,
+                   'model_name', ji.model_name,
+                   'terms', ji.terms
+                 )
+                 ORDER BY ji.id
+               ) FILTER (WHERE ji.id IS NOT NULL),
+               '[]'::json
              ) as jobs
       FROM shops s
-      LEFT JOIN jobs j ON s.cut_sheets::jsonb @> json_build_array(json_build_object('job_id', j.id))::jsonb
-      LEFT JOIN customers c ON j.customer_id = c.id
-      LEFT JOIN salesmen s2 ON j.salesman_id = s2.id
+      LEFT JOIN shop_jobs sj ON sj.shop_id = s.id
+      LEFT JOIN job_items ji ON sj.job_id = ji.id
+      LEFT JOIN jobs proj ON ji.job_id = proj.id
+      LEFT JOIN customers c ON ji.customer_id = c.id
+      LEFT JOIN salesmen s2 ON ji.salesman_id = s2.id
       WHERE s.id = $1
       GROUP BY s.id
     `, [shopId]);
@@ -1068,8 +1156,111 @@ export const generateShopPaper = async (shopId: number): Promise<Buffer> => {
       throw new Error('Shop not found');
     }
 
-    const shopData: ShopData = shopResult.rows[0];
-    const html = generateShopPaperHTML(shopData);
+    const shopRow: ShopData = shopResult.rows[0];
+    const jobs: ShopJob[] = Array.isArray(shopRow.jobs) ? shopRow.jobs : [];
+
+    // Build combined quote-like job blocks (no pricing)
+    const jobBlocks: string[] = [];
+    for (const job of jobs) {
+      // Fetch sections and items for this job
+      const sectionsResult = await pool.query(
+        `SELECT js.*, 
+                COALESCE(json_agg(
+                  json_build_object(
+                    'id', qi.id,
+                    'part_number', qi.part_number,
+                    'description', qi.description,
+                    'quantity', qi.quantity,
+                    'stair_config_id', qi.stair_config_id
+                  ) ORDER BY qi.created_at
+                ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
+         FROM job_sections js
+         LEFT JOIN quote_items qi ON js.id = qi.section_id
+         WHERE js.job_item_id = $1
+         GROUP BY js.id
+         ORDER BY js.display_order, js.id`,
+        [job.job_id]
+      );
+
+      const sections = sectionsResult.rows as any[];
+      const secHtml: string[] = [];
+      for (const section of sections) {
+        const items = Array.isArray(section.items) ? section.items : [];
+        const rows: string[] = [];
+        for (const item of items) {
+          let desc = item.description || '';
+          let configId = item.stair_config_id as number | undefined;
+          if (!configId && typeof item.part_number === 'string') {
+            const m = item.part_number.match(/STAIR-(\d+)/);
+            if (m) configId = parseInt(m[1], 10);
+          }
+          if (configId) {
+            const sc = await getStairConfigurationDetails(configId);
+            if (sc) {
+              const details = formatStairConfigurationForPDF(sc);
+              desc += `<div style=\"margin-top:4px;color:#374151\">${details}</div>`;
+            }
+          }
+          rows.push(`<tr><td class=\"qty-col\">${item.quantity ?? ''}</td><td class=\"desc-col\">${desc}</td></tr>`);
+        }
+        secHtml.push(
+          `<div class=\"section-header\">${section.name}</div>` +
+          (rows.length
+            ? `<table class=\"items-table\"><thead><tr><th class=\"qty-col\">Qty</th><th class=\"desc-col\">Description</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+            : `<div style=\"margin-bottom:8px;color:#6b7280\">No items</div>`)
+        );
+      }
+
+      const block = `
+        <div class=\"job-section\">
+          <div class=\"job-header\">
+            <div>
+              <div class=\"job-title\">${escapeHtml(job.job_title || job.lot_name || 'Job ' + job.job_id)}</div>
+              <div class=\"job-subtitle\">Order # ${escapeHtml(job.order_number || job.job_id.toString())}</div>
+              ${job.lot_name ? `<div class=\"job-subtitle\">Lot: ${escapeHtml(job.lot_name)}</div>` : ''}
+            </div>
+            <div class=\"job-meta\">
+              <div>Shop Date: ${formatDateDisplay(job.shop_date)}</div>
+              <div>Delivery Date: ${formatDateDisplay(job.delivery_date)}</div>
+            </div>
+          </div>
+          ${secHtml.join('')}
+          <div class=\"signature-section\">
+            <div class=\"signature-row\"><span><strong>Sign here for delivery</strong><span class=\"signature-line\"></span></span><span><strong>Date</strong><span class=\"signature-line\"></span></span></div>
+            <div class=\"signature-row\"><span><strong>Time In:</strong><span class=\"signature-line\"></span></span><span><strong>Time Out:</strong><span class=\"signature-line\"></span></span><span><strong>O/D</strong><span class=\"signature-line\"></span></span></div>
+            <div class=\"warning-text\">This product needs to be weather proofed as soon as possible and must be sealed within 30 days of delivery.<br>Craft Mart assumes no responsibility for cracks or splits after 30 days.</div>
+          </div>
+        </div>`;
+      jobBlocks.push(block);
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset=\"utf-8\" />
+        <title>Shop Paper - ${escapeHtml(shopRow.shop_number || '')}</title>
+        <style>
+          body{font-family: Arial, sans-serif;font-size:12px;color:#111827;margin:24px;}
+          .job-section{page-break-inside:avoid;margin-bottom:24px;}
+          .job-header{display:flex;justify-content:space-between;align-items:center;background:#f5f5f5;border:1px solid #d1d5db;padding:10px 14px;margin-bottom:12px;}
+          .job-title{font-weight:700;font-size:14pt}
+          .job-subtitle{font-size:10pt;color:#374151}
+          .job-meta{font-size:10pt;text-align:right}
+          .section-header{background:#f8fafc;border-left:4px solid #3b82f6;padding:6px 8px;margin:10px 0 6px;font-weight:600}
+          .items-table{width:100%;border-collapse:collapse;margin-bottom:8px}
+          .items-table th,.items-table td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left;vertical-align:top}
+          .qty-col{width:48px;text-align:center}
+          .signature-section{margin-top:14px;border:1px solid #111827;padding:10px 12px}
+          .signature-row{display:flex;justify-content:space-between;gap:10px;margin:8px 0}
+          .signature-line{display:inline-block;border-bottom:1px solid #111827;width:180px;margin-left:6px}
+          .warning-text{text-align:center;font-weight:600;font-size:10pt}
+        </style>
+      </head>
+      <body>
+        ${jobBlocks.join('<div class=\"page-break\" style=\"page-break-after:always\"></div>')}
+      </body>
+      </html>`;
 
     // Generate PDF using browser pool
     const browser = await browserPool.getBrowser();
@@ -1114,7 +1305,50 @@ export const generateCutList = async (shopId: number): Promise<Buffer> => {
   const startTime = Date.now();
   
   try {
-    const shopResult = await pool.query('SELECT * FROM shops WHERE id = $1', [shopId]);
+    const shopResult = await pool.query(`
+      SELECT s.*,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'job_id', ji.id,
+                   'order_number', '#' || ji.id::text,
+                   'job_title', COALESCE(sj.job_title, ji.title, 'Job ' || ji.id::text),
+                   'lot_name', proj.name,
+                   'directions', ji.description,
+                   'customer_name', COALESCE(sj.customer_name, c.name),
+                   'customer_address', c.address,
+                   'customer_city', c.city,
+                   'customer_state', c.state,
+                   'customer_zip', c.zip_code,
+                   'customer_phone', c.phone,
+                   'customer_fax', c.fax,
+                   'customer_cell', c.mobile,
+                   'customer_email', c.email,
+                   'contact_person', ji.installer,
+                   'job_location', COALESCE(sj.job_location, ji.job_location),
+                   'shop_date', TO_CHAR(s.generated_date::date, 'YYYY-MM-DD'),
+                   'delivery_date', COALESCE(TO_CHAR(sj.delivery_date, 'YYYY-MM-DD'), TO_CHAR(ji.delivery_date, 'YYYY-MM-DD')),
+                   'oak_delivery_date', NULL,
+                   'sales_rep_name', CASE WHEN s2.id IS NOT NULL THEN TRIM(BOTH ' ' FROM (COALESCE(s2.first_name, '') || ' ' || COALESCE(s2.last_name, ''))) ELSE NULL END,
+                   'sales_rep_phone', s2.phone,
+                   'sales_rep_email', s2.email,
+                   'order_designation', ji.order_designation,
+                   'model_name', ji.model_name,
+                   'terms', ji.terms
+                 )
+                 ORDER BY ji.id
+               ) FILTER (WHERE ji.id IS NOT NULL),
+               '[]'::json
+             ) as jobs
+      FROM shops s
+      LEFT JOIN shop_jobs sj ON sj.shop_id = s.id
+      LEFT JOIN job_items ji ON sj.job_id = ji.id
+      LEFT JOIN jobs proj ON ji.job_id = proj.id
+      LEFT JOIN customers c ON ji.customer_id = c.id
+      LEFT JOIN salesmen s2 ON ji.salesman_id = s2.id
+      WHERE s.id = $1
+      GROUP BY s.id
+    `, [shopId]);
 
     if (shopResult.rows.length === 0) {
       throw new Error('Shop not found');
@@ -1163,25 +1397,185 @@ export const generateCutList = async (shopId: number): Promise<Buffer> => {
  * Generate HTML for shop paper (parts list with signatures)
  */
 function generateShopPaperHTML(shopData: ShopData): string {
-  const cutSheets: CutSheetItem[] = shopData.cut_sheets || [];
-  const jobs: any[] = shopData.jobs || [];
-  const printDate = new Date().toLocaleDateString();
+  const cutSheets: CutSheetItem[] = Array.isArray(shopData.cut_sheets) ? shopData.cut_sheets : [];
+  const jobs: ShopJob[] = Array.isArray(shopData.jobs) ? shopData.jobs : [];
 
-  // Group cut sheets by location and stair ID
-  const locationGroups = cutSheets.reduce((groups: any, item: CutSheetItem) => {
-    const key = `${item.location}|${item.stair_id}`;
-    if (!groups[key]) {
-      groups[key] = {
-        location: item.location,
-        stair_id: item.stair_id,
-        items: []
-      };
+  const itemsByJob = new Map<number, CutSheetItem[]>();
+  for (const item of cutSheets) {
+    if (typeof item.job_id === 'number') {
+      if (!itemsByJob.has(item.job_id)) {
+        itemsByJob.set(item.job_id, []);
+      }
+      itemsByJob.get(item.job_id)!.push(item);
     }
-    groups[key].items.push(item);
-    return groups;
-  }, {});
+  }
 
-  const locationGroupsArray = Object.values(locationGroups);
+  const jobSummaries: ShopJob[] = [];
+  const seen = new Set<number>();
+  for (const job of jobs) {
+    jobSummaries.push(job);
+    seen.add(job.job_id);
+  }
+  for (const jobId of itemsByJob.keys()) {
+    if (!seen.has(jobId)) {
+      jobSummaries.push({
+        job_id: jobId,
+        customer_name: 'Unknown Customer',
+        job_title: `Job ${jobId}`
+      });
+      seen.add(jobId);
+    }
+  }
+
+  const formatText = (value?: string | null): string => {
+    if (!value) {
+      return '—';
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? escapeHtml(trimmed) : '—';
+  };
+
+  const buildLocationSections = (job: ShopJob, jobItems: CutSheetItem[]): string => {
+    if (jobItems.length === 0) {
+      return '<div class="shop-empty">No items for this job.</div>';
+    }
+
+    const locationOrder: string[] = [];
+    const locationMap = new Map<string, { order: string[]; stairs: Map<string, CutSheetItem[]> }>();
+
+    for (const item of jobItems) {
+      const rawLocation = (item.location || job.job_location || 'MISC').toString().trim();
+      const locationKey = rawLocation.length > 0 ? rawLocation.toUpperCase() : 'MISC';
+
+      if (!locationMap.has(locationKey)) {
+        locationMap.set(locationKey, { order: [], stairs: new Map() });
+        locationOrder.push(locationKey);
+      }
+
+      const container = locationMap.get(locationKey)!;
+      const stairKey = (item.stair_id || 'GENERAL').toString().trim() || 'GENERAL';
+
+      if (!container.stairs.has(stairKey)) {
+        container.stairs.set(stairKey, []);
+        container.order.push(stairKey);
+      }
+
+      container.stairs.get(stairKey)!.push(item);
+    }
+
+    const aggregateItems = (items: CutSheetItem[]): Array<{ quantity: number; sample: CutSheetItem }> => {
+      const map = new Map<string, { quantity: number; sample: CutSheetItem }>();
+      for (const item of items) {
+        const key = `${item.item_type}|${item.tread_type || ''}|${item.material}`.toLowerCase();
+        const qtyRaw = typeof item.quantity === 'number' ? item.quantity : Number.parseFloat(String(item.quantity));
+        const quantity = Number.isNaN(qtyRaw) ? 0 : qtyRaw;
+        if (map.has(key)) {
+          map.get(key)!.quantity += quantity;
+        } else {
+          map.set(key, { quantity, sample: item });
+        }
+      }
+      return Array.from(map.values());
+    };
+
+    return locationOrder.map(locationKey => {
+      const container = locationMap.get(locationKey)!;
+      const stairSections = container.order.map(stairKey => {
+        const aggregates = aggregateItems(container.stairs.get(stairKey)!);
+        const rows = aggregates.map(entry => {
+          const sample = entry.sample;
+          const notes = sample.notes ? ` — ${sample.notes}` : '';
+          const treadType = sample.tread_type ? ` (${sample.tread_type.replace(/_/g, ' ')})` : '';
+          return `<div class="part-item"><span class="part-qty">${entry.quantity}</span> ${sample.item_type.toUpperCase()}${treadType} - ${sample.material.toUpperCase()}${notes}</div>`;
+        }).join('');
+
+        return `
+          <div class="stair-section">
+            <div class="stair-heading">Stair ID: ${stairKey}</div>
+            ${rows}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="location-section">
+          <div class="location-heading">Location: ${locationKey}</div>
+          ${stairSections}
+        </div>
+      `;
+    }).join('');
+  };
+
+  const jobBlocks = jobSummaries.map(job => {
+    const jobItems = itemsByJob.get(job.job_id) || [];
+    const customerAddress: string[] = [];
+    if (job.customer_address) {
+      customerAddress.push(job.customer_address);
+    }
+    const cityPieces = [job.customer_city, job.customer_state].filter(Boolean).join(', ');
+    const cityLine = [cityPieces, job.customer_zip].filter(Boolean).join(' ');
+    if (cityLine) {
+      customerAddress.push(cityLine);
+    }
+
+    const phoneLines: string[] = [];
+    if (job.customer_phone) phoneLines.push(`Office#: ${job.customer_phone}`);
+    if (job.customer_fax) phoneLines.push(`Fax#: ${job.customer_fax}`);
+    if (job.customer_cell) phoneLines.push(`Cell#: ${job.customer_cell}`);
+
+    const locationSections = buildLocationSections(job, jobItems);
+
+    return `
+      <div class="job-section">
+        <div class="job-header">
+          <div>
+            <div class="job-title">${formatText(job.job_title || job.lot_name)}</div>
+            <div class="job-subtitle">Order # ${formatText(job.order_number || job.job_id.toString())}</div>
+            ${job.lot_name ? `<div class="job-subtitle">Lot: ${job.lot_name}</div>` : ''}
+          </div>
+          <div class="job-meta">
+            <div>Shop Date: ${formatDateDisplay(job.shop_date || shopData.generated_date)}</div>
+            <div>Delivery Date: ${formatDateDisplay(job.delivery_date)}</div>
+            <div>Oak Delivery Date: ${formatDateDisplay(job.oak_delivery_date)}</div>
+          </div>
+        </div>
+
+        <div class="job-info-grid">
+          <div>
+            <div><strong>Customer:</strong> ${escapeHtml(job.customer_name || '—')}</div>
+            ${customerAddress.map(line => `<div>${escapeHtml(line)}</div>`).join('')}
+            ${phoneLines.map(line => `<div>${escapeHtml(line)}</div>`).join('')}
+            ${job.customer_email ? `<div>Email: ${escapeHtml(job.customer_email)}</div>` : ''}
+          </div>
+          <div>
+            <div><strong>Directions:</strong> ${escapeHtml(job.directions || cityPieces || '—')}</div>
+            <div><strong>Contact Person:</strong> ${escapeHtml(job.contact_person || '—')}</div>
+            <div><strong>Sales Rep:</strong> ${escapeHtml(job.sales_rep_name || '—')}</div>
+            <div><strong>Order Designation:</strong> ${escapeHtml(job.order_designation || '—')}</div>
+            <div><strong>Model Name:</strong> ${escapeHtml(job.model_name || '—')}</div>
+          </div>
+        </div>
+
+        ${locationSections}
+
+        <div class="signature-section">
+          <div class="signature-row">
+            <span><strong>SIGN HERE FOR DELIVERY</strong><span class="signature-line"></span></span>
+            <span><strong>DATE</strong><span class="signature-line"></span></span>
+          </div>
+          <div class="signature-row">
+            <span><strong>TIME IN:</strong><span class="signature-line"></span></span>
+            <span><strong>TIME OUT:</strong><span class="signature-line"></span></span>
+            <span><strong>O/D</strong><span class="signature-line"></span></span>
+          </div>
+          <div class="warning-text">
+            THIS PRODUCT NEEDS TO BE WEATHER PROOFED AS SOON AS POSSIBLE AND MUST BE SEALED WITHIN 30 DAYS OF DELIVERY.<br>
+            CRAFT MART ASSUMES NO RESPONSIBILITY FOR CRACKS OR SPLITS AFTER 30 DAYS.
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('<div class="page-break"></div>');
 
   return `
     <!DOCTYPE html>
@@ -1193,60 +1587,87 @@ function generateShopPaperHTML(shopData: ShopData): string {
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 11pt;
-                line-height: 1.2;
-                margin: 0;
-                padding: 0;
-            }
-            .header {
-                text-align: center;
-                border-bottom: 2px solid #333;
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-            }
-            .header h1 {
-                margin: 0;
-                font-size: 18pt;
-                font-weight: bold;
-            }
-            .company-info {
-                font-size: 10pt;
-                margin: 5px 0;
+                line-height: 1.35;
+                margin: 24px;
+                color: #111827;
             }
             .job-section {
-                margin-bottom: 30px;
                 page-break-inside: avoid;
+                margin-bottom: 28px;
             }
             .job-header {
-                background-color: #f5f5f5;
-                padding: 8px;
-                border: 1px solid #ddd;
-                font-weight: bold;
-                font-size: 12pt;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 2px solid #111827;
+                padding-bottom: 10px;
+                margin-bottom: 12px;
             }
-            .parts-list {
-                margin: 10px 0;
+            .job-title {
+                font-size: 16pt;
+                font-weight: 700;
+            }
+            .job-subtitle {
+                font-size: 11pt;
+                color: #374151;
+            }
+            .job-meta {
+                text-align: right;
+                font-size: 10pt;
+            }
+            .job-info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 12px;
+                border: 1px solid #d1d5db;
+                padding: 12px 16px;
+                margin-bottom: 12px;
+                background-color: #f9fafb;
+            }
+            .location-section {
+                margin-bottom: 16px;
+            }
+            .location-heading {
+                font-weight: 700;
+                text-transform: uppercase;
+                margin-bottom: 6px;
+            }
+            .stair-section {
+                margin-bottom: 8px;
+            }
+            .stair-heading {
+                font-weight: 600;
+                margin-bottom: 4px;
             }
             .part-item {
                 margin: 2px 0;
-                font-size: 11pt;
+            }
+            .part-qty {
+                font-weight: 600;
+                margin-right: 6px;
             }
             .signature-section {
-                margin-top: 20px;
-                padding: 15px;
-                border: 1px solid #333;
-                page-break-inside: avoid;
+                margin-top: 18px;
+                border: 1px solid #111827;
+                padding: 14px 18px;
+            }
+            .signature-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 12px;
             }
             .signature-line {
-                border-bottom: 1px solid #333;
                 display: inline-block;
-                width: 300px;
-                margin: 0 10px;
+                border-bottom: 1px solid #111827;
+                width: 220px;
+                margin-left: 8px;
             }
             .warning-text {
-                margin-top: 15px;
-                font-size: 10pt;
                 text-align: center;
-                font-weight: bold;
+                font-weight: 600;
+                font-size: 10pt;
             }
             .page-break {
                 page-break-after: always;
@@ -1254,59 +1675,7 @@ function generateShopPaperHTML(shopData: ShopData): string {
         </style>
     </head>
     <body>
-        <div class="header">
-            <h1>SHOP ORDER DELIVERY TICKET</h1>
-            <div class="company-info">
-                Craft-Mart Inc.<br>
-                5035 Allendale Lane, Taneytown MD 21787-2100<br>
-                Phone (410) 751-9467 &nbsp;&nbsp;&nbsp; Fax # (410) 751-9469
-            </div>
-            <div style="margin-top: 10px;">
-                <strong>Shop Number:</strong> ${shopData.shop_number} &nbsp;&nbsp;&nbsp;
-                <strong>Print Date:</strong> ${printDate}
-            </div>
-        </div>
-
-        ${locationGroupsArray.map((group: any, index: number) => `
-            <div class="job-section">
-                <div class="job-header">
-                    Location: ${group.location.toUpperCase()} - ${group.stair_id}
-                </div>
-                <div class="parts-list">
-                    ${group.items.map((item: CutSheetItem) => `
-                        <div class="part-item">
-                            ${item.quantity} ${item.item_type.toUpperCase()} - ${item.material.toUpperCase()}
-                            ${item.tread_type ? `(${item.tread_type.replace('_', ' ').toUpperCase()})` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-
-            <div class="signature-section">
-                <div style="margin-bottom: 20px;">
-                    <strong>SIGN HERE FOR DELIVERY</strong>
-                    <span class="signature-line"></span>
-                    <strong>DATE</strong>
-                    <span class="signature-line"></span>
-                </div>
-                <div style="margin-bottom: 20px;">
-                    <strong>TIME IN:</strong>
-                    <span class="signature-line"></span>
-                    <strong>TIME OUT:</strong>
-                    <span class="signature-line"></span>
-                    <strong>O/D</strong>
-                    <span class="signature-line"></span>
-                </div>
-                <div class="warning-text">
-                    THIS PRODUCT NEEDS TO BE WEATHER PROOFED AS SOON AS POSSIBLE<br>
-                    AND MUST BE SEALED WITHIN 30 DAYS OF DELIVERY.<br>
-                    CRAFT MART ASSUMES NO RESPONSIBILITY FOR CRACKS OR SPLITS<br>
-                    AFTER 30 DAYS.
-                </div>
-            </div>
-
-            ${index < locationGroupsArray.length - 1 ? '<div class="page-break"></div>' : ''}
-        `).join('')}
+        ${jobBlocks}
     </body>
     </html>
   `;
@@ -1316,24 +1685,144 @@ function generateShopPaperHTML(shopData: ShopData): string {
  * Generate HTML for cut list (detailed dimensions)
  */
 function generateCutListHTML(shopData: ShopData): string {
-  const cutSheets: CutSheetItem[] = shopData.cut_sheets || [];
+  const cutSheets: CutSheetItem[] = Array.isArray(shopData.cut_sheets) ? shopData.cut_sheets : [];
+  const jobs: ShopJob[] = Array.isArray(shopData.jobs) ? shopData.jobs : [];
   const printDate = new Date().toLocaleDateString();
 
-  // Group by material and location
-  const materialGroups = cutSheets.reduce((groups: any, item: CutSheetItem) => {
-    const key = `${item.material}|${item.location}`;
-    if (!groups[key]) {
-      groups[key] = {
-        material: item.material,
-        location: item.location,
-        items: []
-      };
+  const itemsByJob = new Map<number, CutSheetItem[]>();
+  for (const item of cutSheets) {
+    if (typeof item.job_id === 'number') {
+      if (!itemsByJob.has(item.job_id)) {
+        itemsByJob.set(item.job_id, []);
+      }
+      itemsByJob.get(item.job_id)!.push(item);
     }
-    groups[key].items.push(item);
-    return groups;
-  }, {});
+  }
 
-  const materialGroupsArray = Object.values(materialGroups);
+  const jobSummaries: ShopJob[] = [];
+  const seen = new Set<number>();
+  for (const job of jobs) {
+    jobSummaries.push(job);
+    seen.add(job.job_id);
+  }
+  for (const jobId of itemsByJob.keys()) {
+    if (!seen.has(jobId)) {
+      jobSummaries.push({
+        job_id: jobId,
+        customer_name: 'Unknown Customer',
+        job_title: `Job ${jobId}`
+      });
+      seen.add(jobId);
+    }
+  }
+
+  const buildLocationSections = (job: ShopJob, jobItems: CutSheetItem[]): string => {
+    if (jobItems.length === 0) {
+      return '<div class="cut-empty">No items for this job.</div>';
+    }
+
+    const locationOrder: string[] = [];
+    const locationMap = new Map<string, { order: string[]; stairs: Map<string, CutSheetItem[]> }>();
+
+    for (const item of jobItems) {
+      const rawLocation = (item.location || job.job_location || 'MISC').toString().trim();
+      const locationKey = rawLocation.length > 0 ? rawLocation.toUpperCase() : 'MISC';
+
+      if (!locationMap.has(locationKey)) {
+        locationMap.set(locationKey, { order: [], stairs: new Map() });
+        locationOrder.push(locationKey);
+      }
+
+      const container = locationMap.get(locationKey)!;
+      const stairKey = (item.stair_id || 'GENERAL').toString().trim() || 'GENERAL';
+
+      if (!container.stairs.has(stairKey)) {
+        container.stairs.set(stairKey, []);
+        container.order.push(stairKey);
+      }
+
+      container.stairs.get(stairKey)!.push(item);
+    }
+
+    const aggregateItems = (items: CutSheetItem[]): Array<{ quantity: number; sample: CutSheetItem }> => {
+      const map = new Map<string, { quantity: number; sample: CutSheetItem }>();
+      for (const item of items) {
+        const key = `${item.item_type}|${item.tread_type || ''}|${item.material}|${item.width}|${item.length}|${item.thickness}`.toLowerCase();
+        const qtyRaw = typeof item.quantity === 'number' ? item.quantity : Number.parseFloat(String(item.quantity));
+        const quantity = Number.isNaN(qtyRaw) ? 0 : qtyRaw;
+        if (map.has(key)) {
+          map.get(key)!.quantity += quantity;
+        } else {
+          map.set(key, { quantity, sample: item });
+        }
+      }
+      return Array.from(map.values());
+    };
+
+    return locationOrder.map(locationKey => {
+      const container = locationMap.get(locationKey)!;
+      const rows = container.order.flatMap(stairKey => {
+        const aggregates = aggregateItems(container.stairs.get(stairKey)!);
+        return aggregates.map(entry => {
+          const sample = entry.sample;
+          const iType = (sample.item_type || '').toLowerCase();
+          const itemName = iType === 'tread' ? 'TREADS' : iType === 'riser' ? 'RISERS' : iType.toUpperCase();
+          const widthStr = formatInches(sample.width as any);
+          const lengthStr = formatInches(sample.length as any);
+          return `<tr>
+            <td>${stairKey}</td>
+            <td>${entry.quantity}</td>
+            <td>${itemName}</td>
+            <td>${widthStr}</td>
+            <td>${lengthStr}</td>
+            <td>${sample.thickness || '1\"'}</td>
+            <td>${sample.notes || ''}</td>
+          </tr>`;
+        });
+      }).join('');
+
+      return `
+        <div class="location-section">
+          <div class="location-header">${locationKey}</div>
+          <table class="cut-table">
+            <thead>
+              <tr>
+                <th>STAIR ID</th>
+                <th>QTY</th>
+                <th>ITEM</th>
+                <th>WIDTH</th>
+                <th>LENGTH</th>
+                <th>THICKNESS</th>
+                <th>NOTES</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }).join('');
+  };
+
+  const jobSectionsHtml = jobSummaries.map(job => {
+    const jobItems = itemsByJob.get(job.job_id) || [];
+    const locationSections = buildLocationSections(job, jobItems);
+    const delivery = formatDateDisplay(job.delivery_date);
+    return `
+      <div class="job-block">
+        <div class="job-header">
+          <div class="job-customer">${escapeHtml(job.customer_name || '—')}</div>
+          <div class="job-meta">
+            <span>Order# ${escapeHtml(job.order_number || job.job_id.toString())}</span>
+            <span>Lot: ${escapeHtml(job.lot_name || '—')}</span>
+            <span>Delivery: ${delivery}</span>
+          </div>
+        </div>
+        ${locationSections}
+      </div>
+    `;
+  }).join('<div class="page-break"></div>');
 
   return `
     <!DOCTYPE html>
@@ -1345,105 +1834,78 @@ function generateCutListHTML(shopData: ShopData): string {
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 font-size: 11pt;
-                line-height: 1.2;
-                margin: 0;
-                padding: 0;
+                line-height: 1.25;
+                margin: 24px;
+                color: #111827;
             }
-            .header {
-                text-align: center;
-                border-bottom: 2px solid #333;
-                padding-bottom: 10px;
+            .report-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
                 margin-bottom: 20px;
             }
-            .header h1 {
-                margin: 0;
-                font-size: 18pt;
-                font-weight: bold;
+            .report-title { font-size: 16pt; font-weight: 700; }
+            .report-meta {
+                text-align: right;
+                font-size: 11pt;
             }
-            .company-info {
-                font-size: 10pt;
-                margin: 5px 0;
-            }
-            .material-section {
-                margin-bottom: 25px;
+            .job-block {
+                margin-bottom: 24px;
                 page-break-inside: avoid;
             }
-            .material-header {
+            .job-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 background-color: #f5f5f5;
-                padding: 8px;
-                border: 1px solid #ddd;
-                font-weight: bold;
-                font-size: 12pt;
+                border: 1px solid #d1d5db;
+                padding: 10px 14px;
+                margin-bottom: 12px;
+            }
+            .job-customer {
+                font-weight: 700;
+                font-size: 13pt;
+            }
+            .job-meta span {
+                margin-left: 12px;
+                font-size: 10pt;
+            }
+            .location-section {
+                margin-bottom: 16px;
+            }
+            .location-header {
+                font-weight: 700;
+                margin-bottom: 6px;
             }
             .cut-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin: 10px 0;
             }
             .cut-table th,
             .cut-table td {
-                border: 1px solid #333;
-                padding: 6px;
+                border: 1px solid #d1d5db;
+                padding: 6px 8px;
                 text-align: center;
                 font-size: 10pt;
             }
             .cut-table th {
-                background-color: #e0e0e0;
-                font-weight: bold;
+                background-color: #f3f4f6;
+                font-weight: 600;
             }
-            .stair-id {
-                font-weight: bold;
-                color: #333;
+            .page-break {
+                page-break-after: always;
             }
         </style>
     </head>
     <body>
-        <div class="header">
-            <h1>SHOP ORDER CUT LIST</h1>
-            <div class="company-info">
-                Craft-Mart Inc.<br>
-                5035 Allendale Lane, Taneytown MD 21787-2100<br>
-                Phone (410) 751-9467 &nbsp;&nbsp;&nbsp; Fax # (410) 751-9469
-            </div>
-            <div style="margin-top: 10px;">
-                <strong>Shop Number:</strong> ${shopData.shop_number} &nbsp;&nbsp;&nbsp;
-                <strong>Print Date:</strong> ${printDate}
-            </div>
+        <div class="report-header">
+          <div class="report-title">Cut List</div>
+          <div class="report-meta">
+            <div>Print Date: ${printDate}</div>
+            <div>Shop Number: ${escapeHtml(shopData.shop_number || '—')}</div>
+          </div>
         </div>
-
-        ${materialGroupsArray.map((group: any) => `
-            <div class="material-section">
-                <div class="material-header">
-                    ${group.material.toUpperCase()} - ${group.location.toUpperCase()}
-                </div>
-                <table class="cut-table">
-                    <thead>
-                        <tr>
-                            <th>STAIR ID</th>
-                            <th>QTY</th>
-                            <th>ITEM TYPE</th>
-                            <th>WIDTH</th>
-                            <th>LENGTH</th>
-                            <th>THICKNESS</th>
-                            <th>NOTES</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${group.items.map((item: CutSheetItem) => `
-                            <tr>
-                                <td class="stair-id">${item.stair_id}</td>
-                                <td>${item.quantity}</td>
-                                <td>${item.item_type.toUpperCase()}${item.tread_type ? ` (${item.tread_type.replace('_', ' ').toUpperCase()})` : ''}</td>
-                                <td>${item.width.toFixed(2)}"</td>
-                                <td>${item.length.toFixed(2)}"</td>
-                                <td>${item.thickness || '1"'}</td>
-                                <td>${item.notes || ''}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `).join('')}
+        ${jobSectionsHtml}
     </body>
     </html>
   `;

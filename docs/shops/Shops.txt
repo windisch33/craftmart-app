@@ -1,0 +1,53 @@
+Shops
+
+running shops is an option for any job that is an order. you can select all jobs (current orders) or individual jobs, or only jobs that have not had shops yet
+
+when shops have been run for a job it should be marked so we can sort between jobs that have and have not had shops run. Once a job is an invoice it should be removed from shops as an option.
+
+Here are an example of what shops are for the old system
+these do not need to be followed exactly they are just samples. Ours should reflect the clean modern design of our pdfs.
+
+'shop parts list.pdf' png pages present
+.shop papers.pdf' png pages present 
+
+SHOP PAPER
+
+are a list of all RAIL parts/stair CONFIGURATIONS, SIMILAR TO CURRENT QUOTES, it has no price info, just a list of parts/stairs by job in one file. after each job it should have something similar to.
+ 
+"SIGN HERE FOR DELIVERY   DATE     
+
+
+
+TIME IN:   TIME OUT:   O\D      
+
+
+
+
+
+
+THIS PRODUCT NEEDS TO BE WEATHER PROOFED AS SOON AS POSSIBLE AND MUST BE SEALED WITHIN 30 DAYS OF 
+DELIVERY.
+CRAFT MART ASSUMES NO RESPONSIBLILTY FOR CRACKS OR SPLITS
+AFTER 30 DAYS."
+
+not all capitalized, again formatted for our clean modern pdf.
+
+
+SHOP CUT LIST
+
+are the cut sheets for the stairs in the selected orders.
+
+box treads width is rough cut + nose, length is length - .625" - .625" for routes
+
+open treads  width is rough cut + nose, length is length - .625"  for route
+
+double open treads  width is rough cut + nose, length is length
+
+box risers width is riser height, length is length - .625" - .625" for routes
+
+open risers width is riser height, length is length - .625" for route - 1.25" for nose overhang
+
+double open risers width is riser height, length is length - 1.25" - 1.25" for nose overhangs
+
+each stair gets an s4s (bottom riser) width is riser height - 1" length dependent on bottom tread - if stair has double open treads s4s length is same as double open riser, if a stair has no double opens and has open ends s4s has same length as open risers, finally if stair only has box treads s4s length is same as box risers. 
+
