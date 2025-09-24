@@ -14,6 +14,11 @@ const Shops: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showGenerationModal, setShowGenerationModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [sortBy, setSortBy] = useState<'shop_number' | 'status' | 'generated_date' | 'jobs' | 'cut_sheet_count'>('generated_date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const { showToast } = useToast();
 
   // Define styles first so they can be used in conditional returns
@@ -77,6 +82,77 @@ const Shops: React.FC = () => {
     const matchesStatus = statusFilter === 'all' || shop.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const sortedShops = [...filteredShops].sort((a, b) => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    if (sortBy === 'jobs') {
+      const av = a.jobs?.length || 0; const bv = b.jobs?.length || 0;
+      return (av - bv) * dir;
+    }
+    if (sortBy === 'cut_sheet_count') {
+      const av = a.cut_sheet_count || 0; const bv = b.cut_sheet_count || 0;
+      return (av - bv) * dir;
+    }
+    const av: any = (a as any)[sortBy];
+    const bv: any = (b as any)[sortBy];
+    if (!av && !bv) return 0;
+    if (!av) return 1 * dir;
+    if (!bv) return -1 * dir;
+    if (sortBy === 'generated_date') {
+      return (new Date(av).getTime() - new Date(bv).getTime()) * dir;
+    }
+    return String(av).localeCompare(String(bv)) * dir;
+  });
+
+  const toggleSelect = (id: number) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelectedOnPage = sortedShops.length > 0 && sortedShops.every(s => selected.has(s.id));
+  const toggleSelectAll = () => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (allSelectedOnPage) {
+        sortedShops.forEach(s => next.delete(s.id));
+      } else {
+        sortedShops.forEach(s => next.add(s.id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDownload = async (type: 'paper' | 'cut') => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      for (const id of ids) {
+        if (type === 'paper') await shopService.downloadShopPaper(id);
+        else await shopService.downloadCutList(id);
+      }
+      showToast(`Started ${type === 'paper' ? 'Shop Paper' : 'Cut List'} downloads`, { type: 'success' });
+    } catch (_e) {
+      showToast('Some downloads may have failed', { type: 'error' });
+    }
+  };
+
+  const handleBulkStatus = async (newStatus: 'generated' | 'in_progress' | 'completed') => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      for (const id of ids) {
+        await shopService.updateShopStatus(id, newStatus);
+      }
+      await loadShops();
+      showToast(`Updated ${ids.length} shop(s) to ${newStatus.replace('_',' ')}`, { type: 'success' });
+      setSelected(new Set());
+    } catch (_e) {
+      showToast('Failed updating some shops', { type: 'error' });
+    }
+  };
 
   const handleDownloadShopPaper = async (shopId: number) => {
     try {
@@ -142,7 +218,7 @@ const Shops: React.FC = () => {
   }
 
   return (
-    <div className="container">
+    <div className={`container ${density === 'compact' ? 'density-compact' : ''}`}>
       {/* Header */}
       <div className="page-header">
         <div className="page-title-section">
@@ -160,91 +236,97 @@ const Shops: React.FC = () => {
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div style={{...cardStyle, marginBottom: '24px'}}>
-        <div style={{display: 'flex', gap: '16px', flexWrap: 'wrap'}}>
-          <div style={{flex: 1, minWidth: '300px'}}>
-            <div style={{position: 'relative'}}>
-              <div style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af',
-                pointerEvents: 'none',
-                zIndex: 1
-              }}>
-                <SearchIcon />
-              </div>
-              <input
-                type="text"
-                placeholder="Search shops by number or notes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{...inputStyle, paddingLeft: '48px'}}
-                onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-              />
-            </div>
+      {/* Sticky toolbar */}
+      <div className="shops-toolbar desktop-only">
+        <div className="shops-toolbar-row">
+          <div className="shops-search">
+            <input
+              type="text"
+              placeholder="Search shops by number or notes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search shops"
+            />
           </div>
-          <div style={{display: 'flex', gap: '12px', alignItems: 'center'}}>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                padding: '12px 16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '12px',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                fontWeight: '500',
-                transition: 'all 0.2s ease',
-                outline: 'none'
-              }}
-              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-            >
-              <option value="all">All Status</option>
-              <option value="generated">Generated</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-            <button 
-              style={{
-                padding: '12px 20px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '12px',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                fontWeight: '500',
-                transition: 'all 0.2s ease'
-              }} 
-              onClick={loadShops}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-primary)';
-                e.currentTarget.style.backgroundColor = '#f8fafc';
-              }} 
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e5e7eb';
-                e.currentTarget.style.backgroundColor = 'white';
-              }}
-            >
-              Refresh
-            </button>
-          </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter by status">
+            <option value="all">All Status</option>
+            <option value="generated">Generated</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+          <select value={density} onChange={(e) => setDensity(e.target.value as any)} aria-label="Density">
+            <option value="comfortable">Comfortable</option>
+            <option value="compact">Compact</option>
+          </select>
+          <select value={viewMode} onChange={(e) => setViewMode(e.target.value as any)} aria-label="View mode">
+            <option value="table">Table</option>
+            <option value="cards">Cards</option>
+          </select>
+          <button onClick={loadShops} aria-label="Refresh">Refresh</button>
         </div>
       </div>
 
-      {/* Shops Grid */}
-      {filteredShops.length === 0 ? (
-        <EmptyState
-          icon={<FactoryIcon />}
-          title={shops.length === 0 ? 'No shops yet' : 'No shops match your filters'}
-          description={shops.length === 0 ? 'Generate shops to prepare cut sheets and track progress.' : 'Try clearing filters or generating new shops.'}
-          action={{ label: 'Generate Shops', onClick: () => setShowGenerationModal(true) }}
-        />
-      ) : (
-      <div style={{
+      {/* Desktop table view */}
+      {viewMode === 'table' && (
+        <div className="desktop-only">
+          <div className="shops-table-wrap">
+            <table className="shops-table">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" checked={allSelectedOnPage} onChange={toggleSelectAll} aria-label="Select all" /></th>
+                  <th onClick={() => { setSortBy('shop_number'); setSortDir(sortBy==='shop_number' && sortDir==='asc' ? 'desc' : 'asc'); }}>Shop #</th>
+                  <th onClick={() => { setSortBy('status'); setSortDir(sortBy==='status' && sortDir==='asc' ? 'desc' : 'asc'); }}>Status</th>
+                  <th onClick={() => { setSortBy('jobs'); setSortDir(sortBy==='jobs' && sortDir==='asc' ? 'desc' : 'asc'); }}>Jobs</th>
+                  <th onClick={() => { setSortBy('cut_sheet_count'); setSortDir(sortBy==='cut_sheet_count' && sortDir==='asc' ? 'desc' : 'asc'); }}>Cut Sheets</th>
+                  <th onClick={() => { setSortBy('generated_date'); setSortDir(sortBy==='generated_date' && sortDir==='asc' ? 'desc' : 'asc'); }}>Generated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedShops.map(shop => {
+                  const statusClass = shop.status === 'generated' ? 'badge--generated' : shop.status === 'in_progress' ? 'badge--in_progress' : 'badge--completed';
+                  return (
+                    <tr key={shop.id}>
+                      <td><input type="checkbox" checked={selected.has(shop.id)} onChange={() => toggleSelect(shop.id)} aria-label={`Select ${shop.shop_number}`} /></td>
+                      <td>{shop.shop_number}</td>
+                      <td><span className={`badge ${statusClass}`}>{shop.status.replace('_',' ')}</span></td>
+                      <td>{shop.jobs?.length || 0}</td>
+                      <td>{shop.cut_sheet_count || (shop.cut_sheets?.length || 0)}</td>
+                      <td>{shop.generated_date ? new Date(shop.generated_date).toLocaleDateString() : '—'}</td>
+                      <td>
+                        <div className="actions-row">
+                          <button className="btn-primary" onClick={() => handleDownloadShopPaper(shop.id)}>Shop Paper</button>
+                          <button onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
+                          <select value={shop.status} onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)} aria-label={`Update status for ${shop.shop_number}`}>
+                            <option value="generated">Generated</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {selected.size > 0 && (
+            <div className="bulkbar">
+              <span><strong>{selected.size}</strong> selected</span>
+              <button onClick={() => handleBulkDownload('paper')}>Download Shop Paper</button>
+              <button onClick={() => handleBulkDownload('cut')}>Download Cut List</button>
+              <span>Set status:</span>
+              <button onClick={() => handleBulkStatus('generated')}>Generated</button>
+              <button onClick={() => handleBulkStatus('in_progress')}>In Progress</button>
+              <button onClick={() => handleBulkStatus('completed')}>Completed</button>
+              <button onClick={() => setSelected(new Set())} aria-label="Clear selection">Clear</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cards view (mobile always; desktop when viewMode is Cards) */}
+      <div className={`${viewMode === 'cards' ? '' : 'mobile-only'}`} style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
         gap: '24px'

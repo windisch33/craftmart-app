@@ -262,6 +262,136 @@
   overflow: auto;
 }
 
+/* New: Desktop table view and sticky toolbar */
+.shops-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 10px -6px rgba(0,0,0,0.1);
+  margin-bottom: 16px;
+}
+
+.shops-toolbar-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shops-search {
+  flex: 1;
+  min-width: 240px;
+}
+
+.shops-search input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.shops-toolbar select,
+.shops-toolbar button {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+}
+
+.shops-table-wrap {
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  background: white;
+  overflow: auto;
+}
+
+.shops-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.shops-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f9fafb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  padding: 10px 12px;
+}
+
+.shops-table tbody td {
+  border-bottom: 1px solid #f3f4f6;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.shops-table tr:hover td {
+  background: #fafafa;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #e5e7eb;
+}
+
+.badge--generated { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
+.badge--in_progress { background: #fae8ff; color: #86198f; border-color: #d8b4fe; }
+.badge--completed { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+
+.actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+}
+
+.density-compact .shops-table tbody td { padding: 6px 10px; font-size: 13px; }
+.density-compact .shops-table thead th { padding: 8px 10px; }
+
+/* Bulk action bar */
+.bulkbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 9;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Responsive: hide table on small screens, show cards; reverse on desktop */
+@media (max-width: 900px) {
+  .desktop-only { display: none; }
+}
+
+@media (min-width: 901px) {
+  .mobile-only { display: none; }
+}
+
 .progress-steps {
   display: flex;
   align-items: center;
