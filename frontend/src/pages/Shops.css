@@ -268,11 +268,10 @@
   top: 0;
   z-index: 10;
   background: white;
-  border: 1px solid #f3f4f6;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 2px 10px -6px rgba(0,0,0,0.1);
-  margin-bottom: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
 }
 
 .shops-toolbar-row {
@@ -297,11 +296,12 @@
 
 .shops-toolbar select,
 .shops-toolbar button {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 8px;
   background: white;
   cursor: pointer;
+  font-size: 13px;
 }
 
 .shops-table-wrap {
@@ -320,19 +320,19 @@
 .shops-table thead th {
   position: sticky;
   top: 0;
-  background: #f9fafb;
+  background: #fafafa;
   font-weight: 600;
-  font-size: 13px;
-  color: #374151;
+  font-size: 12px;
+  color: #4b5563;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
-  padding: 10px 12px;
+  padding: 8px 10px;
 }
 
 .shops-table tbody td {
   border-bottom: 1px solid #f3f4f6;
-  padding: 10px 12px;
-  font-size: 14px;
+  padding: 8px 10px;
+  font-size: 13px;
   color: #111827;
 }
 
@@ -373,14 +373,53 @@
   position: sticky;
   bottom: 0;
   z-index: 9;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 10px;
+}
+
+/* Compact actions menu to reduce clutter */
+.actions-menu {
+  position: relative;
+}
+.actions-menu summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+}
+.actions-menu summary::marker { display: none; }
+.actions-menu .menu {
+  position: absolute;
+  right: 0;
+  margin-top: 6px;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 20;
+}
+.actions-menu .menu button,
+.actions-menu .menu select {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
 }
 
 /* Responsive: hide table on small screens, show cards; reverse on desktop */

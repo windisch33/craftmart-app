@@ -254,14 +254,25 @@ const Shops: React.FC = () => {
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
           </select>
-          <select value={density} onChange={(e) => setDensity(e.target.value as any)} aria-label="Density">
-            <option value="comfortable">Comfortable</option>
-            <option value="compact">Compact</option>
-          </select>
-          <select value={viewMode} onChange={(e) => setViewMode(e.target.value as any)} aria-label="View mode">
-            <option value="table">Table</option>
-            <option value="cards">Cards</option>
-          </select>
+          <details>
+            <summary>Display</summary>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 6 }}>
+              <label>
+                Density
+                <select value={density} onChange={(e) => setDensity(e.target.value as any)} aria-label="Density" style={{ marginLeft: 6 }}>
+                  <option value="comfortable">Comfortable</option>
+                  <option value="compact">Compact</option>
+                </select>
+              </label>
+              <label>
+                View
+                <select value={viewMode} onChange={(e) => setViewMode(e.target.value as any)} aria-label="View mode" style={{ marginLeft: 6 }}>
+                  <option value="table">Table</option>
+                  <option value="cards">Cards</option>
+                </select>
+              </label>
+            </div>
+          </details>
           <button onClick={loadShops} aria-label="Refresh">Refresh</button>
         </div>
       </div>
@@ -294,15 +305,18 @@ const Shops: React.FC = () => {
                       <td>{shop.cut_sheet_count || (shop.cut_sheets?.length || 0)}</td>
                       <td>{shop.generated_date ? new Date(shop.generated_date).toLocaleDateString() : '—'}</td>
                       <td>
-                        <div className="actions-row">
-                          <button className="btn-primary" onClick={() => handleDownloadShopPaper(shop.id)}>Shop Paper</button>
-                          <button onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
-                          <select value={shop.status} onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)} aria-label={`Update status for ${shop.shop_number}`}>
-                            <option value="generated">Generated</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                          </select>
-                        </div>
+                        <details className="actions-menu">
+                          <summary>Actions ▾</summary>
+                          <div className="menu">
+                            <button onClick={() => handleDownloadShopPaper(shop.id)}>Shop Paper</button>
+                            <button onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
+                            <select value={shop.status} onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)} aria-label={`Update status for ${shop.shop_number}`}>
+                              <option value="generated">Generated</option>
+                              <option value="in_progress">In Progress</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          </div>
+                        </details>
                       </td>
                     </tr>
                   );
