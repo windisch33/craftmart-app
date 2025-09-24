@@ -301,7 +301,7 @@ const Shops: React.FC = () => {
                       <td>
                         <div className="actions-row">
                           <button className="btn-primary" onClick={() => handleDownloadShopPaper(shop.id)}>Shop Paper</button>
-                          <button onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
+                          <button className="btn-primary" onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
                           <select value={shop.status} onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)} aria-label={`Update status for ${shop.shop_number}`}>
                             <option value="generated">Generated</option>
                             <option value="in_progress">In Progress</option>
@@ -532,7 +532,7 @@ const Shops: React.FC = () => {
                     flex: 1,
                     minWidth: '120px',
                     padding: '10px 16px',
-                    backgroundColor: '#10b981',
+                    backgroundColor: 'var(--color-primary)',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
@@ -545,8 +545,8 @@ const Shops: React.FC = () => {
                     e.stopPropagation();
                     handleDownloadCutList(shop.id);
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
                 >
                   Cut List
                 </button>
