@@ -17,7 +17,7 @@ const Shops: React.FC = () => {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [sortBy, setSortBy] = useState<'shop_number' | 'status' | 'generated_date' | 'jobs' | 'cut_sheet_count'>('generated_date');
+  const [sortBy, setSortBy] = useState<'shop_number' | 'status' | 'generated_date' | 'jobs'>('generated_date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const { showToast } = useToast();
 
@@ -87,10 +87,6 @@ const Shops: React.FC = () => {
     const dir = sortDir === 'asc' ? 1 : -1;
     if (sortBy === 'jobs') {
       const av = a.jobs?.length || 0; const bv = b.jobs?.length || 0;
-      return (av - bv) * dir;
-    }
-    if (sortBy === 'cut_sheet_count') {
-      const av = a.cut_sheet_count || 0; const bv = b.cut_sheet_count || 0;
       return (av - bv) * dir;
     }
     const av: any = (a as any)[sortBy];
@@ -288,7 +284,6 @@ const Shops: React.FC = () => {
                   <th onClick={() => { setSortBy('shop_number'); setSortDir(sortBy==='shop_number' && sortDir==='asc' ? 'desc' : 'asc'); }}>Shop #</th>
                   <th onClick={() => { setSortBy('status'); setSortDir(sortBy==='status' && sortDir==='asc' ? 'desc' : 'asc'); }}>Status</th>
                   <th onClick={() => { setSortBy('jobs'); setSortDir(sortBy==='jobs' && sortDir==='asc' ? 'desc' : 'asc'); }}>Jobs</th>
-                  <th onClick={() => { setSortBy('cut_sheet_count'); setSortDir(sortBy==='cut_sheet_count' && sortDir==='asc' ? 'desc' : 'asc'); }}>Cut Sheets</th>
                   <th onClick={() => { setSortBy('generated_date'); setSortDir(sortBy==='generated_date' && sortDir==='asc' ? 'desc' : 'asc'); }}>Generated</th>
                   <th>Actions</th>
                 </tr>
@@ -302,21 +297,17 @@ const Shops: React.FC = () => {
                       <td>{shop.shop_number}</td>
                       <td><span className={`badge ${statusClass}`}>{shop.status.replace('_',' ')}</span></td>
                       <td>{shop.jobs?.length || 0}</td>
-                      <td>{shop.cut_sheet_count || (shop.cut_sheets?.length || 0)}</td>
                       <td>{shop.generated_date ? new Date(shop.generated_date).toLocaleDateString() : '—'}</td>
                       <td>
-                        <details className="actions-menu">
-                          <summary>Actions ▾</summary>
-                          <div className="menu">
-                            <button onClick={() => handleDownloadShopPaper(shop.id)}>Shop Paper</button>
-                            <button onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
-                            <select value={shop.status} onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)} aria-label={`Update status for ${shop.shop_number}`}>
-                              <option value="generated">Generated</option>
-                              <option value="in_progress">In Progress</option>
-                              <option value="completed">Completed</option>
-                            </select>
-                          </div>
-                        </details>
+                        <div className="actions-row">
+                          <button className="btn-primary" onClick={() => handleDownloadShopPaper(shop.id)}>Shop Paper</button>
+                          <button onClick={() => handleDownloadCutList(shop.id)}>Cut List</button>
+                          <select value={shop.status} onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)} aria-label={`Update status for ${shop.shop_number}`}>
+                            <option value="generated">Generated</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                          </select>
+                        </div>
                       </td>
                     </tr>
                   );
