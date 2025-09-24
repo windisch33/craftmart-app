@@ -1,6 +1,6 @@
 # CraftMart Database Schema Documentation
 
-Generated on: Thu Sep 18 02:00:48 PM UTC 2025
+Generated on: Fri Sep 19 02:09:53 PM UTC 2025
 
 ## Database Overview
 
@@ -10,7 +10,7 @@ This document contains the complete schema for the CraftMart application databas
 
    schema_stats   
 ------------------
- Total Tables: 22
+ Total Tables: 23
 (1 row)
 
 
@@ -114,14 +114,16 @@ Access method: heap
 ### jobs
 Project groupings for customers (internally projects table)
 
-                                                                      Table "public.jobs"
-   Column    |            Type             | Collation | Nullable |               Default                | Storage  | Compression | Stats target | Description 
--------------+-----------------------------+-----------+----------+--------------------------------------+----------+-------------+--------------+-------------
- id          | integer                     |           | not null | nextval('projects_id_seq'::regclass) | plain    |             |              | 
- customer_id | integer                     |           | not null |                                      | plain    |             |              | 
- name        | character varying(255)      |           | not null |                                      | extended |             |              | 
- created_at  | timestamp without time zone |           |          | CURRENT_TIMESTAMP                    | plain    |             |              | 
- updated_at  | timestamp without time zone |           |          | CURRENT_TIMESTAMP                    | plain    |             |              | 
+                                                                       Table "public.jobs"
+     Column     |            Type             | Collation | Nullable |               Default                | Storage  | Compression | Stats target | Description 
+----------------+-----------------------------+-----------+----------+--------------------------------------+----------+-------------+--------------+-------------
+ id             | integer                     |           | not null | nextval('projects_id_seq'::regclass) | plain    |             |              | 
+ customer_id    | integer                     |           | not null |                                      | plain    |             |              | 
+ name           | character varying(255)      |           | not null |                                      | extended |             |              | 
+ created_at     | timestamp without time zone |           |          | CURRENT_TIMESTAMP                    | plain    |             |              | 
+ updated_at     | timestamp without time zone |           |          | CURRENT_TIMESTAMP                    | plain    |             |              | 
+ shops_run      | boolean                     |           |          | false                                | plain    |             |              | 
+ shops_run_date | timestamp without time zone |           |          |                                      | plain    |             |              | 
 Indexes:
     "projects_pkey" PRIMARY KEY, btree (id)
     "idx_jobs_created_at" btree (created_at DESC)
@@ -186,8 +188,10 @@ Foreign-key constraints:
     "jobs_customer_id_fkey" FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
     "jobs_salesman_id_fkey" FOREIGN KEY (salesman_id) REFERENCES salesmen(id)
 Referenced by:
+    TABLE "deposit_allocations" CONSTRAINT "deposit_allocations_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
     TABLE "job_sections" CONSTRAINT "job_sections_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
     TABLE "quote_items" CONSTRAINT "quote_items_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
+    TABLE "shop_jobs" CONSTRAINT "shop_jobs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES job_items(id) ON DELETE CASCADE
     TABLE "shops" CONSTRAINT "shops_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
     TABLE "stair_configurations" CONSTRAINT "stair_configurations_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
 Access method: heap
@@ -211,7 +215,6 @@ Indexes:
 Foreign-key constraints:
     "job_sections_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
 Referenced by:
-    TABLE "deposit_allocations" CONSTRAINT "deposit_allocations_job_section_id_fkey" FOREIGN KEY (job_section_id) REFERENCES job_sections(id) ON DELETE SET NULL
     TABLE "quote_items" CONSTRAINT "quote_items_section_id_fkey" FOREIGN KEY (section_id) REFERENCES job_sections(id) ON DELETE CASCADE
 Access method: heap
 
@@ -258,8 +261,6 @@ Foreign-key constraints:
     "quote_items_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id)
     "quote_items_section_id_fkey" FOREIGN KEY (section_id) REFERENCES job_sections(id) ON DELETE CASCADE
     "quote_items_stair_config_id_fkey" FOREIGN KEY (stair_config_id) REFERENCES stair_configurations(id) ON DELETE SET NULL
-Referenced by:
-    TABLE "deposit_allocations" CONSTRAINT "deposit_allocations_quote_item_id_fkey" FOREIGN KEY (quote_item_id) REFERENCES quote_items(id) ON DELETE SET NULL
 Access method: heap
 
 
@@ -631,8 +632,7 @@ Allocation of deposits to specific jobs and items
  id              | integer                     |           | not null | nextval('deposit_allocations_id_seq'::regclass) | plain    |             |              | 
  deposit_id      | integer                     |           | not null |                                                 | plain    |             |              | 
  job_id          | integer                     |           | not null |                                                 | plain    |             |              | 
- job_section_id  | integer                     |           |          |                                                 | plain    |             |              | 
- quote_item_id   | integer                     |           |          |                                                 | plain    |             |              | 
+ job_item_id     | integer                     |           | not null |                                                 | plain    |             |              | 
  amount          | numeric(10,2)               |           | not null |                                                 | main     |             |              | 
  allocation_date | timestamp without time zone |           |          | CURRENT_TIMESTAMP                               | plain    |             |              | 
  notes           | text                        |           |          |                                                 | extended |             |              | 
@@ -642,15 +642,14 @@ Indexes:
     "deposit_allocations_pkey" PRIMARY KEY, btree (id)
     "idx_deposit_allocations_deposit_id" btree (deposit_id)
     "idx_deposit_allocations_job_id" btree (job_id)
-    "idx_deposit_allocations_quote_item_id" btree (quote_item_id)
+    "idx_deposit_allocations_job_item_id" btree (job_item_id)
 Check constraints:
     "deposit_allocations_amount_check" CHECK (amount > 0::numeric)
 Foreign-key constraints:
     "deposit_allocations_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id)
     "deposit_allocations_deposit_id_fkey" FOREIGN KEY (deposit_id) REFERENCES deposits(id) ON DELETE CASCADE
     "deposit_allocations_job_id_fkey" FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
-    "deposit_allocations_job_section_id_fkey" FOREIGN KEY (job_section_id) REFERENCES job_sections(id) ON DELETE SET NULL
-    "deposit_allocations_quote_item_id_fkey" FOREIGN KEY (quote_item_id) REFERENCES quote_items(id) ON DELETE SET NULL
+    "deposit_allocations_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
 Triggers:
     check_allocation_total_trigger BEFORE INSERT OR UPDATE ON deposit_allocations FOR EACH ROW EXECUTE FUNCTION check_allocation_total()
     update_job_deposits_trigger AFTER INSERT OR DELETE OR UPDATE ON deposit_allocations FOR EACH ROW EXECUTE FUNCTION update_job_deposit_totals()
@@ -684,6 +683,8 @@ Check constraints:
     "shops_status_check" CHECK (status::text = ANY (ARRAY['generated'::character varying, 'in_progress'::character varying, 'completed'::character varying]::text[]))
 Foreign-key constraints:
     "shops_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "shop_jobs" CONSTRAINT "shop_jobs_shop_id_fkey" FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
 Access method: heap
 
 
@@ -901,33 +902,28 @@ View definition:
         |                        |                  |                     |      |            |          |                |          |                   |          |                                                                              | 
 (1 row)
 
-                                                                                                                                    List of functions
- Schema |               Name                | Result data type | Argument data types | Type | Volatility | Parallel |     Owner      | Security | Access privileges | Language |                                        Source code                                         | Description 
---------+-----------------------------------+------------------+---------------------+------+------------+----------+----------------+----------+-------------------+----------+--------------------------------------------------------------------------------------------+-------------
- public | validate_deposit_allocation_links | trigger          |                     | func | volatile   | unsafe   | craftmart_user | invoker  |                   | plpgsql  |                                                                                           +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          | DECLARE                                                                                   +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   section_job_id INTEGER;                                                                 +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   item_job_id INTEGER;                                                                    +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          | BEGIN                                                                                     +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   IF NEW.job_section_id IS NOT NULL THEN                                                  +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |     SELECT job_id INTO section_job_id FROM job_sections WHERE id = NEW.job_section_id;    +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |     IF section_job_id IS NULL OR section_job_id <> NEW.job_id THEN                        +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |       RAISE EXCEPTION 'Section % does not belong to job %', NEW.job_section_id, NEW.job_id+| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |         USING ERRCODE = '23514';                                                          +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |     END IF;                                                                               +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   END IF;                                                                                 +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                           +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   IF NEW.quote_item_id IS NOT NULL THEN                                                   +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |     SELECT job_id INTO item_job_id FROM quote_items WHERE id = NEW.quote_item_id;         +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |     IF item_job_id IS NULL OR item_job_id <> NEW.job_id THEN                              +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |       RAISE EXCEPTION 'Item % does not belong to job %', NEW.quote_item_id, NEW.job_id    +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |         USING ERRCODE = '23514';                                                          +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |     END IF;                                                                               +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   END IF;                                                                                 +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                           +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |   RETURN NEW;                                                                             +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          | END;                                                                                      +| 
-        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                            | 
+                                                                                                                                  List of functions
+ Schema |               Name                | Result data type | Argument data types | Type | Volatility | Parallel |     Owner      | Security | Access privileges | Language |                                      Source code                                       | Description 
+--------+-----------------------------------+------------------+---------------------+------+------------+----------+----------------+----------+-------------------+----------+----------------------------------------------------------------------------------------+-------------
+ public | validate_deposit_allocation_links | trigger          |                     | func | volatile   | unsafe   | craftmart_user | invoker  |                   | plpgsql  |                                                                                       +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          | DECLARE                                                                               +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   item_job_id INTEGER;                                                                +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          | BEGIN                                                                                 +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   SELECT job_id INTO item_job_id FROM job_items WHERE id = NEW.job_item_id;           +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                       +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   IF item_job_id IS NULL THEN                                                         +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |     RAISE EXCEPTION 'Job item % does not exist', NEW.job_item_id                      +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |       USING ERRCODE = '23514';                                                        +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   END IF;                                                                             +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                       +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   IF item_job_id <> NEW.job_id THEN                                                   +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |     RAISE EXCEPTION 'Job item % does not belong to job %', NEW.job_item_id, NEW.job_id+| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |       USING ERRCODE = '23514';                                                        +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   END IF;                                                                             +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                       +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |   RETURN NEW;                                                                         +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          | END;                                                                                  +| 
+        |                                   |                  |                     |      |            |          |                |          |                   |          |                                                                                        | 
 (1 row)
 
 ## Database Indexes
@@ -940,7 +936,7 @@ View definition:
  public | deposit_allocations    | deposit_allocations_pkey               | CREATE UNIQUE INDEX deposit_allocations_pkey ON public.deposit_allocations USING btree (id)
  public | deposit_allocations    | idx_deposit_allocations_deposit_id     | CREATE INDEX idx_deposit_allocations_deposit_id ON public.deposit_allocations USING btree (deposit_id)
  public | deposit_allocations    | idx_deposit_allocations_job_id         | CREATE INDEX idx_deposit_allocations_job_id ON public.deposit_allocations USING btree (job_id)
- public | deposit_allocations    | idx_deposit_allocations_quote_item_id  | CREATE INDEX idx_deposit_allocations_quote_item_id ON public.deposit_allocations USING btree (quote_item_id)
+ public | deposit_allocations    | idx_deposit_allocations_job_item_id    | CREATE INDEX idx_deposit_allocations_job_item_id ON public.deposit_allocations USING btree (job_item_id)
  public | deposits               | deposits_pkey                          | CREATE UNIQUE INDEX deposits_pkey ON public.deposits USING btree (id)
  public | deposits               | idx_deposits_customer_check_number     | CREATE UNIQUE INDEX idx_deposits_customer_check_number ON public.deposits USING btree (customer_id, reference_number) WHERE (((payment_method)::text = 'check'::text) AND (reference_number IS NOT NULL))
  public | deposits               | idx_deposits_customer_id               | CREATE INDEX idx_deposits_customer_id ON public.deposits USING btree (customer_id)
@@ -982,6 +978,10 @@ View definition:
  public | rail_parts_products    | rail_parts_products_pkey               | CREATE UNIQUE INDEX rail_parts_products_pkey ON public.rail_parts_products USING btree (id)
  public | rail_parts_products    | rail_parts_products_product_id_key     | CREATE UNIQUE INDEX rail_parts_products_product_id_key ON public.rail_parts_products USING btree (product_id)
  public | salesmen               | salesmen_pkey                          | CREATE UNIQUE INDEX salesmen_pkey ON public.salesmen USING btree (id)
+ public | shop_jobs              | idx_shop_jobs_job_id                   | CREATE INDEX idx_shop_jobs_job_id ON public.shop_jobs USING btree (job_id)
+ public | shop_jobs              | idx_shop_jobs_shop_id                  | CREATE INDEX idx_shop_jobs_shop_id ON public.shop_jobs USING btree (shop_id)
+ public | shop_jobs              | shop_jobs_pkey                         | CREATE UNIQUE INDEX shop_jobs_pkey ON public.shop_jobs USING btree (id)
+ public | shop_jobs              | shop_jobs_shop_id_job_id_key           | CREATE UNIQUE INDEX shop_jobs_shop_id_job_id_key ON public.shop_jobs USING btree (shop_id, job_id)
  public | shops                  | idx_shops_generated_date               | CREATE INDEX idx_shops_generated_date ON public.shops USING btree (generated_date)
  public | shops                  | idx_shops_job_item_id                  | CREATE INDEX idx_shops_job_item_id ON public.shops USING btree (job_item_id)
  public | shops                  | idx_shops_status                       | CREATE INDEX idx_shops_status ON public.shops USING btree (status)
@@ -1006,7 +1006,7 @@ View definition:
  public | users                  | idx_users_role                         | CREATE INDEX idx_users_role ON public.users USING btree (role)
  public | users                  | users_email_key                        | CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)
  public | users                  | users_pkey                             | CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
-(72 rows)
+(76 rows)
 
 
 ## Foreign Key Relationships
@@ -1016,8 +1016,7 @@ View definition:
  deposit_allocations    | created_by                  | users                | id          | deposit_allocations_created_by_fkey
  deposit_allocations    | deposit_id                  | deposits             | id          | deposit_allocations_deposit_id_fkey
  deposit_allocations    | job_id                      | jobs                 | id          | deposit_allocations_job_id_fkey
- deposit_allocations    | job_section_id              | job_sections         | id          | deposit_allocations_job_section_id_fkey
- deposit_allocations    | quote_item_id               | quote_items          | id          | deposit_allocations_quote_item_id_fkey
+ deposit_allocations    | job_item_id                 | job_items            | id          | deposit_allocations_job_item_id_fkey
  deposits               | created_by                  | users                | id          | deposits_created_by_fkey
  deposits               | customer_id                 | customers            | id          | deposits_customer_id_fkey
  handrail_products      | product_id                  | products             | id          | handrail_products_product_id_fkey
@@ -1033,6 +1032,8 @@ View definition:
  quote_items            | section_id                  | job_sections         | id          | quote_items_section_id_fkey
  quote_items            | stair_config_id             | stair_configurations | id          | quote_items_stair_config_id_fkey
  rail_parts_products    | product_id                  | products             | id          | rail_parts_products_product_id_fkey
+ shop_jobs              | job_id                      | job_items            | id          | shop_jobs_job_id_fkey
+ shop_jobs              | shop_id                     | shops                | id          | shop_jobs_shop_id_fkey
  shops                  | job_item_id                 | job_items            | id          | shops_job_item_id_fkey
  stair_config_items     | board_type_id               | stair_board_types    | brd_typ_id  | stair_config_items_board_type_id_fkey
  stair_config_items     | config_id                   | stair_configurations | id          | stair_config_items_config_id_fkey
@@ -1046,5 +1047,5 @@ View definition:
  stair_configurations   | tread_material_id           | material_multipliers | material_id | stair_configurations_tread_material_id_fkey
  stair_pricing_simple   | board_type_id               | stair_board_types    | brd_typ_id  | stair_pricing_simple_board_type_id_fkey
  stair_special_parts    | mat_seq_n                   | material_multipliers | material_id | stair_special_parts_mat_seq_n_fkey
-(33 rows)
+(34 rows)
 
