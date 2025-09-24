@@ -84,6 +84,19 @@ CREATE TABLE IF NOT EXISTS shops (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Map generated shops to the set of jobs they include
+CREATE TABLE IF NOT EXISTS shop_jobs (
+    id SERIAL PRIMARY KEY,
+    shop_id INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+    job_id INTEGER NOT NULL REFERENCES job_items(id) ON DELETE CASCADE,
+    job_title VARCHAR(255),
+    customer_name VARCHAR(255),
+    job_location VARCHAR(255),
+    delivery_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (shop_id, job_id)
+);
+
 -- Create tax_rates table
 CREATE TABLE IF NOT EXISTS tax_rates (
     id SERIAL PRIMARY KEY,
@@ -126,6 +139,8 @@ CREATE INDEX IF NOT EXISTS idx_jobs_customer_id ON jobs(customer_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_salesman_id ON jobs(salesman_id);
 CREATE INDEX IF NOT EXISTS idx_shops_job_id ON shops(job_id);
+CREATE INDEX IF NOT EXISTS idx_shop_jobs_shop_id ON shop_jobs(shop_id);
+CREATE INDEX IF NOT EXISTS idx_shop_jobs_job_id ON shop_jobs(job_id);
 CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
 CREATE INDEX IF NOT EXISTS idx_customers_last_visited ON customers(last_visited_at DESC);
 CREATE INDEX IF NOT EXISTS idx_job_sections_job_id ON job_sections(job_id);

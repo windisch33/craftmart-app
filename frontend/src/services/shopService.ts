@@ -11,6 +11,7 @@ export interface Shop {
   generated_date: string;
   cut_sheet_count: number;
   notes?: string;
+  jobs: ShopJobSummary[];
 }
 
 export interface CutSheetItem {
@@ -23,7 +24,37 @@ export interface CutSheetItem {
   thickness?: string;
   stair_id: string;
   location: string;
+  job_id?: number;
+  job_title?: string;
   notes?: string;
+}
+
+export interface ShopJobSummary {
+  job_id: number;
+  order_number?: string;
+  job_title?: string | null;
+  lot_name?: string | null;
+  directions?: string | null;
+  customer_name: string;
+  customer_address?: string | null;
+  customer_city?: string | null;
+  customer_state?: string | null;
+  customer_zip?: string | null;
+  customer_phone?: string | null;
+  customer_fax?: string | null;
+  customer_cell?: string | null;
+  customer_email?: string | null;
+  contact_person?: string | null;
+  job_location?: string | null;
+  shop_date?: string | null;
+  delivery_date?: string | null;
+  oak_delivery_date?: string | null;
+  sales_rep_name?: string | null;
+  sales_rep_phone?: string | null;
+  sales_rep_email?: string | null;
+  order_designation?: string | null;
+  model_name?: string | null;
+  terms?: string | null;
 }
 
 export interface AvailableOrder {
@@ -49,12 +80,35 @@ export interface ShopGenerationResponse {
   cut_sheets: CutSheetItem[];
   status: string;
   generated_date: string;
+  jobs: ShopJobSummary[];
 }
 
 class ShopService {
   private getAuthHeaders() {
     const token = localStorage.getItem('authToken');
     return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  private normalizeShop(raw: any): Shop {
+    const cutSheets = Array.isArray(raw.cut_sheets) ? raw.cut_sheets : [];
+    const jobs: ShopJobSummary[] = Array.isArray(raw.jobs)
+      ? raw.jobs.map((job: any) => ({
+          job_id: job.job_id,
+          ...job,
+          customer_name: job.customer_name ?? 'Unknown Customer'
+        }))
+      : [];
+
+    return {
+      id: raw.id,
+      shop_number: raw.shop_number,
+      cut_sheets: cutSheets,
+      status: raw.status,
+      generated_date: raw.generated_date,
+      cut_sheet_count: typeof raw.cut_sheet_count === 'number' ? raw.cut_sheet_count : cutSheets.length,
+      notes: raw.notes ?? undefined,
+      jobs
+    };
   }
 
   /**
@@ -65,7 +119,9 @@ class ShopService {
       const response = await axios.get(`${API_BASE_URL}/api/shops`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return Array.isArray(response.data)
+        ? response.data.map((shop: any) => this.normalizeShop(shop))
+        : [];
     } catch (error: any) {
       console.error('Error fetching shops:', error);
       throw new Error(error.response?.data?.error || 'Failed to fetch shops');
@@ -80,7 +136,7 @@ class ShopService {
       const response = await axios.get(`${API_BASE_URL}/api/shops/${shopId}`, {
         headers: this.getAuthHeaders()
       });
-      return response.data;
+      return this.normalizeShop(response.data);
     } catch (error: any) {
       console.error('Error fetching shop:', error);
       throw new Error(error.response?.data?.error || 'Failed to fetch shop');
@@ -112,7 +168,18 @@ class ShopService {
         { orderIds }, 
         { headers: this.getAuthHeaders() }
       );
-      return response.data;
+      const raw = response.data;
+      return {
+        ...raw,
+        jobs: Array.isArray(raw.jobs)
+          ? raw.jobs.map((job: any) => ({
+              job_id: job.job_id,
+              ...job,
+              customer_name: job.customer_name ?? 'Unknown Customer'
+            }))
+          : [],
+        cut_sheets: Array.isArray(raw.cut_sheets) ? raw.cut_sheets : []
+      };
     } catch (error: any) {
       console.error('Error generating shops:', error);
       throw new Error(error.response?.data?.error || 'Failed to generate shops');
