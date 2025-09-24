@@ -5,6 +5,7 @@ import { shopService, type Shop } from '../services/shopService';
 import { useToast } from '../components/common/ToastProvider';
 import EmptyState from '../components/common/EmptyState';
 import { FactoryIcon, SearchIcon, CalendarIcon } from '../components/common/icons';
+import AccessibleModal from '../components/common/AccessibleModal';
 
 const Shops: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,8 +106,12 @@ const Shops: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) {
+      return '—';
+    }
+    const parsed = new Date(dateString);
+    return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleDateString();
   };
 
   if (loading) {
@@ -291,11 +296,11 @@ const Shops: React.FC = () => {
                       Shop #{shop.id}
                     </p>
                   </div>
-                </div>
-                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
-                  <select
-                    value={shop.status}
-                    onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)}
+              </div>
+              <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                <select
+                  value={shop.status}
+                  onChange={(e) => handleUpdateStatus(shop.id, e.target.value as any)}
                     style={{
                       padding: '6px 12px',
                       borderRadius: '20px',
@@ -316,16 +321,69 @@ const Shops: React.FC = () => {
                 </div>
               </div>
 
+              {shop.jobs && shop.jobs.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  marginBottom: '16px'
+                }}>
+                  {shop.jobs.map(job => (
+                    <div
+                      key={job.job_id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '10px',
+                        padding: '10px 12px'
+                      }}
+                    >
+                      <div>
+                        <div style={{fontSize: '14px', fontWeight: 600, color: '#1f2937'}}>
+                          {job.job_title || job.lot_name || job.order_number || `Job ${job.job_id}`}
+                        </div>
+                        <div style={{fontSize: '12px', color: '#6b7280'}}>
+                          {job.customer_name}
+                          {job.lot_name ? ` • Lot ${job.lot_name}` : ''}
+                        </div>
+                        {job.order_designation && (
+                          <div style={{fontSize: '12px', color: '#6b7280'}}>
+                            Order: {job.order_designation}
+                          </div>
+                        )}
+                        {job.model_name && (
+                          <div style={{fontSize: '12px', color: '#6b7280'}}>
+                            Model: {job.model_name}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{textAlign: 'right', fontSize: '12px', color: '#6b7280'}}>
+                        {job.job_location && <div>{job.job_location}</div>}
+                        {job.contact_person && <div>Contact: {job.contact_person}</div>}
+                        {job.sales_rep_name && <div>Sales: {job.sales_rep_name}</div>}
+                        <div>Delivery: {formatDate(job.delivery_date)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Cut Sheet Info */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                 gap: '16px',
                 padding: '16px',
                 backgroundColor: '#f8fafc',
                 borderRadius: '12px',
                 marginBottom: '16px'
               }}>
+                <div style={{textAlign: 'center'}}>
+                  <div style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937'}}>{shop.jobs?.length ?? 0}</div>
+                  <div style={{fontSize: '12px', color: '#6b7280'}}>Jobs</div>
+                </div>
                 <div style={{textAlign: 'center'}}>
                   <div style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937'}}>{shop.cut_sheet_count || 0}</div>
                   <div style={{fontSize: '12px', color: '#6b7280'}}>Cut Sheets</div>
@@ -513,48 +571,38 @@ const ShopGenerationModal: React.FC<{
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        maxWidth: '600px',
-        width: '90%',
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
+    <AccessibleModal 
+      isOpen={true}
+      onClose={onClose}
+      labelledBy="generate-shops-title"
+      overlayClassName="shops-modal-overlay"
+      contentClassName="shops-modal-content"
+    >
+      <div>
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-          <h2 style={{margin: 0, fontSize: '20px', fontWeight: 'bold'}}>Generate Shops</h2>
+          <h2 id="generate-shops-title" style={{margin: 0, fontSize: '20px', fontWeight: 'bold'}}>Generate Shops</h2>
           <button 
             onClick={onClose}
+            aria-label="Close dialog"
             style={{
               background: 'none',
-              border: 'none',
-              fontSize: '24px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '6px',
+              fontSize: '14px',
               cursor: 'pointer',
-              padding: '4px'
+              padding: '6px 10px'
             }}
           >
-            ×
+            Close
           </button>
         </div>
 
         <div style={{marginBottom: '20px'}}>
-          <label style={{display: 'block', marginBottom: '8px', fontWeight: '500'}}>
+          <label htmlFor="shops-filter-select" style={{display: 'block', marginBottom: '8px', fontWeight: '500'}}>
             Filter Orders:
           </label>
           <select 
+            id="shops-filter-select"
             value={filter}
             onChange={(e) => setFilter(e.target.value as 'all' | 'unrun')}
             style={{
@@ -594,6 +642,7 @@ const ShopGenerationModal: React.FC<{
                         type="checkbox"
                         checked={selectedOrders.includes(order.id)}
                         onChange={() => toggleOrder(order.id)}
+                        aria-label={`Select order ${order.title}`}
                       />
                       <div style={{flex: 1}}>
                         <div style={{fontWeight: '500', fontSize: '14px'}}>{order.title}</div>
@@ -637,6 +686,7 @@ const ShopGenerationModal: React.FC<{
                   borderRadius: '6px',
                   cursor: selectedOrders.length > 0 ? 'pointer' : 'not-allowed'
                 }}
+                aria-disabled={selectedOrders.length === 0 || generating}
               >
                 {generating ? 'Generating...' : `Generate Shops (${selectedOrders.length})`}
               </button>
@@ -644,7 +694,7 @@ const ShopGenerationModal: React.FC<{
           </>
         )}
       </div>
-    </div>
+    </AccessibleModal>
   );
 };
 

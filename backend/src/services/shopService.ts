@@ -21,6 +21,7 @@ interface StairConfiguration {
   customer_id?: number;
   customer_name?: string;
   special_notes?: string | null;
+  riser_material_name?: string | null;
 }
 
 interface StairConfigItem {
@@ -236,9 +237,15 @@ function calculateS4SDimensions(
   const hasDoubleOpen = treadTypes.includes('double_open');
   const hasOpen = treadTypes.some(type => type?.includes('open'));
 
-  // Use a sample riser length for calculation
-  const sampleRiser = configItems.find(item => item.item_type === 'riser');
-  const baseLength = toNumber(sampleRiser?.length, toNumber((config as any).floor_to_floor, 0)); // Fallback
+  // Base length derives from tread span (tread.width stores span per generation logic)
+  const treadSpans = configItems
+    .filter(item => item.item_type === 'tread')
+    .map(item => toNumber(item.width, NaN))
+    .filter(n => Number.isFinite(n));
+  // Prefer the maximum span among treads; fallback to any available numeric; otherwise 0
+  const baseLength = treadSpans.length > 0
+    ? Math.max(...treadSpans)
+    : 0;
 
   let length: number;
   if (hasDoubleOpen) {
@@ -349,8 +356,9 @@ export async function generateCutSheets(jobIds: number[]): Promise<ShopData> {
 
     // Get stair configurations for the jobs
     const configQuery = `
-      SELECT *
+      SELECT sc.*, rm.material_name AS riser_material_name
       FROM stair_configurations sc
+      LEFT JOIN material_multipliers rm ON sc.riser_material_id = rm.material_id
       WHERE sc.job_item_id = ANY($1)
       ORDER BY sc.job_item_id, sc.id
     `;
@@ -457,30 +465,116 @@ export async function generateCutSheets(jobIds: number[]): Promise<ShopData> {
       }
 
       // Process risers
-      for (const riser of risers) {
-        // Find associated tread type for this riser
-        const associatedTread = treads.find(t => t.riser_number === riser.riser_number);
-        const treadType = associatedTread?.tread_type || 'box';
-        
-        const dimensions = calculateRiserDimensions(config, riser, treadType);
-        cutSheets.push({
-          item_type: 'riser',
-          tread_type: treadType,
-          material: riser.material_name || 'UNKNOWN',
-          quantity: riser.quantity,
-          width: dimensions.width,
-          length: dimensions.length,
-          stair_id: stairId,
-          location: location,
-          job_id: jobId,
-          job_title: jobTitle
-        });
+      if (risers.length > 0) {
+        for (const riser of risers) {
+          // Find associated tread type for this riser
+          const associatedTread = treads.find(t => t.riser_number === riser.riser_number);
+          const treadType = associatedTread?.tread_type || 'box';
+          
+          const dimensions = calculateRiserDimensions(config, riser, treadType);
+          cutSheets.push({
+            item_type: 'riser',
+            tread_type: treadType,
+            material: (riser as any).material_name || 'Primed',
+            quantity: riser.quantity,
+            width: dimensions.width,
+            length: dimensions.length,
+            thickness: '3/4"',
+            stair_id: stairId,
+            location: location,
+            job_id: jobId,
+            job_title: jobTitle
+          });
+        }
+      } else {
+        // Fallback: synthesize risers from treads when no explicit riser items exist
+        for (const tread of treads) {
+          const treadType = tread.tread_type || 'box';
+          const baseLen = toNumber(tread.width, 0);
+          const fakeRiser: StairConfigItem = {
+            id: 0,
+            config_id: config.id,
+            item_type: 'riser',
+            riser_number: (tread as any).riser_number,
+            width: 0,
+            length: baseLen,
+            quantity: 1
+          };
+          const dimensions = calculateRiserDimensions(config, fakeRiser, treadType);
+          cutSheets.push({
+            item_type: 'riser',
+            tread_type: treadType,
+            material: (config as any).riser_material_name || 'Primed',
+            quantity: 1,
+            width: dimensions.width,
+            length: dimensions.length,
+            thickness: '3/4"',
+            stair_id: stairId,
+            location: location,
+            job_id: jobId,
+            job_title: jobTitle
+          });
+        }
+
+        // Add landing riser according to grouping rule
+        const typeCounts = {
+          box: treads.filter(t => (t.tread_type || '') === 'box').length,
+          open_left: treads.filter(t => (t.tread_type || '') === 'open_left').length,
+          open_right: treads.filter(t => (t.tread_type || '') === 'open_right').length,
+          double_open: treads.filter(t => (t.tread_type || '') === 'double_open').length,
+        };
+        const totalTreads = treads.length;
+        let landingType: string = 'box';
+        if (totalTreads > 0) {
+          if (typeCounts.double_open === totalTreads) {
+            landingType = 'double_open';
+          } else if (typeCounts.box === totalTreads) {
+            landingType = 'box';
+          } else if ((typeCounts.open_left + typeCounts.open_right) > 0 && typeCounts.box === 0) {
+            // Choose the majority between open_left and open_right
+            landingType = typeCounts.open_left >= typeCounts.open_right ? 'open_left' : 'open_right';
+          } else {
+            // Mixed types including box; default to box
+            landingType = 'box';
+          }
+
+          // Choose a representative span for landing riser
+          const candidates = treads.filter(t => (t.tread_type || 'box') === landingType);
+          let span = candidates.length > 0 ? Math.max(...candidates.map(t => toNumber(t.width, 0))) : 0;
+          if (!Number.isFinite(span) || span <= 0) {
+            const allSpans = treads.map(t => toNumber(t.width, 0)).filter(n => Number.isFinite(n) && n > 0);
+            span = allSpans.length > 0 ? Math.max(...allSpans) : 0;
+          }
+
+          const landingBase: StairConfigItem = {
+            id: 0,
+            config_id: config.id,
+            item_type: 'riser',
+            width: 0,
+            length: span,
+            quantity: 1
+          };
+          const landingDims = calculateRiserDimensions(config, landingBase, landingType);
+          cutSheets.push({
+            item_type: 'riser',
+            tread_type: landingType,
+            material: (config as any).riser_material_name || 'Primed',
+            quantity: 1,
+            width: landingDims.width,
+            length: landingDims.length,
+            thickness: '3/4"',
+            stair_id: stairId,
+            location: location,
+            job_id: jobId,
+            job_title: jobTitle
+          });
+        }
       }
 
       // Add S4S (bottom riser)
       if (items.length > 0) {
         const s4sDimensions = calculateS4SDimensions(config, items);
-        const s4sMaterial = risers[0]?.material_name || 'UNKNOWN';
+        const s4sMaterial = risers[0]?.material_name || (config as any).riser_material_name || 'UNKNOWN';
         
         cutSheets.push({
           item_type: 's4s',
@@ -488,6 +582,7 @@ export async function generateCutSheets(jobIds: number[]): Promise<ShopData> {
           quantity: 1,
           width: s4sDimensions.width,
           length: s4sDimensions.length,
+          thickness: '3/4"',
           stair_id: stairId,
          location: location,
          job_id: jobId,

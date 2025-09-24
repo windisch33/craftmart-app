@@ -63,7 +63,7 @@ export const groupTreadsByType = (items: StairConfigurationDetails['items']): Tr
       groups.push({
         type,
         count: typeItems.length,
-        width: Math.round(typeItems[0].width) // Use first item's width
+        width: typeItems[0].width // Preserve exact width (no rounding)
       });
     }
   });

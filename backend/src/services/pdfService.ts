@@ -235,16 +235,16 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   const specialItems = items.filter(item => item.item_type === 'special_part');
   
   // Count different tread types and get their specific widths
-  const boxTreads = treadItems.filter(t => t.tread_type === 'box');
-  const openRightTreads = treadItems.filter(t => t.tread_type === 'open_right');
-  const openLeftTreads = treadItems.filter(t => t.tread_type === 'open_left');
-  const doubleOpenTreads = treadItems.filter(t => t.tread_type === 'double_open');
+  const boxTreads = treadItems.filter(t => t.item_type === 'tread' && t.tread_type === 'box');
+  const openRightTreads = treadItems.filter(t => t.item_type === 'tread' && t.tread_type === 'open_right');
+  const openLeftTreads = treadItems.filter(t => t.item_type === 'tread' && t.tread_type === 'open_left');
+  const doubleOpenTreads = treadItems.filter(t => t.item_type === 'tread' && t.tread_type === 'double_open');
   
-  // Get specific widths for each tread type
-  const boxWidth = boxTreads.length > 0 ? Math.round(boxTreads[0]!.width) : 42;
-  const openRightWidth = openRightTreads.length > 0 ? Math.round(openRightTreads[0]!.width) : 42;
-  const openLeftWidth = openLeftTreads.length > 0 ? Math.round(openLeftTreads[0]!.width) : 42;
-  const doubleOpenWidth = doubleOpenTreads.length > 0 ? Math.round(doubleOpenTreads[0]!.width) : 42;
+  // Get specific widths for each tread type (format as 1/32")
+  const boxWidth = boxTreads.length > 0 ? toFraction(boxTreads[0]!.width) : '42';
+  const openRightWidth = openRightTreads.length > 0 ? toFraction(openRightTreads[0]!.width) : '42';
+  const openLeftWidth = openLeftTreads.length > 0 ? toFraction(openLeftTreads[0]!.width) : '42';
+  const doubleOpenWidth = doubleOpenTreads.length > 0 ? toFraction(doubleOpenTreads[0]!.width) : '42';
 
   let output = `Floor to Floor: ${Math.round(floor_to_floor)}\"<br>`;
   
@@ -301,8 +301,8 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${riserHeightFormatted}\" X ${roughCutFraction}\" X ${noseFormatted}\"<br>`;
   
   // Materials
-  const treadMaterial = tread_material_name || 'Oak';
-  const riserMaterial = riser_material_name || 'Primed';
+  const treadMaterial = mapMaterialLabel(tread_material_name || 'Oak');
+  const riserMaterial = mapMaterialLabel(riser_material_name || 'Primed');
   output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Treads, ${riserMaterial} Risers<br>`;
   output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Landing Tread<br>`;
   
@@ -1078,6 +1078,34 @@ const formatDateDisplay = (value?: string | null): string => {
   return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
 };
 
+// Normalize material labels for display (map variants to legacy/desired wording)
+const mapMaterialLabel = (name?: string | null): string => {
+  if (!name) return '—';
+  const raw = String(name).trim();
+  if (!raw) return '—';
+  const lower = raw.toLowerCase();
+  const direct: Record<string, string> = {
+    'second grade oak': '2nd Grade Oak',
+    '2nd grade oak': '2nd Grade Oak',
+    'oak': 'Oak',
+    'red oak': 'Red Oak',
+    'white oak': 'White Oak',
+    'select oak': 'Select Oak',
+    'pine': 'Pine',
+    'poplar': 'Poplar',
+    'american cherry': 'American Cherry',
+    'brazilian cherry': 'Brazilian Cherry',
+    'maple': 'Maple',
+    'heartpine': 'HeartPine',
+    'heart pine': 'HeartPine',
+    'pgs': 'PGS',
+    'cdx': 'CDX'
+  };
+  if (direct[lower]) return direct[lower];
+  // Default: return as provided with normalized spacing
+  return raw.replace(/\s+/g, ' ');
+};
+
 // Convert decimal inches to a fraction string (nearest 1/32)
 const toInchFraction = (value: number | string, denom: number = 32): string => {
   const num = typeof value === 'string' ? parseFloat(value) : value;
@@ -1226,8 +1254,15 @@ export const generateShopPaper = async (shopId: number): Promise<Buffer> => {
           </div>
           ${secHtml.join('')}
           <div class=\"signature-section\">
-            <div class=\"signature-row\"><span><strong>Sign here for delivery</strong><span class=\"signature-line\"></span></span><span><strong>Date</strong><span class=\"signature-line\"></span></span></div>
-            <div class=\"signature-row\"><span><strong>Time In:</strong><span class=\"signature-line\"></span></span><span><strong>Time Out:</strong><span class=\"signature-line\"></span></span><span><strong>O/D</strong><span class=\"signature-line\"></span></span></div>
+            <div class=\"signature-row\">
+              <span class=\"sig-field\"><span class=\"sig-label\">Sign here for delivery</span><span class=\"signature-line\"></span></span>
+              <span class=\"sig-field\"><span class=\"sig-label\">Date</span><span class=\"signature-line\"></span></span>
+            </div>
+            <div class=\"signature-row\">
+              <span class=\"sig-field\"><span class=\"sig-label\">Time In:</span><span class=\"signature-line\"></span></span>
+              <span class=\"sig-field\"><span class=\"sig-label\" style=\"white-space:nowrap\">Time Out:</span><span class=\"signature-line\"></span></span>
+              <span class=\"sig-field\"><span class=\"sig-label\">O/D</span><span class=\"signature-line\"></span></span>
+            </div>
             <div class=\"warning-text\">This product needs to be weather proofed as soon as possible and must be sealed within 30 days of delivery.<br>Craft Mart assumes no responsibility for cracks or splits after 30 days.</div>
           </div>
         </div>`;
@@ -1251,10 +1286,12 @@ export const generateShopPaper = async (shopId: number): Promise<Buffer> => {
           .items-table{width:100%;border-collapse:collapse;margin-bottom:8px}
           .items-table th,.items-table td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left;vertical-align:top}
           .qty-col{width:48px;text-align:center}
-          .signature-section{margin-top:14px;border:1px solid #111827;padding:10px 12px}
-          .signature-row{display:flex;justify-content:space-between;gap:10px;margin:8px 0}
-          .signature-line{display:inline-block;border-bottom:1px solid #111827;width:180px;margin-left:6px}
-          .warning-text{text-align:center;font-weight:600;font-size:10pt}
+          .signature-section{margin-top:14px;border:1px solid #d1d5db;border-radius:8px;padding:12px 14px;background:#f9fafb}
+          .signature-row{display:flex;justify-content:space-between;gap:16px;margin:8px 0}
+          .sig-field{display:flex;align-items:center;gap:8px;flex:1}
+          .sig-label{color:#374151;font-weight:600;font-size:10pt}
+          .signature-line{flex:1;min-width:140px;border-bottom:1px solid #111827;height:14px}
+          .warning-text{text-align:center;color:#6b7280;font-weight:700;font-size:10pt;margin-top:6px}
         </style>
       </head>
       <body>
@@ -1486,7 +1523,7 @@ function generateShopPaperHTML(shopData: ShopData): string {
           const sample = entry.sample;
           const notes = sample.notes ? ` — ${sample.notes}` : '';
           const treadType = sample.tread_type ? ` (${sample.tread_type.replace(/_/g, ' ')})` : '';
-          return `<div class="part-item"><span class="part-qty">${entry.quantity}</span> ${sample.item_type.toUpperCase()}${treadType} - ${sample.material.toUpperCase()}${notes}</div>`;
+          return `<div class="part-item"><span class="part-qty">${entry.quantity}</span> ${sample.item_type.toUpperCase()}${treadType} - ${mapMaterialLabel((sample as any).material)}${notes}</div>`;
         }).join('');
 
         return `
@@ -1766,13 +1803,25 @@ function generateCutListHTML(shopData: ShopData): string {
         return aggregates.map(entry => {
           const sample = entry.sample;
           const iType = (sample.item_type || '').toLowerCase();
-          const itemName = iType === 'tread' ? 'TREADS' : iType === 'riser' ? 'RISERS' : iType.toUpperCase();
+          const typeDisplay = (t: string | undefined): string => {
+            const v = (t || '').toLowerCase();
+            if (v === 'double_open') return 'Double Open';
+            if (v === 'open_left') return 'Open Left';
+            if (v === 'open_right') return 'Open Right';
+            return 'Box';
+          };
+          const baseItem = iType === 'tread' ? 'TREADS' : iType === 'riser' ? 'RISERS' : iType.toUpperCase();
+          const itemName = (iType === 'tread' || iType === 'riser') && sample.tread_type
+            ? `${baseItem} - ${typeDisplay(sample.tread_type)}`
+            : baseItem;
           const widthStr = formatInches(sample.width as any);
           const lengthStr = formatInches(sample.length as any);
+          const materialName = mapMaterialLabel((sample as any).material);
           return `<tr>
             <td>${stairKey}</td>
             <td>${entry.quantity}</td>
             <td>${itemName}</td>
+            <td>${materialName}</td>
             <td>${widthStr}</td>
             <td>${lengthStr}</td>
             <td>${sample.thickness || '1\"'}</td>
@@ -1790,6 +1839,7 @@ function generateCutListHTML(shopData: ShopData): string {
                 <th>STAIR ID</th>
                 <th>QTY</th>
                 <th>ITEM</th>
+                <th>MATERIAL</th>
                 <th>WIDTH</th>
                 <th>LENGTH</th>
                 <th>THICKNESS</th>

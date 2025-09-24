@@ -710,15 +710,16 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
         for (const item of stair_configuration.items) {
           await pool.query(
             `INSERT INTO stair_config_items (
-              config_id, item_type, riser_number, tread_type, width, 
+              config_id, item_type, riser_number, tread_type, width, length,
               material_id, quantity, unit_price, total_price
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
             [
               stairConfigId,
               item.itemType || 'tread',
               item.riserNumber || null,
               item.treadType || 'box',
               item.stairWidth || item.width || 0,
+              (item as any).stairLength || (item as any).length || null,
               item.materialId || 5,
               item.quantity || 1,
               item.unitPrice || 0,
@@ -877,15 +878,16 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
           for (const item of stair_configuration.items) {
             await pool.query(
               `INSERT INTO stair_config_items (
-                config_id, item_type, riser_number, tread_type, width, 
+                config_id, item_type, riser_number, tread_type, width, length,
                 material_id, quantity, unit_price, total_price
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
               [
                 stairConfigId,
                 item.itemType || 'tread',
                 item.riserNumber || null,
                 item.treadType || 'box',
                 item.stairWidth || item.width || 0,
+                (item as any).stairLength || (item as any).length || null,
                 item.materialId || 5,
                 item.quantity || 1,
                 item.unitPrice || 0,
@@ -936,15 +938,16 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
           for (const item of stair_configuration.items) {
             await pool.query(
               `INSERT INTO stair_config_items (
-                config_id, item_type, riser_number, tread_type, width, 
+                config_id, item_type, riser_number, tread_type, width, length,
                 material_id, quantity, unit_price, total_price
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
               [
                 stairConfigId,
                 item.itemType || 'tread',
                 item.riserNumber || null,
                 item.treadType || 'box',
                 item.stairWidth || item.width || 0,
+                (item as any).stairLength || (item as any).length || null,
                 item.materialId || 5,
                 item.quantity || 1,
                 item.unitPrice || 0,
