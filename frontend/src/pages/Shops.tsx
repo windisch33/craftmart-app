@@ -550,7 +550,6 @@ const Shops: React.FC = () => {
           );
         })}
       </div>
-      )}
 
       {/* Empty State */}
       {filteredShops.length === 0 && (
