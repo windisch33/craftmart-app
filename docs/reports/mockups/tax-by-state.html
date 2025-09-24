@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Tax by State — Mockup</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111827; margin: 24px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .title { font-size: 20px; font-weight: 700; }
+    .meta { text-align: right; color: #4b5563; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { position: sticky; top:0; background: #fafafa; font-size: 12px; text-align: left; padding: 8px 10px; color: #374151; border-bottom: 1px solid #e5e7eb; }
+    tbody td { border-bottom: 1px solid #f3f4f6; padding: 8px 10px; font-size: 13px; }
+    tfoot td { font-weight: 700; padding: 10px; border-top: 2px solid #e5e7eb; }
+    .right { text-align: right; }
+  </style>
+  </head>
+<body>
+  <div class="header">
+    <div>
+      <div class="title">Tax by State</div>
+      <div class="meta">Period: May 1, 2025 – May 31, 2025</div>
+    </div>
+    <div class="meta">Generated: 2025-09-24 10:15 AM</div>
+  </div>
+
+  <table aria-label="Tax by State">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th class="right">Invoices</th>
+        <th class="right">Taxable</th>
+        <th class="right">Tax</th>
+        <th class="right">Effective Rate</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>MD</td><td class="right">63</td><td class="right">$250,000.00</td><td class="right">$15,000.00</td><td class="right">6.00%</td></tr>
+      <tr><td>PA</td><td class="right">28</td><td class="right">$110,000.00</td><td class="right">$6,600.00</td><td class="right">6.00%</td></tr>
+      <tr><td>VA</td><td class="right">21</td><td class="right">$92,000.00</td><td class="right">$5,520.00</td><td class="right">6.00%</td></tr>
+    </tbody>
+    <tfoot>
+      <tr><td>Total</td><td class="right">112</td><td class="right">$452,000.00</td><td class="right">$27,120.00</td><td class="right"></td></tr>
+    </tfoot>
+  </table>
+</body>
+</html>
+
