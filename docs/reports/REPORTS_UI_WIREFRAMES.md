@@ -12,6 +12,7 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 
 1) Top of page
 - [Reports]                                      [ Date Range ▼ ] [ Export ▼ ]
+- Quick presets: [ Today ] [ This Week ] [ This Month ] [ Last Month ] [ Month ▼ ]
 - [ Search… ]  [ Salesman ▼ ] [ Customer ▼ ] [ State ▼ ] [ Grouping ▼ ] [ Density ▼ ] [ Refresh ]
 - ─────────────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 - Layout: allow Landscape for PDF; freeze Customer column on wide tables
 
 ## Mobile Wireframes
-- Header collapses (Date Range becomes a sheet/dialog, Export in kebab menu).
+- Header collapses (Date Range becomes a sheet/dialog, Export in kebab menu). Month picker shows Month/Year selector for quick single‑month.
 - Filters collapse into a single “Filters (N)” button; opens sheet with fields.
 - Tabs become a segmented control, scrollable horizontally.
 - Tables render as responsive cards: each row → stacked key/value pairs with prominent value (e.g., Total) and links for drill‑down.
@@ -72,4 +73,3 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 ---
 
 These wireframes serve as the blueprint for implementing the Reports page. See CSV_SPECS.md for export field details and REPORTS_PLAN.md for endpoints and behavior.
-

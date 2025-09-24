@@ -86,6 +86,14 @@ Namespace: `/api/reports`
 - GET `/payments?start=...&end=...` (phase 2)
 - All endpoints accept `export=csv|xlsx` to trigger file download.
 
+Date semantics
+- Sales‑oriented reports (Sales by Month/Salesman/Customer, Tax by State) filter on invoice_date.
+- AR/Aging and Unpaid filter on invoice_date and compute due_date buckets; “as of” today unless overridden.
+- Example: “Sales by Salesman in May 2025”
+  - UI: choose quick preset “May 2025” (start=2025‑05‑01, end=2025‑05‑31)
+  - API: `/api/reports/sales/by-salesman?start=2025-05-01&end=2025-05-31`
+  - Exports: CSV filename `sales_by_salesman_2025-05.csv`; PDF header shows “Period: May 1, 2025 – May 31, 2025”.
+
 ## Query Sketches (pseudo SQL)
 - Sales by Month
 ```sql
@@ -146,10 +154,10 @@ Note: `invoices_view` is a conceptual read model joining jobs/job_items/customer
 ## Exports
 - CSV default; UTF‑8, RFC4180; comma‑separated, quoted where needed.
 - XLSX optional via server‑side lib; include formatting for currency/totals.
-- PDF (later) for tax filing summaries and AR snapshots.
+- PDF (print‑ready) for all reports (see PDF Deliverables below).
 
 ## UI Behavior
-- Date presets: Today, This Week, This Month/Quarter/Year, Last Month, Custom.
+- Date selection (all reports): Presets Today, This Week, This Month, Last Month, This Quarter, This Year, Custom Range, and a Month quick picker (e.g., “May 2025”).
 - Sticky filters, small badge chips for active filters.
 - Drill‑down opens in a side panel or modal; export respects current filters.
 - Rows show currency with 2 decimals; totals bolded; thousands separators.
@@ -178,3 +186,37 @@ Note: `invoices_view` is a conceptual read model joining jobs/job_items/customer
 - AR Aging buckets sum to total; unpaid list total equals aging total.
 - Tax by State totals match Sales totals for the same period.
 
+## PDF Deliverables (Print‑Ready)
+- Engine: reuse backend Puppeteer/browser pool (as in existing pdfService) for server‑side HTML→PDF.
+- Layout: letter, 0.5in margins; portrait for listings; landscape allowed for wide aging or tax tables.
+- Header: company block (name, address, phone/web), report title, date range, generated timestamp.
+- Footer: page X of Y, optional confidentiality note.
+- Tables: repeating header row per page; zebra rows; currency formatting; thousand separators; totals bolded; section subtotals when grouped.
+- Typography: consistent with existing PDFs; avoid decorative banners; emphasize clarity.
+- Accessibility: high contrast text; avoid color‑only meaning; readable font sizes (>=10pt).
+- Performance: render within ~2s for typical ranges (<5k rows) using streaming content and minimal images.
+
+PDF Outputs per Report (Phase 1)
+- Sales by Month: summary cards + monthly table; one page per few months (auto paginate).
+- Sales by Salesman: table grouped by salesman, each group subtotaled.
+- Sales by Customer: table grouped by customer with totals and last invoice date column.
+- Tax by State: table showing state, invoices, taxable, tax, effective rate.
+- Unpaid Invoices: listing with invoice date, due date, balance; sorted by due date desc.
+- AR Aging: matrix (customer rows × aging buckets) + total; landscape if needed.
+
+Front‑End Print View (optional add‑on)
+- Provide a print CSS for on‑screen preview to match PDF as closely as feasible.
+
+## Code Organization & Size Guidelines
+- Keep files manageable: split any report module approaching 400 lines.
+  - Example structure:
+    - `backend/src/services/reports/`
+      - `data/` query builders per report (e.g., `salesByMonthQuery.ts`).
+      - `format/` CSV/XLSX formatters (small, focused).
+      - `pdf/` per‑report PDF generators (e.g., `salesByMonthPdf.ts`, `taxByStatePdf.ts`).
+      - `pdf/common.ts` shared styles, table builders, currency helpers.
+    - `backend/src/controllers/reportsController.ts` thin controllers delegating to services.
+    - `backend/src/routes/reports.ts` routes only.
+- Prefer small, pure helpers (format currency, percent, date display, group totals) shared across reports.
+- Avoid inlining giant query strings—extract to builder functions or `.sql` files if needed.
+- Keep controllers <100 lines; per‑report PDF generators ~150–300 lines; data/format helpers ~50–120 lines.
