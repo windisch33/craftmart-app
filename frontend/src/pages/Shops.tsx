@@ -331,31 +331,18 @@ const Shops: React.FC = () => {
       )}
 
       {/* Cards view (mobile always; desktop when viewMode is Cards) */}
-      <div className={`${viewMode === 'cards' ? '' : 'mobile-only'}`} style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-        gap: '24px'
-      }}>
+      <div className={`${viewMode === 'cards' ? 'shops-grid' : 'mobile-only shops-grid'}`}>
         {filteredShops.map((shop) => {
           const statusStyle = getStatusColor(shop.status);
           return (
             <div
               key={shop.id}
-              style={{
-                ...cardStyle,
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 10px 60px -15px rgba(0, 0, 0, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04)';
-              }}
+              className="shop-card"
+              role="group"
+              aria-label={`Shop ${shop.shop_number}`}
             >
               {/* Shop Header */}
-              <div style={{display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px'}}>
+              <div className="shop-header">
                 <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                   <div style={{
                     width: '48px',
@@ -369,19 +356,9 @@ const Shops: React.FC = () => {
                   }}>
                     <FactoryIcon />
                   </div>
-                  <div>
-                    <h3 style={{
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      color: '#1f2937',
-                      margin: 0,
-                      transition: 'color 0.2s ease'
-                    }}>
-                      {shop.shop_number}
-                    </h3>
-                    <p style={{fontSize: '14px', color: '#6b7280', margin: 0}}>
-                      Shop #{shop.id}
-                    </p>
+                  <div className="shop-info">
+                    <h3 className="shop-name">{shop.shop_number}</h3>
+                    <p className="shop-customer">Shop #{shop.id}</p>
                   </div>
               </div>
               <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>

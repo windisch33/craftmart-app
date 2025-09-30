@@ -67,6 +67,12 @@
   box-shadow: var(--shadow-lg);
 }
 
+/* Shared focus-visible ring for common interactives */
+:where(button, .btn, .select, .input, a):focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-primary);
+}
+
 .btn-secondary {
   background-color: var(--color-gray-100);
   color: var(--color-gray-700);

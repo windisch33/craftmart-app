@@ -39,6 +39,13 @@
   box-shadow: 0 10px 60px -15px rgba(0, 0, 0, 0.3);
 }
 
+/* Grid for cards view to replace inline styles */
+.shops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 24px;
+}
+
 .shop-header {
   display: flex;
   align-items: flex-start;
