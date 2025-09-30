@@ -6,6 +6,7 @@ This document outlines the accounting/operations Reports area. It is desktop‑f
 - Give accounting clear, consistent, exportable reports with day, week, month filters.
 - Cover key dimensions: by Salesman, by Customer, by Month, Tax by State, Unpaid Invoices, Aging (30/60/90), Payments/Deposits, and AR snapshots.
 - Provide both summary and drill‑down detail, with CSV/XLSX export and optional PDF.
+- Include concrete identifiers everywhere: Invoice # and Order # (job item id) in invoice lists, and a second‑level drill‑down that shows the actual Job Items (line details) for a selected invoice/order.
 - Reuse existing auth; restrict sensitive reports to finance roles.
 
 ## Page Structure (UI)
@@ -19,6 +20,7 @@ This document outlines the accounting/operations Reports area. It is desktop‑f
 
 ## Data Sources (current schema cues)
 - jobs (projects), job_items (orders), customers, salesmen.
+- quote_items (job item line details) for Job Items breakdown in drill‑downs.
 - deposits/payments tables (if present), invoice fields on jobs/job_items (invoice_amount, tax_amount, status).
 - tax_rates (state → rate) if present; otherwise use job/customer state.
 - Note: The backend already has basic `/api/reports/sales` and `/api/reports/tax` routes; this plan supersedes with richer filters/metrics.
@@ -30,7 +32,8 @@ This document outlines the accounting/operations Reports area. It is desktop‑f
 - Filters: date range (invoice date), salesman, customer, state.
 - Grouping: month (YYYY‑MM) → total invoiced, tax, count of invoices.
 - Columns: Month, Invoices, Subtotal, Tax, Total.
-- Drill‑down: link to invoice list for that month.
+- Drill‑down (level 1): invoice list for that month with columns [Invoice #, Order #, Job Title, Customer, Subtotal, Tax, Total, Invoice Date].
+- Drill‑down (level 2): selecting an invoice shows Job Items table [Section, Item Description, Qty, Unit Price, Line Total] with invoice totals.
 - Export: CSV.
 
 2) Sales by Salesman
@@ -38,27 +41,31 @@ This document outlines the accounting/operations Reports area. It is desktop‑f
 - Filters: date range, customer, state.
 - Grouping: salesman → totals.
 - Columns: Salesman, Invoices, Subtotal, Tax, Total, Avg Invoice.
-- Drill‑down: invoices for that salesman.
+- Drill‑down (level 1): invoices for that salesman with [Invoice #, Order #, Job Title, Customer, Subtotal, Tax, Total, Invoice Date].
+- Drill‑down (level 2): Job Items table for the selected invoice.
 
 3) Sales by Customer
 - Purpose: Revenue concentration.
 - Filters: date range, salesman, state.
 - Grouping: customer → totals.
 - Columns: Customer, Invoices, Subtotal, Tax, Total, Last Invoice Date.
-- Drill‑down: invoices for that customer.
+- Drill‑down (level 1): invoices for that customer with [Invoice #, Order #, Job Title, Subtotal, Tax, Total, Invoice Date].
+- Drill‑down (level 2): Job Items table for the selected invoice.
 
 4) Tax Report by State
 - Purpose: Filing support.
 - Filters: date range.
 - Grouping: state → taxable base, tax amount, invoices.
 - Columns: State, Invoices, Taxable Sales, Tax Amount, Effective Rate.
-- Drill‑down: invoices per state.
+- Drill‑down (level 1): invoices per state with [Invoice #, Order #, Customer, Subtotal, Tax, Total, State].
+- Drill‑down (level 2): Job Items table for the selected invoice.
 - Note: Use job/customer ship‑to state and rate from `tax_rates` if available; otherwise store per‑invoice tax rate snapshot.
 
 5) Unpaid Invoices
 - Purpose: Open AR list.
 - Filters: date range (invoice date), salesman, customer, state.
-- Columns: Invoice #/Job, Customer, Salesman, Invoice Date, Due Date, Amount, Paid, Balance.
+- Columns: Invoice #, Order #, Customer, Salesman, Invoice Date, Due Date, Amount, Paid, Balance.
+- Drill‑down: Job Items table for the selected invoice (with allocations/payment history in sidebar).
 - Drill‑down: payment history.
 
 6) AR Aging (30/60/90)
@@ -84,6 +91,8 @@ Namespace: `/api/reports`
 - GET `/ar/unpaid?start=...&end=...&salesmanId=&customerId=&state=`
 - GET `/ar/aging?start=...&end=...&bucketSize=30`
 - GET `/payments?start=...&end=...` (phase 2)
+- GET `/invoices?start=...&end=...&salesmanId=&customerId=&state=` (shared drill‑down endpoint returning Invoice #, Order #, amounts, dates)
+- GET `/invoices/:invoiceId/items` (Job Items breakdown: section, description, qty, unit price, line total)
 - All endpoints accept `export=csv|xlsx` to trigger file download.
 
 Date semantics
@@ -150,6 +159,7 @@ ORDER BY total DESC;
 ```
 
 Note: `invoices_view` is a conceptual read model joining jobs/job_items/customers/salesmen, with derived fields (invoice_date, due_date, subtotal, tax, total, taxable_amount, state, paid_amount).
+It must expose: `invoice_id`, `invoice_number`, `order_id` (job_item_id), `order_number` (formatted), `job_title`, `customer_id`, `customer_name`, `salesman_id`, `salesman_name` so drill‑downs can show Invoice # and Order # consistently.
 
 ## Exports
 - CSV default; UTF‑8, RFC4180; comma‑separated, quoted where needed.
@@ -198,10 +208,10 @@ Note: `invoices_view` is a conceptual read model joining jobs/job_items/customer
 
 PDF Outputs per Report (Phase 1)
 - Sales by Month: summary cards + monthly table; one page per few months (auto paginate).
-- Sales by Salesman: table grouped by salesman, each group subtotaled.
-- Sales by Customer: table grouped by customer with totals and last invoice date column.
+- Sales by Salesman: table grouped by salesman, each group subtotaled. Drill‑down PDF includes invoice list with [Invoice #, Order #] and optional second page showing Job Items for a selected invoice.
+- Sales by Customer: table grouped by customer with totals and last invoice date column. Drill‑down PDF includes invoice list with [Invoice #, Order #] and optional Job Items page.
 - Tax by State: table showing state, invoices, taxable, tax, effective rate.
-- Unpaid Invoices: listing with invoice date, due date, balance; sorted by due date desc.
+- Unpaid Invoices: listing with invoice date, due date, balance; sorted by due date desc. Selecting an invoice shows Job Items breakdown.
 - AR Aging: matrix (customer rows × aging buckets) + total; landscape if needed.
 
 Front‑End Print View (optional add‑on)

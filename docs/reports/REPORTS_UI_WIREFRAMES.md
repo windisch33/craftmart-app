@@ -30,19 +30,20 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 5) Table (Sales by Salesman)
 - Columns: Salesman | Invoices | Subtotal | Tax | Total | Avg Invoice
 - Rows: Jane Smith | 16 | $88,000.00 | $6,160.00 | $94,160.00 | $5,885.00
-- Interaction: clicking a row opens a side panel with invoice list (drill‑down) and export button (respects filters)
+- Interaction: clicking a row opens a side panel with an Invoice List (level 1) showing columns [Invoice # | Order # | Job Title | Customer | Subtotal | Tax | Total | Invoice Date]. Selecting an invoice opens a Job Items view (level 2) with [Section | Item | Qty | Unit Price | Line Total]. Export button respects current filters/view.
 
 6) Table (Sales by Customer)
 - Columns: Customer | Invoices | Subtotal | Tax | Total | Last Invoice Date
 - Rows: ACME Homes | 9 | …
+- Interaction: row click → Invoice List (level 1) with [Invoice # | Order # | Job Title | Subtotal | Tax | Total | Date], then Job Items view (level 2).
 
 7) Table (Tax by State)
 - Columns: State | Invoices | Taxable | Tax | Effective Rate
 - Rows: MD | 63 | $250,000.00 | $15,000.00 | 6.00%
 
 8) Table (Unpaid Invoices)
-- Columns: Invoice # | Customer | Salesman | Invoice Date | Due Date | Amount | Paid | Balance
-- Interaction: bulk select + Export CSV
+- Columns: Invoice # | Order # | Customer | Salesman | Invoice Date | Due Date | Amount | Paid | Balance
+- Interaction: bulk select + Export CSV; row click shows Job Items for that invoice (with payment history sidebar).
 
 9) Table (AR Aging – customer level)
 - Columns: Customer | Current | 1–30 | 31–60 | 61–90 | >90 | Total | Invoices
