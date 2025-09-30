@@ -1,107 +1,142 @@
 # Reports CSV Specifications
 
-All CSVs follow RFC 4180: comma‑separated, quoted fields when needed, UTF‑8 encoding, CRLF line endings for maximum compatibility.
+This document defines exact CSV exports for Phase 1 reports and shared drill‑downs. All CSVs are UTF‑8, comma‑separated, quoted where needed (RFC4180). Currency fields are exported as numbers with 2 decimals; dates are YYYY‑MM‑DD.
 
-Common formatting
-- Dates: ISO 8601 (YYYY‑MM‑DD)
-- Currency: numeric with 2 decimals (e.g., 12345.67) — do not include $ in CSV
-- Percentages: decimal (e.g., 0.06) or percentage with 2 decimals (e.g., 6.00%) — noted per column below
-- IDs: numeric or string as stored; no formatting changes
+## Shared Conventions
+- File naming: `${report_key}_${start}_${end}.csv` (e.g., `sales_by_salesman_2025-05-01_2025-05-31.csv`).
+- Date range columns are NOT included unless noted; range is captured in filename and PDF header.
+- Identifiers:
+  - `invoice_number`: human‑readable invoice code (string)
+  - `invoice_id`: internal integer id (optional; included in drill‑downs)
+  - `order_number`: formatted order number (string, usually `#<job_item_id>`)
+  - `order_id`: job_item id (integer)
 
-## Sales by Month (sales_by_month.csv)
-Columns
-1. month (string, YYYY‑MM)
-2. invoices (integer)
-3. subtotal (number, 2dp)
-4. tax (number, 2dp)
-5. total (number, 2dp)
+## Sales by Month (summary)
+Headers
+- month (YYYY‑MM)
+- invoices (integer)
+- subtotal (number)
+- tax (number)
+- total (number)
 
-Example
-```
-2025-09,112,123456.00,8641.92,132097.92
-```
+Sort: by `month` asc.
 
-## Sales by Salesman (sales_by_salesman.csv)
-Columns
-1. salesman_id (integer)
-2. salesman_name (string)
-3. invoices (integer)
-4. subtotal (number, 2dp)
-5. tax (number, 2dp)
-6. total (number, 2dp)
-7. avg_invoice (number, 2dp)
+## Sales by Salesman (summary)
+Headers
+- salesman (string) — `first last`
+- invoices (integer)
+- subtotal (number)
+- tax (number)
+- total (number)
+- avg_invoice (number)
 
-## Sales by Customer (sales_by_customer.csv)
-Columns
-1. customer_id (integer)
-2. customer_name (string)
-3. invoices (integer)
-4. subtotal (number, 2dp)
-5. tax (number, 2dp)
-6. total (number, 2dp)
-7. last_invoice_date (date, YYYY‑MM‑DD)
+Sort: `total` desc, then `salesman` asc.
 
-## Tax by State (tax_by_state.csv)
-Columns
-1. state (string, 2‑letter)
-2. invoices (integer)
-3. taxable (number, 2dp)
-4. tax (number, 2dp)
-5. effective_rate (percent string, e.g., "6.00%")
+### Drill‑down: Invoices (level 1)
+Headers
+- invoice_number (string)
+- invoice_id (integer)
+- order_number (string)
+- order_id (integer)
+- job_title (string)
+- customer (string)
+- subtotal (number)
+- tax (number)
+- total (number)
+- invoice_date (YYYY‑MM‑DD)
 
-## Unpaid Invoices (unpaid_invoices.csv)
-Columns
-1. invoice_id (integer)
-2. job_id (integer)
-3. customer_id (integer)
-4. customer_name (string)
-5. salesman_id (integer)
-6. salesman_name (string)
-7. invoice_date (date)
-8. due_date (date)
-9. amount (number, 2dp)
-10. paid (number, 2dp)
-11. balance (number, 2dp)
+Sort: `invoice_date` desc, then `invoice_number` asc.
 
-## AR Aging (ar_aging.csv)
-Columns (customer level)
-1. customer_id (integer)
-2. customer_name (string)
-3. current (number, 2dp)
-4. d1_30 (number, 2dp)
-5. d31_60 (number, 2dp)
-6. d61_90 (number, 2dp)
-7. d90_plus (number, 2dp)
-8. invoices (integer)
-9. total (number, 2dp)
+### Drill‑down: Job Items (level 2)
+Headers
+- invoice_number (string)
+- order_number (string)
+- section (string)
+- item_description (string)
+- quantity (number)
+- unit_price (number)
+- line_total (number)
 
-Notes
-- Rows are one per customer; group‑by salesman variant adds salesman columns and aggregates accordingly.
-- Export respects applied filters (date range, salesman, customer, state).
+Sort: by `section` asc, then `item_description` asc.
 
-## Payments & Deposits (phase 2) (payments.csv)
-Columns
-1. payment_id (integer)
-2. date (date)
-3. customer_id (integer)
-4. customer_name (string)
-5. method (string)
-6. reference (string)
-7. amount (number, 2dp)
-8. applied (number, 2dp)
-9. unapplied (number, 2dp)
+## Sales by Customer (summary)
+Headers
+- customer (string)
+- invoices (integer)
+- subtotal (number)
+- tax (number)
+- total (number)
+- last_invoice_date (YYYY‑MM‑DD)
 
----
+Sort: `total` desc, then `customer` asc.
 
-Header row
-- All CSVs include a header row (column names as above).
+Drill‑downs: same as Sales by Salesman (Invoices + Job Items) with the filters applied.
 
-Delimiters & escaping
-- Fields containing commas, quotes, or newlines are wrapped in double quotes; quotes inside fields are doubled per RFC 4180.
+## Tax by State (summary)
+Headers
+- state (string)
+- invoices (integer)
+- taxable_sales (number)
+- tax_amount (number)
+- effective_rate (number) — e.g., 0.06 for 6%
 
-Timezone
-- Dates are normalized to business timezone at export time; stored as local date (no time).
+Sort: `state` asc.
 
-Validation
-- Numeric fields must be valid numbers; blanks only where allowed (e.g., paid may be 0.00).
+### Drill‑down: Invoices (level 1)
+Headers
+- invoice_number (string)
+- order_number (string)
+- customer (string)
+- taxable_sales (number)
+- tax_amount (number)
+- total (number)
+- state (string)
+- invoice_date (YYYY‑MM‑DD)
+
+## Unpaid Invoices (open AR)
+Headers
+- invoice_number (string)
+- order_number (string)
+- customer (string)
+- salesman (string)
+- invoice_date (YYYY‑MM‑DD)
+- due_date (YYYY‑MM‑DD)
+- amount (number) — invoice total
+- paid (number)
+- balance (number)
+- days_past_due (integer)
+
+Sort: `due_date` desc.
+
+### Drill‑down: Job Items (optional)
+Headers
+- invoice_number (string)
+- order_number (string)
+- section (string)
+- item_description (string)
+- quantity (number)
+- unit_price (number)
+- line_total (number)
+
+## AR Aging (customer level)
+Headers
+- customer (string)
+- current (number)
+- d1_30 (number)
+- d31_60 (number)
+- d61_90 (number)
+- d90_plus (number)
+- invoices (integer)
+- total (number)
+
+Sort: `total` desc.
+
+## Data Source Notes (read model)
+The backend read model (`invoices_view` concept) must expose fields used above:
+- invoice_id, invoice_number, order_id, order_number, job_title
+- customer_id, customer_name, salesman_id, salesman_name
+- invoice_date, due_date, subtotal, tax_amount, total_amount
+- taxable_amount (for tax report), paid_amount, balance_due, state
+
+Quote items endpoint should return section name, item description, qty, unit price, line total for the Job Items drill‑down.
 
