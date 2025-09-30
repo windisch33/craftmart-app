@@ -18,7 +18,8 @@ Textual mockups showing identifiers and job item drill‑downs.
  │ John Doe                     │   12     │ 54,200.00 │ 3,794  │ 57,994  │ 4,832.83    │
  └──────────────────────────────┴──────────┴───────────┴────────┴─────────┴─────────────┘
 
- (Row click → Invoice List)
+ Salesman Total — Jane Smith (May 2025)
+ - Invoices: 16  •  Subtotal: 88,000.00  •  Tax: 6,160.00  •  Total: 94,160.00  •  Avg: 5,885.00
 
  Invoice List — Jane Smith (May 2025)
  ┌──────────────┬────────────┬──────────────────────┬──────────────────┬──────────┬───────┬─────────┬───────────────┐
@@ -28,16 +29,7 @@ Textual mockups showing identifiers and job item drill‑downs.
  │ INV‑2025‑311 │ #25        │ ABC Flooring – Stairs│ ABC Flooring     │   950.00 │ 57.00 │ 1,007.00│ 2025‑08‑22     │
  └──────────────┴────────────┴──────────────────────┴──────────────────┴──────────┴───────┴─────────┴───────────────┘
 
- (Row click → Job Items for INV‑2025‑310)
-
- Job Items — INV‑2025‑310 (Order #43)
- ┌──────────┬───────────────────────────────┬──────┬────────────┬────────────┐
- │ Section  │ Item Description              │ Qty  │ Unit Price │ Line Total │
- ├──────────┼───────────────────────────────┼──────┼────────────┼────────────┤
- │ Basement │ 6710 – Brazilian Cherry (56")│  1   │   233.33   │   233.33   │
- │ Basement │ Stair Config 1234 (16 Rise…)  │  1   │   931.53   │   931.53   │
- └──────────┴───────────────────────────────┴──────┴────────────┴────────────┘
- Totals: Subtotal 1,164.86  Tax 0.00  Total 1,164.86
+Note: No Job Items drill‑down is shown in this mockup for Sales by Salesman.
 ```
 
 ## Sales by Customer (Invoice drill‑down)
@@ -76,4 +68,3 @@ Textual mockups showing identifiers and job item drill‑downs.
 Notes
 - These mockups reflect the presence of both identifiers: `Invoice #` and `Order #` (job item id).
 - The Job Items panel intentionally mirrors the job PDF sections to aid reconciliation.
-
