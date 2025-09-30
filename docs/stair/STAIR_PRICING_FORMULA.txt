@@ -1,0 +1,234 @@
+STAIR PRICING FORMULA DOCUMENTATION
+====================================
+Last Updated: August 13, 2025
+
+The stair pricing system uses a simplified formula-based approach that calculates costs based on 
+base prices, dimensional modifiers, material multipliers, and labor.
+
+SIMPLIFIED PRICING FORMULA
+---------------------------
+Price = (Base Price + Length Charge + Width Charge) × Material Multiplier + Mitre Charge
+
+Where:
+- Base Price: Starting price for standard dimensions
+- Length Charge: Additional cost for lengths exceeding base length
+- Width Charge: Additional cost for widths exceeding base width  
+- Material Multiplier: Percentage adjustment based on wood type
+- Mitre Charge: Flat fee for full mitre cuts (if applicable)
+
+BOARD TYPES AND PRICING
+------------------------
+
+1. BOX TREAD (Board Type 1):
+   - Base Price: $37.00 (at 36" × 9")
+   - Length Charge: $1.25 per 6" over 36"
+   - Width Charge: $2.00 per inch over 9"
+   - Mitre Charge: $8.50 (if full mitre)
+   
+   Example: 42" × 11" Oak box tread
+   = ($37.00 + $1.25 + $4.00) × 1.0 + $0
+   = $42.25
+
+2. OPEN TREAD (Board Type 2):
+   - Base Price: $48.00 (at 36" × 9")
+   - Length Charge: $1.75 per 6" over 36"
+   - Width Charge: $2.50 per inch over 9"
+   - Mitre Charge: $10.00 (if full mitre)
+   
+   Example: 38" × 10" Pine open tread
+   = ($48.00 + $1.75 + $2.50) × 0.5 + $0
+   = $26.13
+
+3. DOUBLE OPEN TREAD (Board Type 3):
+   - Base Price: $62.00 (at 36" × 9")
+   - Length Charge: $2.25 per 6" over 36"
+   - Width Charge: $3.00 per inch over 9"
+   - Mitre Charge: $12.00 (if full mitre)
+
+4. RISER (Board Type 4):
+   - Base Price: $3.50 (at 36" × 8")
+   - Length Charge: $0.25 per 6" over 36"
+   - Width Charge: $0.50 per inch over 8"
+   - No mitre option
+
+5. STRINGER (Board Type 5):
+   - Base Price: $3.00 per riser
+   - Width Charge: $0.50 per inch over 9.25" (width dimension)
+   - Thickness Charge: $0.25 per inch over 1" (thickness dimension)
+   - Dimensions parsed from type (e.g., "2×11.25" = 2" thick, 11.25" wide)
+   
+   Example: 2×11.25 PGS stringer for 14 risers
+   = ($3.00 + $1.00 + $0.25) × 0.85 × 14
+   = $4.25 × 0.85 × 14
+   = $50.58 per stringer
+
+6. CENTER HORSE (Board Type 6):
+   - Base Price: $5.00 per riser
+   - Width Charge: $0.75 per inch over 9.25"
+   - Thickness Charge: $0.35 per inch over 1"
+   - Typically double the thickness of stringers
+   
+   Example: Center horse for 1×9.25 stringers (becomes 2×9.25)
+   = ($5.00 + $0 + $0.35) × 1.0 × 14
+   = $74.90 per center horse
+
+LANDING TREAD SPECIAL CASE
+--------------------------
+- Fixed width: 3.5" (regardless of regular tread width)
+- Length: Same as regular tread stair width
+- Material: Same as regular treads
+- Calculated as Box Tread with 3.5" width
+
+Example: 38" × 3.5" Oak landing tread
+= ($37.00 + $1.25 + $0) × 1.0 + $0
+= $38.25
+
+MATERIAL MULTIPLIERS
+--------------------
+Current active materials (from material_multipliers table):
+- CDX: 0.60×
+- Pine: 0.60×
+- PGS (Prime Ground Stock): 0.65×
+- Poplar: 0.65×
+- Red Oak: 1.00× (base)
+- White Oak: 1.10×
+- Maple: 1.30×
+- HeartPine: 1.50×
+- 1/4 Sawn Red Oak: 1.40×
+- 1/4 Sawn White Oak: 1.50×
+- American Cherry: 1.70×
+- Brazilian Cherry: 1.90×
+
+SPECIAL PARTS PRICING
+---------------------
+Formula: (unit_cost × quantity) + labor_cost
+
+Examples:
+- Bull Nose: $102.20 + $25 labor (Oak)
+- Winder Box Tread: $128.75 + $35 labor (Oak)
+- Tread Protectors: $45.00 + $10 labor
+- Custom Brackets: $85.00 + $20 labor
+
+TOTAL CALCULATION
+-----------------
+Subtotal = Σ(Treads) + Landing Tread + Σ(Risers) + Σ(Stringers) + Σ(Center Horses) + Σ(Special Parts)
+Labor Total = Σ(Installation Labor for all components)
+Tax Amount = Subtotal × Tax Rate (typically 6%)
+Total = Subtotal + Labor Total + Tax Amount
+
+COMPLETE EXAMPLE CALCULATION
+-----------------------------
+14-riser staircase configuration:
+- 13 box treads @ 38" × 11" Oak
+- 1 landing tread @ 38" × 3.5" Oak  
+- 14 risers @ 38" × 8" Oak
+- 2 stringers @ 1×9.25 Poplar
+- 1 center horse (2×9.25 thickness)
+- No special parts
+
+Treads (13 × Box):
+  Each: ($37.00 + $1.25 + $4.00) × 1.0 = $42.25
+  Total: $42.25 × 13 = $549.25
+
+Landing Tread (1 × Box @ 3.5" width):
+  ($37.00 + $1.25 + $0) × 1.0 = $38.25
+
+Risers (14 × Oak):
+  Each: ($3.50 + $1.25 + $0) × 1.0 = $4.75
+  Total: $4.75 × 14 = $66.50
+
+Stringers (2 × Poplar 1×9.25):
+  Each: ($3.00 + $0 + $0) × 0.4 × 14 = $16.80
+  Total: $16.80 × 2 = $33.60
+  Labor: $10 × 14 × 2 = $280.00
+
+Center Horse (1 × 2×9.25):
+  ($5.00 + $0 + $0.35) × 1.0 × 14 = $74.90
+
+Subtotal: $762.50
+Labor Total: $280.00
+Tax (6%): $45.75
+TOTAL: $1,088.25
+
+DATABASE IMPLEMENTATION
+-----------------------
+Core tables:
+- stair_pricing_simple: Stores base prices and increment values per board type
+- material_multipliers: Stores material names and their multipliers
+- stair_board_types: Defines board type IDs and descriptions
+- stair_special_parts: Stores special component pricing
+
+PostgreSQL function: calculate_stair_price_simple()
+Parameters: board_type_id, material_id, length, width, quantity, has_mitre
+Returns: base_price, length_charge, width_charge, material_multiplier, mitre_charge, unit_price, total_price
+
+PRICING UPDATES
+---------------
+To adjust pricing:
+1. Update base prices in stair_pricing_simple table
+2. Modify increment prices (length_increment_price, width_increment_price)
+3. Adjust material multipliers in material_multipliers table
+4. Update special parts pricing in stair_special_parts table
+
+All pricing changes take effect immediately without code modifications.
+
+ADVANCED FEATURES (August 2025)
+===============================
+
+INDIVIDUAL STRINGER PRICING
+----------------------------
+The system now supports individual pricing for each stringer, allowing different materials and dimensions:
+
+Left Stringer: Can have unique width, thickness, and material
+Right Stringer: Can have unique width, thickness, and material  
+Center Stringer/Horse: Optional, can have unique dimensions and material
+
+Example with mixed materials:
+- Left: 1" × 9.25" Poplar = ($3.00 + $0 + $0) × 0.65 × 14 = $27.30
+- Right: 1.5" × 11" Red Oak = ($3.00 + $0.875 + $0.25) × 1.0 × 14 = $57.75
+- Center: 2" × 9.25" Maple = ($5.00 + $0 + $0.35) × 1.30 × 14 = $97.37
+
+VARIABLE RISER WIDTHS
+---------------------
+Risers are automatically sized based on their corresponding tread types:
+
+Standard Risers: Match box tread widths (e.g., 38" treads = 38" risers)
+Open Risers: Match open tread widths (e.g., 42" open treads = 42" risers)
+Double Open Risers: Match double open tread widths (e.g., 40" double = 40" risers)
+
+This ensures proper fit and eliminates manual width calculations.
+
+QUICK STAIR PRICER TOOL
+------------------------
+Location: Products page → Quick Stair Pricer tab
+Features:
+- Real-time pricing without saving configurations
+- Individual stringer configuration with live material selection
+- Detailed price breakdown showing formulas and calculations  
+- Expandable sections for each component type
+- Debounced calculations to prevent form resets
+- Support for variable tread counts and dimensions
+
+BULK TREAD CONFIGURATION
+-------------------------
+Instead of configuring individual treads, users specify:
+- Box Treads: Count and width for standard box treads
+- Open Treads: Count, width, and direction (left/right)
+- Double Open Treads: Count and width for double open treads
+
+The system automatically generates the appropriate tread list and matches risers.
+
+PRICING INTERFACE UPDATES
+--------------------------
+Frontend TypeScript interfaces updated to support:
+- individualStringers parameter with left/right/center objects
+- roughCutWidth and noseSize for flexible tread sizing
+- includeLandingTread flag for landing tread calculations
+- Enhanced StairPriceBreakdown with detailed component data
+
+Backend API enhanced to handle:
+- Individual stringer calculations per component
+- Variable riser width grouping by type and dimension
+- Comprehensive price breakdown with formulas
+- Detailed logging for debugging and verification
+ 

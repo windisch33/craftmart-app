@@ -205,7 +205,7 @@ craftmart-app/
 - To change the app’s look:
   1) Edit the primary ramp and semantic tokens in `variables.css` (see THEME_MIGRATION.md presets)
   2) Hard refresh the browser (Ctrl/Cmd+Shift+R) or run `cd frontend && npm run build`
-- Reference: `THEME_MIGRATION.md` for progress, remaining files, and ready-to-paste color presets.
+- Reference: `docs/design/THEME_MIGRATION.md` for progress, remaining files, and ready-to-paste color presets.
 
 ## 🧩 Accessibility
 - Modals use a shared, accessible wrapper (`AccessibleModal`):
@@ -407,8 +407,8 @@ docker-compose exec postgres psql -U craftmart_user -d craftmart -c "\\dt"
 ## 📞 Support
 
 For technical support or questions:
-- Check the `CLAUDE.md` file for detailed technical documentation
-- Review the `IMPLEMENTATION_PLAN.md` for development roadmap
+- Check the `docs/agents/CLAUDE.md` file for detailed technical documentation
+- Review the `docs/plans/IMPLEMENTATION_PLAN.md` for development roadmap
 - Create GitHub issues for bug reports or feature requests
 
 ## 📄 License

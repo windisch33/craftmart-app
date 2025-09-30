@@ -1,0 +1,48 @@
+A web app for CraftMart inc, a custom staircase manufacturer. This will be used by employees to manage customers and jobs. It will have 6-10 users.
+
+It will have 
+
+Customers
+	customers should have at least the following fields. 
+	name
+	address
+	city
+	state
+	zip code
+	phone
+	mobile
+	fax
+	email
+	accounting email
+	notes - for miscellaneous information 
+	
+
+Jobs
+	jobs start as quotes then get turned into orders and finally invoices.
+
+Shops 
+	shops will be created from Jobs that are orders. It will consist of the orders themselves and cut sheets for the shop. Cut sheets will be calculated from the stairs that are ordered. rail parts will simply be a list of parts. 
+
+Reports
+	this will generate various sales and tax reports
+
+Products
+	
+	this will be how we add and edit products
+	there will be many different types of products	
+	example - handrails, balusters, newels...
+
+
+This should be easy to backup and move to a different server if needed. Initial development will be in wsl then will probably be moved to an ubuntu vm.
+
+Design a modern, professional-looking app interface that adheres to the following criteria:
+
+1.	⁠Visual Style:- Use a clean, minimalist design approach- Implement a cohesive color scheme with 2-3 primary colors and appropriate accent colors- Incorporate ample white space for a sleek, uncluttered look- Use modern typography with a clear hierarchy (headings, subheadings, body text)
+2.	⁠Layout and Structure:- Create an intuitive, user-friendly navigation system- Design a responsive layout that adapts seamlessly to different screen sizes- Use a grid-based layout for consistent alignment and spacing
+3.	⁠UI Elements:- Design custom icons that align with the overall visual style- Create visually appealing and interactive buttons, forms, and other UI components- Implement subtle animations and transitions for a polished feel
+4.	⁠UX Considerations:- Ensure clear visual feedback for user actions- Optimize the user flow to minimize the number of steps for key tasks- Implement intuitive gestures and interactions for mobile users
+5.	⁠Branding:- Incorporate the app's logo and brand identity seamlessly into the design- Maintain consistency with the brand's visual language across all screens
+6.	⁠Accessibility:- Use high-contrast color combinations for text and backgrounds- Ensure all interactive elements are easily tappable on mobile devices- Include alt text for images and icons
+7.	⁠Current Trends:- Consider incorporating trendy design elements like glassmorphism or neumorphism, if appropriate- Use subtle gradients or textures to add depth and interest
+
+ 
