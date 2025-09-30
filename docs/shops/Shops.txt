@@ -49,5 +49,7 @@ open risers width is riser height, length is length - .625" for route - 1.25" fo
 
 double open risers width is riser height, length is length - 1.25" - 1.25" for nose overhangs
 
+for number and type of riser logic look at stair pricing code. 
+
 each stair gets an s4s (bottom riser) width is riser height - 1" length dependent on bottom tread - if stair has double open treads s4s length is same as double open riser, if a stair has no double opens and has open ends s4s has same length as open risers, finally if stair only has box treads s4s length is same as box risers. 
 

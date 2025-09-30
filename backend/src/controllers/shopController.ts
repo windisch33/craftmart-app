@@ -143,8 +143,9 @@ export const generateShops = async (req: Request, res: Response, next: NextFunct
     const shop = await shopService.generateCutSheets(orderIds);
     res.status(201).json(shop);
   } catch (error: any) {
-    if (error.message.includes('No stair configurations found')) {
-      return res.status(400).json({ error: error.message });
+    const msg = typeof error?.message === 'string' ? error.message : '';
+    if (msg.includes('No stair configurations found') || msg.includes('No quoted stair configurations found')) {
+      return res.status(400).json({ error: msg });
     }
     next(error);
   }

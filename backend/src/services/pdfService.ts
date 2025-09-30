@@ -1244,7 +1244,7 @@ export const generateShopPaper = async (shopId: number): Promise<Buffer> => {
           <div class=\"job-header\">
             <div>
               <div class=\"job-title\">${escapeHtml(job.job_title || job.lot_name || 'Job ' + job.job_id)}</div>
-              <div class=\"job-subtitle\">Order # ${escapeHtml(job.order_number || job.job_id.toString())}</div>
+              <div class=\"job-subtitle\">Order # ${escapeHtml((job.order_number || job.job_id.toString()).toString().replace(/^#\s*/, ''))}</div>
               ${job.lot_name ? `<div class=\"job-subtitle\">Lot: ${escapeHtml(job.lot_name)}</div>` : ''}
             </div>
             <div class=\"job-meta\">
@@ -1567,7 +1567,7 @@ function generateShopPaperHTML(shopData: ShopData): string {
         <div class="job-header">
           <div>
             <div class="job-title">${formatText(job.job_title || job.lot_name)}</div>
-            <div class="job-subtitle">Order # ${formatText(job.order_number || job.job_id.toString())}</div>
+            <div class="job-subtitle">Order # ${formatText((job.order_number || job.job_id.toString()).toString().replace(/^#\s*/, ''))}</div>
             ${job.lot_name ? `<div class="job-subtitle">Lot: ${job.lot_name}</div>` : ''}
           </div>
           <div class="job-meta">
@@ -1864,7 +1864,7 @@ function generateCutListHTML(shopData: ShopData): string {
         <div class="job-header">
           <div class="job-customer">${escapeHtml(job.customer_name || '—')}</div>
           <div class="job-meta">
-            <span>Order# ${escapeHtml(job.order_number || job.job_id.toString())}</span>
+            <span>Order# ${escapeHtml((job.order_number || job.job_id.toString()).toString().replace(/^#\s*/, ''))}</span>
             <span>Lot: ${escapeHtml(job.lot_name || '—')}</span>
             <span>Delivery: ${delivery}</span>
           </div>
