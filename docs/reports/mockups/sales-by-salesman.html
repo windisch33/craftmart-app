@@ -1,49 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Sales by Salesman — Mockup</title>
+  <title>Reports Mockup – Sales by Salesman</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; color: #111827; margin: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .title { font-size: 20px; font-weight: 700; }
-    .meta { text-align: right; color: #4b5563; font-size: 12px; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { position: sticky; top:0; background: #fafafa; font-size: 12px; text-align: left; padding: 8px 10px; color: #374151; border-bottom: 1px solid #e5e7eb; }
-    tbody td { border-bottom: 1px solid #f3f4f6; padding: 8px 10px; font-size: 13px; }
-    tfoot td { font-weight: 700; padding: 10px; border-top: 2px solid #e5e7eb; }
-    .right { text-align: right; }
+    :root { --border:#d1d5db; --fg:#111827; --muted:#374151; --bg:#fff; --sub:#f5f5f5; }
+    *{box-sizing:border-box}
+    body{font-family:Segoe UI, Arial, sans-serif; color:var(--fg); background:#fafafa; margin:24px}
+    .header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px}
+    .title{font-size:20pt;font-weight:700}
+    .meta{color:var(--muted)}
+    .toolbar{display:flex;gap:8px;margin-bottom:12px}
+    .chip{border:1px solid var(--border);padding:6px 10px;border-radius:8px;background:#fff}
+    table{width:100%;border-collapse:collapse;margin:10px 0;background:#fff}
+    th,td{border:1px solid var(--border);padding:8px 10px;text-align:center;font-size:10.5pt}
+    th{background:#f3f4f6;text-align:center}
+    .group-title{font-weight:700;margin:16px 0 6px}
+    .sub{color:var(--muted)}
+    .click{color:#2563eb;text-decoration:none}
+    .card{border:1px solid var(--border);background:#fff;border-radius:8px;padding:12px}
   </style>
   </head>
 <body>
   <div class="header">
-    <div>
-      <div class="title">Sales by Salesman</div>
-      <div class="meta">Period: May 1, 2025 – May 31, 2025</div>
-    </div>
-    <div class="meta">Generated: 2025-09-24 10:15 AM</div>
+    <div class="title">Reports — Sales by Salesman</div>
+    <div class="meta">Date: May 1–31, 2025</div>
+  </div>
+  <div class="toolbar">
+    <span class="chip">Salesman: All</span>
+    <span class="chip">Customer: All</span>
+    <span class="chip">State: All</span>
+    <span class="chip">Export ▾</span>
+  </div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Salesman</th><th>Invoices</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Avg Invoice</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="click" href="#invoices">Jane Smith</a></td><td>16</td><td>88,000.00</td><td>6,160.00</td><td>94,160.00</td><td>5,885.00</td>
+        </tr>
+        <tr>
+          <td><a class="click" href="#invoices">John Doe</a></td><td>12</td><td>54,200.00</td><td>3,794.00</td><td>57,994.00</td><td>4,832.83</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
-  <table aria-label="Sales by Salesman">
-    <thead>
-      <tr>
-        <th>Salesman</th>
-        <th class="right">Invoices</th>
-        <th class="right">Subtotal</th>
-        <th class="right">Tax</th>
-        <th class="right">Total</th>
-        <th class="right">Avg Invoice</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td>Jane Smith</td><td class="right">16</td><td class="right">$88,000.00</td><td class="right">$6,160.00</td><td class="right">$94,160.00</td><td class="right">$5,885.00</td></tr>
-      <tr><td>John Miller</td><td class="right">12</td><td class="right">$72,500.00</td><td class="right">$5,075.00</td><td class="right">$77,575.00</td><td class="right">$6,464.58</td></tr>
-      <tr><td>Sam Patel</td><td class="right">9</td><td class="right">$54,120.00</td><td class="right">$3,788.40</td><td class="right">$57,908.40</td><td class="right">$6,434.27</td></tr>
-    </tbody>
-    <tfoot>
-      <tr><td>Total</td><td class="right">37</td><td class="right">$214,620.00</td><td class="right">$15,023.40</td><td class="right">$229,643.40</td><td class="right">$6,206.32</td></tr>
-    </tfoot>
-  </table>
+  <div id="invoices" class="group-title">Invoice List — Jane Smith (May 2025)</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice #</th><th>Order #</th><th>Job Title</th><th>Customer</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Invoice Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a class="click" href="#items">INV‑2025‑310</a></td><td>#43</td><td>test pdf 1234</td><td>Christopher Clark</td><td>1,100.00</td><td>66.00</td><td>1,166.00</td><td>2025‑08‑20</td>
+        </tr>
+        <tr>
+          <td><a class="click" href="#items">INV‑2025‑311</a></td><td>#25</td><td>ABC Flooring – Stairs</td><td>ABC Flooring</td><td>950.00</td><td>57.00</td><td>1,007.00</td><td>2025‑08‑22</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="items" class="group-title">Job Items — INV‑2025‑310 (Order #43) <span class="sub">Totals: Subtotal 1,164.86  •  Tax 0.00  •  Total 1,164.86</span></div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Section</th><th>Item Description</th><th>Qty</th><th>Unit Price</th><th>Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Basement</td><td>6710 – Brazilian Cherry (56")</td><td>1</td><td>233.33</td><td>233.33</td>
+        </tr>
+        <tr>
+          <td>Basement</td><td>Stair Config 1234 (16 Rise…)</td><td>1</td><td>931.53</td><td>931.53</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>
 

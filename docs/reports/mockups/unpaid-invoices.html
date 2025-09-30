@@ -1,50 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Unpaid Invoices — Mockup</title>
+  <title>Reports Mockup – Unpaid Invoices</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; color: #111827; margin: 24px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .title { font-size: 20px; font-weight: 700; }
-    .meta { text-align: right; color: #4b5563; font-size: 12px; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { position: sticky; top:0; background: #fafafa; font-size: 12px; text-align: left; padding: 8px 10px; color: #374151; border-bottom: 1px solid #e5e7eb; }
-    tbody td { border-bottom: 1px solid #f3f4f6; padding: 8px 10px; font-size: 13px; }
-    tfoot td { font-weight: 700; padding: 10px; border-top: 2px solid #e5e7eb; }
-    .right { text-align: right; }
+    :root { --border:#d1d5db; --fg:#111827; --muted:#374151; }
+    *{box-sizing:border-box}
+    body{font-family:Segoe UI, Arial, sans-serif; color:var(--fg); background:#fafafa; margin:24px}
+    .header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px}
+    .title{font-size:20pt;font-weight:700}
+    .meta{color:var(--muted)}
+    .chip{border:1px solid var(--border);padding:6px 10px;border-radius:8px;background:#fff;margin-right:6px}
+    table{width:100%;border-collapse:collapse;background:#fff}
+    th,td{border:1px solid var(--border);padding:8px 10px;text-align:center;font-size:10.5pt}
+    th{background:#f3f4f6}
   </style>
-  </head>
+</head>
 <body>
   <div class="header">
-    <div>
-      <div class="title">Unpaid Invoices</div>
-      <div class="meta">As of: 2025‑09‑24</div>
-    </div>
-    <div class="meta">Generated: 2025-09-24 10:15 AM</div>
+    <div class="title">Reports — Unpaid Invoices</div>
+    <div class="meta">As of Today</div>
+  </div>
+  <div>
+    <span class="chip">Salesman: All</span>
+    <span class="chip">Customer: All</span>
+    <span class="chip">State: All</span>
+    <span class="chip">Export ▾</span>
   </div>
 
-  <table aria-label="Unpaid Invoices">
+  <table style="margin-top:12px">
     <thead>
       <tr>
-        <th>Invoice #</th>
-        <th>Customer</th>
-        <th>Salesman</th>
-        <th>Invoice Date</th>
-        <th>Due Date</th>
-        <th class="right">Amount</th>
-        <th class="right">Paid</th>
-        <th class="right">Balance</th>
+        <th>Invoice #</th><th>Order #</th><th>Customer</th><th>Salesman</th><th>Invoice Date</th><th>Due Date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Days Past Due</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td>INV‑1001</td><td>ACME Homes</td><td>Jane Smith</td><td>2025‑09‑10</td><td>2025‑10‑10</td><td class="right">$6,200.00</td><td class="right">$0.00</td><td class="right">$6,200.00</td></tr>
-      <tr><td>INV‑1002</td><td>Sunrise Builders</td><td>Jane Smith</td><td>2025‑09‑09</td><td>2025‑10‑09</td><td class="right">$4,800.00</td><td class="right">$1,000.00</td><td class="right">$3,800.00</td></tr>
-      <tr><td>INV‑1003</td><td>Green Valley</td><td>John Miller</td><td>2025‑09‑05</td><td>2025‑10‑05</td><td class="right">$7,500.00</td><td class="right">$0.00</td><td class="right">$7,500.00</td></tr>
+      <tr>
+        <td>INV‑2025‑310</td><td>#43</td><td>Christopher Clark</td><td>Joe Smith</td><td>2025‑08‑20</td><td>2025‑09‑19</td><td>1,166.00</td><td>0.00</td><td>1,166.00</td><td>11</td>
+      </tr>
     </tbody>
-    <tfoot>
-      <tr><td>Total</td><td></td><td></td><td></td><td></td><td class="right">$18,500.00</td><td class="right">$1,000.00</td><td class="right">$17,500.00</td></tr>
-    </tfoot>
   </table>
 </body>
 </html>
