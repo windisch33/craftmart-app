@@ -138,8 +138,14 @@ npm run dev        # Starts on port 3000
 # Database operations
 docker-compose exec postgres psql -U craftmart_user -d craftmart
 
-# Apply database migrations
-docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/migrations/02-enhance-jobs-table.sql
+# Apply database migrations (examples)
+# Deposit management (schema, triggers, view)
+docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/migrations/19-add-deposit-management.sql
+# Per-item allocation cap (optional-safe)
+docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/migrations/20-enforce-item-allocation-cap.sql
+
+# Run backend tests (build + jest) inside the container
+docker-compose exec backend npm run test
 ```
 
 ### **Docker Commands**
@@ -169,6 +175,9 @@ docker-compose up -d
 - **Database**: PostgreSQL 13 with comprehensive schema
 - **Infrastructure**: Docker, Nginx reverse proxy, Cloudflare Tunnel
 - **Security**: JWT authentication, parameterized queries, CORS protection
+
+### **Reverse Proxy Notes**
+- The backend sets `app.set('trust proxy', 1)` so rate limiting and client IP logging work correctly behind Nginx/Cloudflared. If you customize proxy layers, ensure this still reflects your hop count.
 
 ### **Project Structure & Naming**
 ```

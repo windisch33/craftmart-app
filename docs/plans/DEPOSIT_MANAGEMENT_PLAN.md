@@ -68,6 +68,13 @@ We intentionally removed the legacy `quote_item_id`/`job_section_id` columns—j
 - **Trigger:** `update_job_deposits_trigger` maintains `jobs.total_deposits` any time an allocation is inserted, updated, or deleted, and recomputes `balance_due` as `total_amount - total_deposits`.
 - **Trigger:** `check_allocation_total_trigger` prevents over-allocation past the payment’s total.
 - **Trigger:** `validate_deposit_allocation_links_trigger` ensures the selected job item actually belongs to the job on the allocation row.
+- ✅ **New (Migration 20): `check_item_allocation_total_trigger`** — prevents allocating more than a job item’s own `total_amount`. This acts as a concurrency-safe backstop to the service-level validation noted below. The trigger is optional-safe and no-ops if `job_items.total_amount` is missing or non-positive.
+
+### Service-Level Safeguards (Runtime)
+- Allocation requests are validated in `backend/src/services/depositService.ts` to ensure:
+  - Total requested allocations ≤ deposit remaining balance
+  - Per-item requested amount (summed across entries) + existing allocations ≤ item’s `total_amount` (when present)
+  - Job item ownership (item belongs to the job and customer)
 
 ## Backend Surface Area
 All routes live under `backend/src/routes/deposits.ts`.
@@ -100,7 +107,7 @@ Implemented under `frontend/src/pages/Deposits.tsx` with shared components in `f
 4. **Hard refresh** the frontend (or redeploy) so the renamed UI and new modals load.
 
 ## QA & Validation Checklist
-- Unit + integration tests cover allocation validation and service-layer error paths (`backend/src/services/depositService.ts`).
+- Unit tests cover allocation validation and service-layer error paths (`backend/src/services/depositService.ts`). See `backend/__tests__/depositAllocation.test.js`.
 - Manual regression: create payment → allocate to multiple job items → remove allocation → confirm job detail and PDFs update.
 - Verified frontend build (`npm run build`) and backend TypeScript build (`npm run build` in backend) succeed post-changes.
 
