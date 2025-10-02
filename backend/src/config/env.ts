@@ -19,6 +19,10 @@ interface EnvConfig {
   CORS_ORIGIN: string;
   RATE_LIMIT_MAX: number;
   RATE_LIMIT_WINDOW_MS: number;
+  COMPANY_NAME: string;
+  COMPANY_ADDRESS: string;
+  COMPANY_PHONE: string;
+  COMPANY_WEBSITE: string;
 }
 
 const parseNumber = (value: string | undefined, fallback: number): number => {
@@ -43,5 +47,9 @@ export const config: EnvConfig = {
   PDF_CACHE_DIR: process.env.PDF_CACHE_DIR ?? path.join(os.tmpdir(), 'craftmart-pdf-cache'),
   CORS_ORIGIN: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
   RATE_LIMIT_MAX: parseNumber(process.env.RATE_LIMIT_MAX, 5),
-  RATE_LIMIT_WINDOW_MS: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 900000)
+  RATE_LIMIT_WINDOW_MS: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 900000),
+  COMPANY_NAME: process.env.COMPANY_NAME ?? 'Craft-Mart Inc.',
+  COMPANY_ADDRESS: process.env.COMPANY_ADDRESS ?? '5035 Allendale Lane, Taneytown, MD 21787',
+  COMPANY_PHONE: process.env.COMPANY_PHONE ?? '(410)-751-9467',
+  COMPANY_WEBSITE: process.env.COMPANY_WEBSITE ?? 'www.craftmartinc.com'
 };

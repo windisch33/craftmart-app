@@ -3,8 +3,7 @@ import '../styles/common.css';
 import './Shops.css';
 import { shopService, type Shop } from '../services/shopService';
 import { useToast } from '../components/common/ToastProvider';
-import EmptyState from '../components/common/EmptyState';
-import { FactoryIcon, SearchIcon, CalendarIcon } from '../components/common/icons';
+import { FactoryIcon, CalendarIcon } from '../components/common/icons';
 import AccessibleModal from '../components/common/AccessibleModal';
 
 const Shops: React.FC = () => {
@@ -31,15 +30,7 @@ const Shops: React.FC = () => {
     transition: 'all 0.3s ease'
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    fontSize: '16px',
-    transition: 'all 0.2s ease',
-    outline: 'none'
-  };
+  // (removed unused inputStyle)
 
   const getStatusColor = (status: string) => {
     switch (status) {

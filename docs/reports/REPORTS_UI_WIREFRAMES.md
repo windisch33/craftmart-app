@@ -12,7 +12,7 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 
 1) Top of page
 - [Reports]                                      [ Date Range ▼ ] [ Export ▼ ]
-- Quick presets: [ Today ] [ This Week ] [ This Month ] [ Last Month ] [ Month ▼ ]
+- Quick presets (Month‑first): [ Month ▼ ] [ This Month ] [ Last Month ] [ Today ] [ This Week ] [ This Quarter ]
 - [ Search… ]  [ Salesman ▼ ] [ Customer ▼ ] [ State ▼ ] [ Grouping ▼ ] [ Density ▼ ] [ Refresh ]
 - ─────────────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 5) Table (Sales by Salesman)
 - Columns: Salesman | Invoices | Subtotal | Tax | Total | Avg Invoice
 - Rows: Jane Smith | 16 | $88,000.00 | $6,160.00 | $94,160.00 | $5,885.00
-- Interaction: clicking a row opens a side panel with an Invoice List (level 1) showing columns [Invoice # | Order # | Job Title | Customer | Subtotal | Tax | Total | Invoice Date]. Selecting an invoice opens a Job Items view (level 2) with [Section | Item | Qty | Unit Price | Line Total]. Export button respects current filters/view.
+ - Interaction: clicking a row opens a side panel with an Invoice List (level 1) showing columns [Invoice # | Order # | PO # | Job Title | Customer | Subtotal | Labor | Tax | Total | Invoice Date]. Selecting an invoice opens a Job Items view (level 2) with [Section | Item | Qty | Unit Price | Line Total]. Export button respects current filters/view.
 
 6) Table (Sales by Customer)
 - Columns: Customer | Invoices | Subtotal | Tax | Total | Last Invoice Date
@@ -42,12 +42,29 @@ This document sketches the desktop‑first, mobile‑compatible Reports UI witho
 - Rows: MD | 63 | $250,000.00 | $15,000.00 | 6.00%
 
 8) Table (Unpaid Invoices)
-- Columns: Invoice # | Order # | Customer | Salesman | Invoice Date | Due Date | Amount | Paid | Balance
-- Interaction: bulk select + Export CSV; row click shows Job Items for that invoice (with payment history sidebar).
+- Columns: Invoice # | Order # | PO # | Customer | Salesman | Invoice Date | Due Date | Amount | Paid | Balance
+- Interaction: Export CSV/PDF. No item-level pane.
 
 9) Table (AR Aging – customer level)
 - Columns: Customer | Current | 1–30 | 31–60 | 61–90 | >90 | Total | Invoices
 - Layout: allow Landscape for PDF; freeze Customer column on wide tables
+
+## Date Semantics
+- invoice_date: primary bucketing date for Sales/Tax; shown on invoice rows. Month view uses calendar months in business timezone via date_trunc('month', invoice_date). Business timezone: America/New_York (Eastern).
+- due_date: derived from invoice_date + terms; used for Aging buckets and overdue badges.
+- paid_date: when allocations fully cover total using the deposit cash receipt date (deposits.payment_date). If paid_date is null and today > due_date, mark as Overdue. If paid_date > due_date, mark as Paid Late.
+ 
+Month‑first UX
+- Default tab is Sales by Month with the Month picker in focus.
+- Month picker accepts YYYY‑MM typing and keyboard left/right to move months.
+- For multi‑month ranges, charts and tables display month labels as YYYY‑MM and include zero‑value months.
+
+## Frontend Summary Rows
+- For each report view, show summary cards above the table reflecting the current dataset:
+  - Sales (Month/Salesman/Customer): Invoices, Subtotal, Tax, Total
+  - Tax by State: Taxable, Non‑tax Labor, Tax, Effective Rate
+  - Unpaid: Amount, Paid, Balance
+  - Aging: Current, 1–30, 31–60, 61–90, >90, Invoices, Total
 
 ## Mobile Wireframes
 - Header collapses (Date Range becomes a sheet/dialog, Export in kebab menu). Month picker shows Month/Year selector for quick single‑month.

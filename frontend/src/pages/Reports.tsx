@@ -1,11 +1,63 @@
 import React, { useState } from 'react';
 import '../styles/common.css';
 import './Reports.css';
-import { BarChartIcon, MailIcon, FileIcon, DollarIcon, ClipboardIcon, UsersIcon } from '../components/common/icons';
+import ReportFilters from '../components/reports/ReportFilters';
+import { getSalesByMonth, downloadSalesByMonthCsv, downloadSalesByMonthPdf, getSalesBySalesman, getSalesByCustomer, downloadSalesBySalesmanCsv, downloadSalesBySalesmanPdf, downloadSalesByCustomerCsv, downloadSalesByCustomerPdf, getTaxByState, downloadTaxByStateCsv, downloadTaxByStatePdf, getUnpaid, getAging, downloadUnpaidCsv, downloadUnpaidPdf, downloadAgingCsv, downloadAgingPdf, getInvoices } from '../services/reportsService';
+import type { SalesByMonthRow, SalesGroupRow, InvoiceRow } from '../services/reportsService';
+// Filters moved into ReportFilters component
+import InvoiceModal from '../components/reports/InvoiceModal';
+import SalesByMonthSection from '../components/reports/sections/SalesByMonthSection';
+import SalesBySalesmanSection from '../components/reports/sections/SalesBySalesmanSection';
+import SalesByCustomerSection from '../components/reports/sections/SalesByCustomerSection';
+import TaxByStateSection from '../components/reports/sections/TaxByStateSection';
+import UnpaidSection from '../components/reports/sections/UnpaidSection';
+import ARAgingSection from '../components/reports/sections/ARAgingSection';
+
+import salesmanService from '../services/salesmanService';
+import customerService from '../services/customerService';
+import type { Salesman } from '../services/salesmanService';
+import type { Customer } from '../services/customerService';
 
 const Reports: React.FC = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [reportType, setReportType] = useState('sales');
+  const [loading, setLoading] = useState(false);
+  const [salesRows, setSalesRows] = useState<SalesByMonthRow[] | null>(null);
+  const [taxRows, setTaxRows] = useState<any[] | null>(null);
+  const [unpaidRows, setUnpaidRows] = useState<any[] | null>(null);
+  const [agingRows, setAgingRows] = useState<any[] | null>(null);
+  const [salesmanRows, setSalesmanRows] = useState<SalesGroupRow[] | null>(null);
+  const [customerRows, setCustomerRows] = useState<SalesGroupRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [month, setMonth] = useState<string>('');
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<InvoiceRow[] | null>(null);
+  const [invoiceContext, setInvoiceContext] = useState<any | null>(null);
+  // Removed item details per requirement
+  const [presets, setPresets] = useState<any[]>(() => {
+    try { return JSON.parse(localStorage.getItem('reportPresets') || '[]'); } catch { return []; }
+  });
+  const [presetName, setPresetName] = useState('');
+  const [salesmen, setSalesmen] = useState<Salesman[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedSalesmanId, setSelectedSalesmanId] = useState<string>('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>('');
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const [ss, cc] = await Promise.all([
+          salesmanService.getAllSalesmen(true),
+          customerService.getAllCustomers(),
+        ]);
+        setSalesmen(ss);
+        setCustomers(cc);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
 
 
   const cardStyle = {
@@ -17,338 +69,242 @@ const Reports: React.FC = () => {
     transition: 'all 0.3s ease'
   };
 
+  // (removed unused inputStyle)
 
+  // Helpers moved to components/reports/utils
 
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 16px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    fontSize: '16px',
-    transition: 'all 0.2s ease',
-    outline: 'none'
-  };
-
-  // Sample report data
-  const recentReports = [
-    {
-      id: 1,
-      type: 'Sales',
-      dateRange: '2024-01-01 to 2024-01-31',
-      totalRevenue: '$48,250',
-      generatedDate: '2024-02-01',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      type: 'Tax',
-      dateRange: '2024-Q1',
-      totalRevenue: '$142,750',
-      generatedDate: '2024-04-01',
-      status: 'completed'
-    },
-    {
-      id: 3,
-      type: 'Sales',
-      dateRange: '2024-02-01 to 2024-02-29',
-      totalRevenue: '$52,100',
-      generatedDate: '2024-03-01',
-      status: 'completed'
-    }
-  ];
+  // (removed placeholder recentReports)
 
   return (
     <div className="container">
-      {/* Header */}
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1 className="gradient-title">Reports</h1>
-          <p className="page-subtitle">Generate sales and tax reports for accounting</p>
-        </div>
-      </div>
-
-      {/* Report Generation Section */}
-      <div style={{...cardStyle, marginBottom: '32px'}}>
-        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            borderRadius: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '20px'
-          }}>
-            <BarChartIcon />
-          </div>
-          <div>
-            <h2 style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0}}>Generate New Report</h2>
-            <p style={{fontSize: '14px', color: '#6b7280', margin: 0}}>Create custom reports for any date range</p>
-          </div>
-        </div>
-
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px'}}>
-          {/* Report Type Selection */}
-          <div>
-            <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px'}}>
-              Report Type
-            </label>
-            <select
-              value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-            >
-              <option value="sales">Sales Report</option>
-              <option value="tax">Tax Report</option>
-              <option value="customer">Customer Summary</option>
-              <option value="job">Job Analysis</option>
-            </select>
-          </div>
-
-          {/* Date Range */}
-          <div>
-            <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px'}}>
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-              style={inputStyle}
-              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-            />
-          </div>
-
-          <div>
-            <label style={{display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px'}}>
-              End Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-              style={inputStyle}
-              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-              onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-            />
-          </div>
-        </div>
-
-        <div style={{display: 'flex', gap: '12px', marginTop: '24px'}}>
-          <button className="btn btn-primary">
-            <span className="nav-icon"><BarChartIcon /></span>
-            Generate Report
-          </button>
-          <button style={{
-            padding: '12px 24px',
-            border: '2px solid #e5e7eb',
-            borderRadius: '12px',
-            backgroundColor: 'white',
-            cursor: 'pointer',
-            fontWeight: '600',
-            transition: 'all 0.2s ease'
-          }} onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#10b981';
-            e.currentTarget.style.backgroundColor = '#f0fdf4';
-          }} onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e5e7eb';
-            e.currentTarget.style.backgroundColor = 'white';
-          }}>
-              <span style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-              <span className="nav-icon"><MailIcon /></span>
-              Email Report
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Report Cards */}
-      <div style={{marginBottom: '32px'}}>
-        <h3 style={{fontSize: '24px', fontWeight: 'bold', color: '#1f2937', marginBottom: '16px'}}>Quick Reports</h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '24px'
-        }}>
-          {[
-            {
-              title: 'Monthly Sales',
-              description: 'Current month sales performance',
-              iconElement: <DollarIcon />,
-              color: '#10b981',
-              action: 'Generate Now'
-            },
-            {
-              title: 'Quarterly Tax',
-              description: 'Q1 2024 tax summary',
-              iconElement: <ClipboardIcon />,
-              color: 'var(--color-primary)',
-              action: 'Generate Now'
-            },
-            {
-              title: 'Customer Report',
-              description: 'Top customers by revenue',
-              iconElement: <UsersIcon />,
-              color: '#8b5cf6',
-              action: 'Generate Now'
-            },
-            {
-              title: 'Job Analysis',
-              description: 'Job completion rates',
-              iconElement: <BarChartIcon />,
-              color: '#f59e0b',
-              action: 'Generate Now'
+      <ReportFilters
+        reportType={reportType} setReportType={setReportType}
+        dateRange={dateRange} setDateRange={setDateRange}
+        month={month} setMonth={setMonth}
+        salesmen={salesmen} customers={customers}
+        selectedSalesmanId={selectedSalesmanId} setSelectedSalesmanId={setSelectedSalesmanId}
+        selectedCustomerId={selectedCustomerId} setSelectedCustomerId={setSelectedCustomerId}
+        selectedState={selectedState} setSelectedState={setSelectedState}
+        presets={presets} setPresets={setPresets}
+        presetName={presetName} setPresetName={setPresetName}
+        loading={loading}
+        onGenerate={async () => {
+          try {
+            setError(null); setLoading(true);
+            setSalesRows(null); setTaxRows(null); setUnpaidRows(null); setAgingRows(null); setSalesmanRows(null); setCustomerRows(null);
+            if (reportType === 'sales') {
+              const params: any = {};
+              if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+              if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+              if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+              if (selectedState) params.state = selectedState;
+              const data = await getSalesByMonth(params);
+              setSalesRows(data);
+            } else if (reportType === 'salesman') {
+              const params: any = {};
+              if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+              if (selectedState) params.state = selectedState;
+              if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+              const data = await getSalesBySalesman(params);
+              setSalesmanRows(data);
+            } else if (reportType === 'customer') {
+              const params: any = {};
+              if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+              if (selectedState) params.state = selectedState;
+              if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+              const data = await getSalesByCustomer(params);
+              setCustomerRows(data);
+            } else if (reportType === 'tax') {
+              const params: any = {};
+              if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+              const data = await getTaxByState(params);
+              setTaxRows(data);
+            } else if (reportType === 'unpaid') {
+              const params: any = { asOf: new Date().toISOString().slice(0,10) };
+              if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+              if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+              if (selectedState) params.state = selectedState;
+              const data = await getUnpaid(params);
+              setUnpaidRows(data);
+            } else if (reportType === 'aging') {
+              const params: any = { asOf: new Date().toISOString().slice(0,10) };
+              if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+              if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+              if (selectedState) params.state = selectedState;
+              const data = await getAging(params);
+              setAgingRows(data);
             }
-          ].map((report, index) => (
-            <div
-              key={index}
-              style={{
-                ...cardStyle,
-                cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 10px 60px -15px rgba(0, 0, 0, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.04)';
-              }}
-            >
-              <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px'}}>
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  backgroundColor: report.color + '20',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px'
-                }}>
-                  {report.iconElement}
-                </div>
-                <div>
-                  <h4 style={{fontSize: '18px', fontWeight: 'bold', color: '#1f2937', margin: 0}}>
-                    {report.title}
-                  </h4>
-                  <p style={{fontSize: '14px', color: '#6b7280', margin: 0}}>
-                    {report.description}
-                  </p>
-                </div>
-              </div>
-              <button style={{
-                width: '100%',
-                padding: '12px 16px',
-                backgroundColor: report.color,
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                 onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
-                {report.action}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+          } catch (e: any) {
+            setError(e?.response?.data?.error || e?.message || 'Failed to load report');
+          } finally {
+            setLoading(false);
+          }
+        }}
+      />
 
-      {/* Recent Reports */}
-      <div style={cardStyle}>
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px'}}>
-          <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}>
-              <FileIcon />
-            </div>
-            <div>
-              <h3 style={{fontSize: '20px', fontWeight: 'bold', color: '#1f2937', margin: 0}}>Recent Reports</h3>
-              <p style={{fontSize: '14px', color: '#6b7280', margin: 0}}>Previously generated reports</p>
-            </div>
-          </div>
-          <button style={{color: 'var(--color-primary)', fontWeight: '500', fontSize: '14px', border: 'none', background: 'none', cursor: 'pointer'}}>
-            View all
-          </button>
-        </div>
+      {/* Sales by Month Results */}
+      {salesRows && reportType === 'sales' && (
+        <SalesByMonthSection
+          rows={salesRows}
+          onDownloadCsv={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; }
+            else { params.month = month || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`; }
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            if (selectedState) params.state = selectedState;
+            await downloadSalesByMonthCsv(params);
+          }}
+          onDownloadPdf={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; }
+            else { params.month = month || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`; }
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            if (selectedState) params.state = selectedState;
+            await downloadSalesByMonthPdf(params);
+          }}
+          onOpenInvoicesForMonth={async (m)=>{
+            const ctx:any = {};
+            if (selectedSalesmanId) ctx.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) ctx.customerId = Number(selectedCustomerId);
+            if (selectedState) ctx.state = selectedState;
+            const rows = await getInvoices({ month: m, ...ctx });
+            setInvoiceContext({ title:`Invoices — ${m}`, params:{ month: m, ...ctx } });
+            setInvoiceRows(rows); setInvoiceModalOpen(true);
+          }}
+        />
+      )}
 
-        <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-          {recentReports.map((report) => (
-            <div key={report.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px',
-              backgroundColor: '#f8fafc',
-              borderRadius: '12px',
-              border: '1px solid #e5e7eb',
-              transition: 'all 0.2s ease'
-            }} onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f1f5f9';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }} onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#f8fafc';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-            }}>
-              <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: report.type === 'Sales' ? '#dbeafe' : '#d1fae5',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px'
-                }}>
-                  {report.type === 'Sales' ? <DollarIcon /> : <ClipboardIcon />}
-                </div>
-                <div>
-                  <div style={{fontWeight: '500', color: '#1f2937', fontSize: '16px'}}>
-                    {report.type} Report
-                  </div>
-                  <div style={{fontSize: '14px', color: '#6b7280'}}>
-                    {report.dateRange} • {report.totalRevenue}
-                  </div>
-                </div>
-              </div>
-              <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                <span style={{fontSize: '12px', color: '#6b7280'}}>
-                  Generated {report.generatedDate}
-                </span>
-                <button style={{
-                  padding: '8px 12px',
-                  backgroundColor: 'var(--color-primary)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'}
-                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}>
-                  Download
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Sales by Salesman */}
+      {salesmanRows && reportType === 'salesman' && (
+        <SalesBySalesmanSection
+          rows={salesmanRows}
+          onDownloadCsv={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            if (selectedState) params.state = selectedState;
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            await downloadSalesBySalesmanCsv(params);
+          }}
+          onDownloadPdf={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            if (selectedState) params.state = selectedState;
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            await downloadSalesBySalesmanPdf(params);
+          }}
+          onOpenInvoicesForSalesman={async (r)=>{
+            const params:any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            params.salesmanId = r.key_id ?? undefined;
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            const rows = await getInvoices(params);
+            setInvoiceContext({ title:`Invoices — ${r.key_name || r.key_id}`, params });
+            setInvoiceRows(rows); setInvoiceModalOpen(true);
+          }}
+        />
+      )}
+
+      {/* Sales by Customer */}
+      {customerRows && reportType === 'customer' && (
+        <SalesByCustomerSection
+          rows={customerRows}
+          onDownloadCsv={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            if (selectedState) params.state = selectedState;
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            await downloadSalesByCustomerCsv(params);
+          }}
+          onDownloadPdf={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            if (selectedState) params.state = selectedState;
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            await downloadSalesByCustomerPdf(params);
+          }}
+          onOpenInvoicesForCustomer={async (r)=>{
+            const params:any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            params.customerId = r.key_id ?? undefined;
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            const rows = await getInvoices(params);
+            setInvoiceContext({ title:`Invoices — ${r.key_name || r.key_id}`, params });
+            setInvoiceRows(rows); setInvoiceModalOpen(true);
+          }}
+        />
+      )}
+      
+      {/* Tax by State Results */}
+      {taxRows && reportType === 'tax' && (
+        <TaxByStateSection
+          rows={taxRows as any}
+          onDownloadCsv={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            await downloadTaxByStateCsv(params);
+          }}
+          onDownloadPdf={async ()=>{
+            const params: any = {};
+            if (dateRange.start && dateRange.end) { params.start = dateRange.start; params.end = dateRange.end; } else if (month) { params.month = month; }
+            await downloadTaxByStatePdf(params);
+          }}
+        />
+      )}
+
+      {/* Unpaid */}
+      {unpaidRows && reportType === 'unpaid' && (
+        <UnpaidSection
+          rows={unpaidRows as any}
+          onDownloadCsv={async ()=>{
+            const params: any = { asOf: new Date().toISOString().slice(0,10) };
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            if (selectedState) params.state = selectedState;
+            await downloadUnpaidCsv(params);
+          }}
+          onDownloadPdf={async ()=>{
+            const params: any = { asOf: new Date().toISOString().slice(0,10) };
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            if (selectedState) params.state = selectedState;
+            await downloadUnpaidPdf(params);
+          }}
+        />
+      )}
+
+      {/* Aging */}
+      {agingRows && reportType === 'aging' && (
+        <ARAgingSection
+          rows={agingRows as any}
+          onDownloadCsv={async ()=>{
+            const params: any = { asOf: new Date().toISOString().slice(0,10) };
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            if (selectedState) params.state = selectedState;
+            await downloadAgingCsv(params);
+          }}
+          onDownloadPdf={async ()=>{
+            const params: any = { asOf: new Date().toISOString().slice(0,10) };
+            if (selectedSalesmanId) params.salesmanId = Number(selectedSalesmanId);
+            if (selectedCustomerId) params.customerId = Number(selectedCustomerId);
+            if (selectedState) params.state = selectedState;
+            await downloadAgingPdf(params);
+          }}
+        />
+      )}
+
+      {/* Invoices Drill-down Modal */}
+      <InvoiceModal open={invoiceModalOpen} onClose={()=> setInvoiceModalOpen(false)} title={invoiceContext?.title || 'Invoices'} params={invoiceContext?.params || {}} rows={invoiceRows} />
+
+      {error && (
+        <div style={{...cardStyle, marginBottom:'32px', color:'#b91c1c', background:'#fef2f2', border:'1px solid #fecaca'}}>
+          {error}
         </div>
-      </div>
+      )}
+
+      {/* Quick Reports and Recent Reports removed */}
     </div>
   );
 };
