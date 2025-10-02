@@ -15,10 +15,10 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
     let params: any[] = [];
     
     if (recent === 'true') {
-      // Get last 10 visited customers
+      // Get last 10 visited customers (no is_active column in current schema)
       query = `
         SELECT * FROM customers 
-        WHERE last_visited_at IS NOT NULL AND is_active = TRUE
+        WHERE last_visited_at IS NOT NULL
         ORDER BY last_visited_at DESC 
         LIMIT 10
       `;
@@ -30,7 +30,7 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
       const pageSizeRaw = Math.max(1, Number.parseInt(String(pageSizeParam || '25'), 10));
       const pageSize = Math.min(100, pageSizeRaw);
 
-      const where: string[] = ['is_active = TRUE'];
+      const where: string[] = [];
       if (stateFilter) { params.push(stateFilter.toUpperCase()); where.push(`state = $${params.length}`); }
       if (hasEmail !== undefined) {
         if (hasEmail) { where.push("(email IS NOT NULL AND email <> '')"); }
@@ -50,8 +50,8 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
       const listRes = await pool.query(listSql, [...params, pageSize, offset]);
       return res.json({ data: listRes.rows, page, pageSize, total, totalPages });
     } else {
-      // Default to all ACTIVE customers ordered by name (legacy behavior)
-      query = 'SELECT * FROM customers WHERE is_active = TRUE ORDER BY name ASC';
+      // Default to all customers ordered by name
+      query = 'SELECT * FROM customers ORDER BY name ASC';
       const result = await pool.query(query, params);
       return res.json(result.rows);
     }
@@ -205,7 +205,7 @@ export const searchCustomers = async (req: Request, res: Response, next: NextFun
         email ILIKE $1 OR
         city ILIKE $1 OR
         state ILIKE $1
-      ) AND is_active = TRUE
+      )
       ORDER BY 
         CASE 
           WHEN name ILIKE $2 THEN 1

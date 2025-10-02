@@ -15,6 +15,9 @@ validateEnvironment();
 
 const app = express();
 
+// Respect X-Forwarded-* headers when behind Nginx/Cloudflared to satisfy rate limiter and logging
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({
   origin: config.CORS_ORIGIN.split(',').map(origin => origin.trim()),
