@@ -3,7 +3,13 @@ import pool from '../config/database';
 
 export const getAllCustomers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { recent } = req.query;
+    const { recent } = req.query as Record<string, string | undefined>;
+    const pageParam = (req.query as any).page;
+    const pageSizeParam = (req.query as any).pageSize || (req.query as any).page_size || (req.query as any).limit;
+    const sortBy = ((req.query as any).sortBy || 'name').toString();
+    const sortDir = ((req.query as any).sortDir || 'asc').toString().toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+    const stateFilter = (req.query as any).state ? String((req.query as any).state) : undefined;
+    const hasEmail = (req.query as any).hasEmail ? String((req.query as any).hasEmail).toLowerCase() === 'true' : undefined;
     
     let query: string;
     let params: any[] = [];
@@ -16,13 +22,37 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
         ORDER BY last_visited_at DESC 
         LIMIT 10
       `;
+    } else if (pageParam || pageSizeParam) {
+      // Paginated list
+      const page = Math.max(1, Number.parseInt(String(pageParam || '1'), 10));
+      const pageSizeRaw = Math.max(1, Number.parseInt(String(pageSizeParam || '25'), 10));
+      const pageSize = Math.min(100, pageSizeRaw);
+
+      const where: string[] = [];
+      if (stateFilter) { params.push(stateFilter.toUpperCase()); where.push(`state = $${params.length}`); }
+      if (hasEmail !== undefined) {
+        if (hasEmail) { where.push("(email IS NOT NULL AND email <> '')"); }
+        else { where.push("(email IS NULL OR email = '')"); }
+      }
+      const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+      // Count
+      const countSql = `SELECT COUNT(*) AS cnt FROM customers ${whereSql}`;
+      const countRes = await pool.query(countSql, params);
+      const total = Number(countRes.rows[0]?.cnt || 0);
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      const offset = (page - 1) * pageSize;
+
+      const allowedSort = sortBy === 'created_at' ? 'created_at' : 'name';
+      const listSql = `SELECT * FROM customers ${whereSql} ORDER BY ${allowedSort} ${sortDir} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      const listRes = await pool.query(listSql, [...params, pageSize, offset]);
+      return res.json({ data: listRes.rows, page, pageSize, total, totalPages });
     } else {
-      // Default to all customers ordered by name
+      // Default to all customers ordered by name (legacy behavior)
       query = 'SELECT * FROM customers ORDER BY name ASC';
+      const result = await pool.query(query, params);
+      return res.json(result.rows);
     }
-    
-    const result = await pool.query(query, params);
-    res.json(result.rows);
   } catch (error) {
     next(error);
   }
@@ -106,13 +136,19 @@ export const deleteCustomer = async (req: Request, res: Response, next: NextFunc
 
 export const searchCustomers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { q } = req.query;
+    const { q } = req.query as Record<string, string | undefined>;
     
     if (!q || typeof q !== 'string' || q.trim().length === 0) {
       return res.json([]);
     }
     
     const searchTerm = q.trim();
+    const limitParam = (req.query as any).limit;
+    const pageParam = (req.query as any).page;
+    const limitRaw = limitParam ? Number.parseInt(String(limitParam), 10) : 50;
+    const limit = Math.min(100, Math.max(1, limitRaw));
+    const page = Math.max(1, Number.parseInt(String(pageParam || '1'), 10));
+    const offset = (page - 1) * limit;
     const query = `
       SELECT * FROM customers 
       WHERE 
@@ -127,10 +163,9 @@ export const searchCustomers = async (req: Request, res: Response, next: NextFun
           ELSE 3
         END,
         name ASC
-      LIMIT 50
+      LIMIT $3 OFFSET $4
     `;
-    
-    const result = await pool.query(query, [`%${searchTerm}%`, `${searchTerm}%`]);
+    const result = await pool.query(query, [`%${searchTerm}%`, `${searchTerm}%`, limit, offset]);
     res.json(result.rows);
   } catch (error) {
     next(error);

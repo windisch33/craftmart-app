@@ -12,6 +12,9 @@ import { useToast } from '../components/common/ToastProvider';
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -24,20 +27,22 @@ const Customers: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  // Load recent customers on component mount
+  // Load paginated customers by default
   useEffect(() => {
-    loadRecentCustomers();
+    void loadPagedCustomers(1);
   }, []);
 
-  const loadRecentCustomers = async () => {
+  const loadPagedCustomers = async (p: number) => {
     try {
       setError(null);
       setLoading(true);
-      const recentCustomers = await customerService.getRecentCustomers();
-      setCustomers(recentCustomers);
+      const resp = await customerService.getCustomersPaged({ page: p, pageSize });
+      setCustomers(resp.data);
+      setPage(resp.page);
+      setTotalPages(resp.totalPages);
     } catch (err: any) {
-      setError(err.message || 'Failed to load recent customers');
-      console.error('Error loading recent customers:', err);
+      setError(err.message || 'Failed to load customers');
+      console.error('Error loading customers:', err);
     } finally {
       setLoading(false);
     }
@@ -47,9 +52,9 @@ const Customers: React.FC = () => {
     setSearchTerm(query);
     
     if (!query.trim()) {
-      // If search is cleared, show recent customers again
+      // If search is cleared, show paged customers again
       setIsSearching(false);
-      await loadRecentCustomers();
+      await loadPagedCustomers(1);
       return;
     }
 
@@ -58,6 +63,7 @@ const Customers: React.FC = () => {
       setIsSearching(true);
       const searchResults = await customerService.searchCustomers(query);
       setCustomers(searchResults);
+      setPage(1); setTotalPages(1);
     } catch (err: any) {
       setError(err.message || 'Search failed');
     }
@@ -91,7 +97,7 @@ const Customers: React.FC = () => {
         showToast('Customer created successfully', { type: 'success' });
       }
       if (!isSearching) {
-        await loadRecentCustomers();
+        await loadPagedCustomers(1);
       }
       setIsFormOpen(false);
       setEditingCustomer(null);
@@ -167,7 +173,7 @@ const Customers: React.FC = () => {
           <p className="search-status">Showing search results for "{searchTerm}"</p>
         )}
         {!isSearching && customers.length > 0 && (
-          <p className="search-status">Recently visited customers</p>
+          <p className="search-status">All customers (page {page} of {totalPages})</p>
         )}
       </div>
 
@@ -249,6 +255,14 @@ const Customers: React.FC = () => {
           description={isSearching ? 'Try adjusting your search terms or add a new customer.' : 'Start searching for customers or add a new one to get started.'}
           action={!isSearching ? { label: 'Add Your First Customer', onClick: handleAddCustomer } : undefined}
         />
+      )}
+
+      {/* Pagination controls (only when not searching) */}
+      {!isSearching && totalPages > 1 && (
+        <div style={{display:'flex', gap:'8px', justifyContent:'center', marginTop:'16px'}}>
+          <button className="btn btn-secondary" disabled={page<=1 || loading} onClick={()=> loadPagedCustomers(page-1)}>Prev</button>
+          <button className="btn btn-secondary" disabled={page>=totalPages || loading} onClick={()=> loadPagedCustomers(page+1)}>Next</button>
+        </div>
       )}
 
       {/* Customer Form Modal */}

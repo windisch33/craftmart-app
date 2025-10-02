@@ -120,11 +120,11 @@ const JobFormInner: React.FC<JobFormProps> = ({
   const loadData = async () => {
     try {
       setLoading(true);
-      const [customersData, salesmenData] = await Promise.all([
-        customerService.getAllCustomers(),
+      const [recentCustomers, salesmenData] = await Promise.all([
+        customerService.getRecentCustomers(),
         salesmanService.getAllSalesmen()
       ]);
-      setCustomers(customersData);
+      setCustomers(recentCustomers);
       setSalesmen(salesmenData);
     } catch (error) {
       console.error('Error loading form data:', error);

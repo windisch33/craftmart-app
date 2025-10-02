@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Project as Job } from '../../services/projectService';
 import type { Customer } from '../../services/customerService';
+import customerService from '../../services/customerService';
 import AccessibleModal from '../common/AccessibleModal';
 import CustomerForm from '../customers/CustomerForm';
 
@@ -26,6 +27,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     name: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [localCustomers, setLocalCustomers] = useState<Customer[]>(customers);
+  const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
 
@@ -45,6 +49,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }
     setErrors({});
   }, [project, isOpen]);
+
+  useEffect(() => { setLocalCustomers(customers); }, [customers]);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (!customerQuery.trim()) return;
+      try {
+        setSearching(true);
+        const results = await customerService.searchCustomers(customerQuery.trim());
+        setLocalCustomers(results);
+      } catch (_e) { /* ignore */ } finally { setSearching(false); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [customerQuery]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -132,6 +150,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                     Customer <span className="required">*</span>
                   </label>
                   <div className="select-with-add">
+                    <input
+                      type="text"
+                      placeholder="Search customer..."
+                      value={customerQuery}
+                      onChange={(e)=> setCustomerQuery(e.target.value)}
+                      className="form-control"
+                      style={{marginBottom:'8px'}}
+                      disabled={loading}
+                    />
                     <select
                       id="customer_id"
                       value={formData.customer_id}
@@ -140,13 +167,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                       disabled={loading}
                     >
                       <option value="">Select a customer...</option>
-                      {customers.map(customer => (
+                      {localCustomers.map(customer => (
                         <option key={customer.id} value={customer.id}>
                           {customer.name}
                           {customer.city && customer.state && ` (${customer.city}, ${customer.state})`}
                         </option>
                       ))}
                     </select>
+                    {searching && <small className="help-text">Searching…</small>}
                     <button
                       type="button"
                       className="add-button"

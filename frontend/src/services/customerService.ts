@@ -58,6 +58,25 @@ class CustomerService {
     }
   }
 
+  async getCustomersPaged(params: { page?: number; pageSize?: number; state?: string; hasEmail?: boolean; sortBy?: 'name' | 'created_at'; sortDir?: 'asc' | 'desc'; }): Promise<{ data: Customer[]; page: number; pageSize: number; total: number; totalPages: number; }> {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/customers`, {
+        headers: this.getAuthHeaders(),
+        params: {
+          page: params.page ?? 1,
+          pageSize: params.pageSize ?? 25,
+          state: params.state,
+          hasEmail: params.hasEmail,
+          sortBy: params.sortBy ?? 'name',
+          sortDir: params.sortDir ?? 'asc',
+        }
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || 'Failed to fetch customers');
+    }
+  }
+
   async getCustomerById(id: number): Promise<Customer> {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/customers/${id}`, {
@@ -115,7 +134,7 @@ class CustomerService {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/customers/search`, {
         headers: this.getAuthHeaders(),
-        params: { q: query }
+        params: { q: query, limit: 20, page: 1 }
       });
       return response.data;
     } catch (error: any) {

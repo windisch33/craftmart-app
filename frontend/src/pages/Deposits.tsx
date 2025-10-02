@@ -63,7 +63,7 @@ const Deposits: React.FC = () => {
 
   const loadCustomers = useCallback(async () => {
     try {
-      const data = await customerService.getAllCustomers();
+      const data = await customerService.getRecentCustomers();
       setCustomers(data);
     } catch (err) {
       console.error('Failed to load customers', err);
