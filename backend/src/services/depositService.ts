@@ -332,44 +332,103 @@ const validateAllocations = async (
   allocations: AllocationInput[],
   maxAllocationAmount: number
 ) => {
+  // Basic amount validation and aggregate requested total
   let allocationTotal = 0;
-
   for (const allocation of allocations) {
     if (allocation.amount <= 0) {
       throw new DepositServiceError(400, 'Allocation amount must be greater than zero');
     }
-
     allocationTotal += allocation.amount;
-
-  const jobItemResult = await client.query(
-    `SELECT job_id, customer_id
-     FROM job_items
-     WHERE id = $1
-     FOR SHARE`,
-    [allocation.jobItemId]
-  );
-
-  if (jobItemResult.rows.length === 0) {
-    throw new DepositServiceError(400, `Job item ${allocation.jobItemId} not found`, 'INVALID_JOB_ITEM');
   }
 
-  const { job_id: jobIdForItem, customer_id: customerForItem } = jobItemResult.rows[0];
-
-  if (jobIdForItem !== allocation.jobId) {
-    throw new DepositServiceError(400, `Job item ${allocation.jobItemId} does not belong to job ${allocation.jobId}`, 'INVALID_JOB_ITEM');
-  }
-
-  if (customerForItem !== customerId) {
-    throw new DepositServiceError(400, `Job item ${allocation.jobItemId} does not belong to the specified customer`, 'INVALID_JOB_ITEM');
-  }
-}
-
-  if (allocationTotal > maxAllocationAmount) {
+  // Ensure the total requested does not exceed the available amount on the deposit
+  if (allocationTotal > maxAllocationAmount + MONEY_EPSILON) {
     throw new DepositServiceError(
       400,
       `Cannot allocate ${allocationTotal.toFixed(2)}. Total exceeds available amount ${maxAllocationAmount.toFixed(2)}`,
       'OVER_ALLOCATION'
     );
+  }
+
+  // Build per-item aggregates for validation (handles duplicate entries for same item within one request)
+  const byItem = new Map<number, { jobId: number; requested: number }>();
+  for (const a of allocations) {
+    const entry = byItem.get(a.jobItemId) ?? { jobId: a.jobId, requested: 0 };
+    entry.requested += a.amount;
+    byItem.set(a.jobItemId, entry);
+  }
+
+  const jobItemIds = Array.from(byItem.keys());
+  if (jobItemIds.length === 0) return;
+
+  // Lock the referenced job items for share to reduce race conditions
+  // Also pull customer_id, job_id, and total_amount (if the column exists)
+  const columnState = await getJobItemColumnState(client);
+
+  const selectTotalAmount = columnState.totalAmount ? 'ji.total_amount' : 'NULL::numeric';
+
+  const { rows } = await client.query(
+    `WITH alloc AS (
+       SELECT job_item_id, COALESCE(SUM(amount), 0) AS allocated
+       FROM deposit_allocations
+       WHERE job_item_id = ANY($1)
+       GROUP BY job_item_id
+     )
+     SELECT ji.id,
+            ji.job_id,
+            ji.customer_id,
+            ${selectTotalAmount} AS total_amount,
+            COALESCE(a.allocated, 0) AS allocated
+     FROM job_items ji
+     LEFT JOIN alloc a ON a.job_item_id = ji.id
+     WHERE ji.id = ANY($1)
+     FOR SHARE`,
+    [jobItemIds]
+  );
+
+  // Build lookup for fetched items
+  interface ItemRow {
+    id: number;
+    job_id: number;
+    customer_id: number;
+    total_amount: string | null;
+    allocated: string | null;
+  }
+  const itemsById = new Map<number, ItemRow>();
+  for (const r of rows as ItemRow[]) {
+    itemsById.set(r.id, r);
+  }
+
+  // Validate each requested item exists and belongs to the right job/customer
+  for (const [jobItemId, { jobId, requested }] of byItem.entries()) {
+    const row = itemsById.get(jobItemId);
+    if (!row) {
+      throw new DepositServiceError(400, `Job item ${jobItemId} not found`, 'INVALID_JOB_ITEM');
+    }
+
+    if (row.job_id !== jobId) {
+      throw new DepositServiceError(400, `Job item ${jobItemId} does not belong to job ${jobId}`, 'INVALID_JOB_ITEM');
+    }
+
+    if (row.customer_id !== customerId) {
+      throw new DepositServiceError(400, `Job item ${jobItemId} does not belong to the specified customer`, 'INVALID_JOB_ITEM');
+    }
+
+    // Per-item cap: only enforce if job_items.total_amount exists and is > 0
+    if (columnState.totalAmount) {
+      const itemTotal = Number(row.total_amount ?? 0);
+      if (itemTotal > 0) {
+        const alreadyAllocated = Number(row.allocated ?? 0);
+        if (alreadyAllocated + requested > itemTotal + MONEY_EPSILON) {
+          const remaining = Math.max(itemTotal - alreadyAllocated, 0).toFixed(2);
+          throw new DepositServiceError(
+            400,
+            `Cannot allocate ${requested.toFixed(2)} to item ${jobItemId}. Remaining balance is ${remaining}.`,
+            'OVER_ALLOCATION'
+          );
+        }
+      }
+    }
   }
 };
 
@@ -495,7 +554,8 @@ export const createDeposit = async (input: CreateDepositInput): Promise<DepositS
     }
 
     if (error.code === '23514') {
-      throw new DepositServiceError(400, 'Total allocations exceed deposit amount', 'OVER_ALLOCATION');
+      // Preserve the underlying database message for clarity (may be deposit-level or item-level cap)
+      throw new DepositServiceError(400, String(error.message || 'Total allocations exceed allowed amount'), 'OVER_ALLOCATION');
     }
 
     if (error.code === '23503') {
@@ -704,7 +764,8 @@ export const allocateDeposit = async ({
     }
 
     if (error.code === '23514') {
-      throw new DepositServiceError(400, 'Total allocations exceed deposit amount', 'OVER_ALLOCATION');
+      // Preserve item/deposit cap violation message
+      throw new DepositServiceError(400, String(error.message || 'Total allocations exceed allowed amount'), 'OVER_ALLOCATION');
     }
 
     if (error.code === '23503') {

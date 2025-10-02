@@ -92,6 +92,7 @@ The CraftMart database contains **22 tables** organized into these categories:
 - `update_job_deposit_totals()` - Maintains job-level deposit totals
 - `check_allocation_total()` - Prevents deposit over-allocation
 - `validate_deposit_allocation_links()` - Ensures allocation data integrity
+- `check_item_allocation_total()` - Prevents allocating more than a job item's total amount (if `job_items.total_amount` exists)
 
 ### Data Integrity
 - Comprehensive foreign key relationships
