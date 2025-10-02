@@ -18,7 +18,7 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
       // Get last 10 visited customers
       query = `
         SELECT * FROM customers 
-        WHERE last_visited_at IS NOT NULL 
+        WHERE last_visited_at IS NOT NULL AND is_active = TRUE
         ORDER BY last_visited_at DESC 
         LIMIT 10
       `;
@@ -30,7 +30,7 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
       const pageSizeRaw = Math.max(1, Number.parseInt(String(pageSizeParam || '25'), 10));
       const pageSize = Math.min(100, pageSizeRaw);
 
-      const where: string[] = [];
+      const where: string[] = ['is_active = TRUE'];
       if (stateFilter) { params.push(stateFilter.toUpperCase()); where.push(`state = $${params.length}`); }
       if (hasEmail !== undefined) {
         if (hasEmail) { where.push("(email IS NOT NULL AND email <> '')"); }
@@ -50,8 +50,8 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
       const listRes = await pool.query(listSql, [...params, pageSize, offset]);
       return res.json({ data: listRes.rows, page, pageSize, total, totalPages });
     } else {
-      // Default to all customers ordered by name (legacy behavior)
-      query = 'SELECT * FROM customers ORDER BY name ASC';
+      // Default to all ACTIVE customers ordered by name (legacy behavior)
+      query = 'SELECT * FROM customers WHERE is_active = TRUE ORDER BY name ASC';
       const result = await pool.query(query, params);
       return res.json(result.rows);
     }
@@ -63,12 +63,8 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
 export const getCustomerById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    
-    // Update last_visited_at timestamp
-    await pool.query(
-      'UPDATE customers SET last_visited_at = NOW() WHERE id = $1',
-      [id]
-    );
+    // Update last_visited_at timestamp (no-op if archived)
+    await pool.query('UPDATE customers SET last_visited_at = NOW() WHERE id = $1 AND is_active = TRUE', [id]);
     
     // Get the updated customer data
     const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);
@@ -86,11 +82,36 @@ export const getCustomerById = async (req: Request, res: Response, next: NextFun
 export const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes } = req.body;
+    const normalized = {
+      name: name?.trim(),
+      address: address?.trim() || null,
+      city: city?.trim() || null,
+      state: state ? String(state).toUpperCase() : null,
+      zip_code: zip_code?.trim() || null,
+      phone: phone?.trim() || null,
+      mobile: mobile?.trim() || null,
+      fax: fax?.trim() || null,
+      email: email ? String(email).toLowerCase() : null,
+      accounting_email: accounting_email ? String(accounting_email).toLowerCase() : null,
+      notes: notes?.trim() || null,
+    };
     
     const result = await pool.query(
       `INSERT INTO customers (name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes]
+      [
+        normalized.name,
+        normalized.address,
+        normalized.city,
+        normalized.state,
+        normalized.zip_code,
+        normalized.phone,
+        normalized.mobile,
+        normalized.fax,
+        normalized.email,
+        normalized.accounting_email,
+        normalized.notes
+      ]
     );
     
     res.status(201).json(result.rows[0]);
@@ -103,12 +124,38 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
   try {
     const { id } = req.params;
     const { name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes } = req.body;
+    const normalized = {
+      name: name?.trim(),
+      address: address?.trim() || null,
+      city: city?.trim() || null,
+      state: state ? String(state).toUpperCase() : null,
+      zip_code: zip_code?.trim() || null,
+      phone: phone?.trim() || null,
+      mobile: mobile?.trim() || null,
+      fax: fax?.trim() || null,
+      email: email ? String(email).toLowerCase() : null,
+      accounting_email: accounting_email ? String(accounting_email).toLowerCase() : null,
+      notes: notes?.trim() || null,
+    };
     
     const result = await pool.query(
       `UPDATE customers SET name = $1, address = $2, city = $3, state = $4, zip_code = $5, 
        phone = $6, mobile = $7, fax = $8, email = $9, accounting_email = $10, notes = $11, updated_at = NOW()
        WHERE id = $12 RETURNING *`,
-      [name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes, id]
+      [
+        normalized.name,
+        normalized.address,
+        normalized.city,
+        normalized.state,
+        normalized.zip_code,
+        normalized.phone,
+        normalized.mobile,
+        normalized.fax,
+        normalized.email,
+        normalized.accounting_email,
+        normalized.notes,
+        id
+      ]
     );
     
     if (result.rows.length === 0) {
@@ -124,13 +171,13 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
 export const deleteCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM customers WHERE id = $1 RETURNING id', [id]);
+    const result = await pool.query('UPDATE customers SET is_active = FALSE, updated_at = NOW() WHERE id = $1 RETURNING id', [id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Customer not found' });
     }
     
-    res.json({ message: 'Customer deleted successfully' });
+    res.json({ message: 'Customer archived successfully' });
   } catch (error) {
     next(error);
   }
@@ -153,11 +200,12 @@ export const searchCustomers = async (req: Request, res: Response, next: NextFun
     const offset = (page - 1) * limit;
     const query = `
       SELECT * FROM customers 
-      WHERE 
+      WHERE ( 
         name ILIKE $1 OR
         email ILIKE $1 OR
         city ILIKE $1 OR
         state ILIKE $1
+      ) AND is_active = TRUE
       ORDER BY 
         CASE 
           WHEN name ILIKE $2 THEN 1
