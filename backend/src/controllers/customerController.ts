@@ -22,6 +22,8 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
         ORDER BY last_visited_at DESC 
         LIMIT 10
       `;
+      const result = await pool.query(query, params);
+      return res.json(result.rows);
     } else if (pageParam || pageSizeParam) {
       // Paginated list
       const page = Math.max(1, Number.parseInt(String(pageParam || '1'), 10));

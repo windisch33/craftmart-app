@@ -1,4 +1,4 @@
-import Joi from 'joi';
+// using existing Joi import at top of file
 
 // Email validation regex (RFC 5322 compliant)
 const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -247,3 +247,27 @@ export const {
   resetPassword: resetPasswordSchema,
   createCustomer: createCustomerSchema
 } = schemas;
+
+// Customer API validation (aligned to current API fields)
+import Joi from 'joi';
+
+const apiEmail = Joi.string()
+  .trim()
+  .email({ tlds: { allow: false } })
+  .max(255);
+
+export const createCustomerApiSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(255).required(),
+  address: Joi.string().trim().max(500).allow('', null),
+  city: Joi.string().trim().max(100).allow('', null),
+  state: Joi.string().trim().length(2).uppercase().allow('', null),
+  zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null),
+  phone: Joi.string().trim().max(50).allow('', null),
+  mobile: Joi.string().trim().max(50).allow('', null),
+  fax: Joi.string().trim().max(50).allow('', null),
+  email: apiEmail.allow('', null),
+  accounting_email: apiEmail.allow('', null),
+  notes: Joi.string().trim().max(2000).allow('', null)
+}).unknown(false);
+
+export const updateCustomerApiSchema = createCustomerApiSchema; 

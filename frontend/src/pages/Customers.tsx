@@ -15,6 +15,7 @@ const Customers: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [totalPages, setTotalPages] = useState(1);
+  const [viewMode, setViewMode] = useState<'recent' | 'all'>('recent');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -27,9 +28,9 @@ const Customers: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  // Load paginated customers by default
+  // Load recent customers by default
   useEffect(() => {
-    void loadPagedCustomers(1);
+    void loadRecentCustomers();
   }, []);
 
   const loadPagedCustomers = async (p: number) => {
@@ -48,13 +49,33 @@ const Customers: React.FC = () => {
     }
   };
 
+  const loadRecentCustomers = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+      const recentCustomers = await customerService.getRecentCustomers();
+      setCustomers(recentCustomers);
+      setPage(1);
+      setTotalPages(1);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load recent customers');
+      console.error('Error loading recent customers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearch = async (query: string) => {
     setSearchTerm(query);
     
     if (!query.trim()) {
-      // If search is cleared, show paged customers again
+      // If search is cleared, restore current view
       setIsSearching(false);
-      await loadPagedCustomers(1);
+      if (viewMode === 'recent') {
+        await loadRecentCustomers();
+      } else {
+        await loadPagedCustomers(1);
+      }
       return;
     }
 
@@ -97,7 +118,7 @@ const Customers: React.FC = () => {
         showToast('Customer created successfully', { type: 'success' });
       }
       if (!isSearching) {
-        await loadPagedCustomers(1);
+        if (viewMode === 'recent') { await loadRecentCustomers(); } else { await loadPagedCustomers(1); }
       }
       setIsFormOpen(false);
       setEditingCustomer(null);
@@ -156,6 +177,24 @@ const Customers: React.FC = () => {
         </div>
       </div>
 
+      {/* View toggle */}
+      <div style={{display:'flex', gap:'8px', marginBottom:'12px'}}>
+        <button
+          className={`btn ${viewMode==='recent' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={async ()=>{ setViewMode('recent'); setIsSearching(false); await loadRecentCustomers(); }}
+          disabled={loading || viewMode==='recent'}
+        >
+          Recent
+        </button>
+        <button
+          className={`btn ${viewMode==='all' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={async ()=>{ setViewMode('all'); setIsSearching(false); await loadPagedCustomers(1); }}
+          disabled={loading || viewMode==='all'}
+        >
+          All
+        </button>
+      </div>
+
       {/* Large Search Bar */}
       <div className="search-section sticky-controls">
         <div className="search-container-large">
@@ -173,7 +212,9 @@ const Customers: React.FC = () => {
           <p className="search-status">Showing search results for "{searchTerm}"</p>
         )}
         {!isSearching && customers.length > 0 && (
-          <p className="search-status">All customers (page {page} of {totalPages})</p>
+          viewMode === 'recent'
+            ? <p className="search-status">Recently visited customers</p>
+            : <p className="search-status">All customers (page {page} of {totalPages})</p>
         )}
       </div>
 
@@ -257,8 +298,8 @@ const Customers: React.FC = () => {
         />
       )}
 
-      {/* Pagination controls (only when not searching) */}
-      {!isSearching && totalPages > 1 && (
+      {/* Pagination controls (only when not searching and in All view) */}
+      {!isSearching && viewMode==='all' && totalPages > 1 && (
         <div style={{display:'flex', gap:'8px', justifyContent:'center', marginTop:'16px'}}>
           <button className="btn btn-secondary" disabled={page<=1 || loading} onClick={()=> loadPagedCustomers(page-1)}>Prev</button>
           <button className="btn btn-secondary" disabled={page>=totalPages || loading} onClick={()=> loadPagedCustomers(page+1)}>Next</button>
