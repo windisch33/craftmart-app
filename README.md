@@ -303,11 +303,20 @@ Developer notes:
 - `GET /api/salesmen/search` - Search salesmen by name
 
 ### **Products & Materials**
-- `GET /api/products` - Product catalog with type filtering (hanrail, landing_tread, rail_parts)
+- `GET /api/products` - Product catalog with type filtering (handrail, landing_tread, rail_parts)
 - `GET /api/products/handrails` - Handrail products with per-6-inch pricing
 - `GET /api/products/landing-treads` - Landing tread products with per-6-inch pricing  
 - `GET /api/products/rail-parts` - Rail parts products with base price + material multiplier
 - `GET /api/materials` - Material types with pricing multipliers
+
+#### Product API Validation
+- All product endpoints use Joi validation. Invalid requests return 400 with:
+  - `error`: "Validation failed"
+  - `message`: A primary error message
+  - `details`: Array of `{ field, message, value }`
+- Query validation for `GET /api/products` supports `type` = `handrail | landing_tread | rail_parts`.
+
+See docs/api/PRODUCTS.md for full payload specs and examples.
 
 ## 🚀 Production Deployment
 
