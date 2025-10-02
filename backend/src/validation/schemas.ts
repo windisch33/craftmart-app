@@ -1,3 +1,5 @@
+import Joi from 'joi';
+
 // using existing Joi import at top of file
 
 // Email validation regex (RFC 5322 compliant)
@@ -249,7 +251,6 @@ export const {
 } = schemas;
 
 // Customer API validation (aligned to current API fields)
-import Joi from 'joi';
 
 const apiEmail = Joi.string()
   .trim()
@@ -271,3 +272,59 @@ export const createCustomerApiSchema = Joi.object({
 }).unknown(false);
 
 export const updateCustomerApiSchema = createCustomerApiSchema; 
+
+// ============================================
+// Product API Schemas
+// ============================================
+
+// GET /api/products?type=...
+export const getProductsQuerySchema = Joi.object({
+  type: Joi.string().valid('handrail', 'landing_tread', 'rail_parts').optional()
+}).unknown(false);
+
+// Handrail product schemas
+export const createHandrailProductSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(255).required().messages({
+    'string.empty': 'Name is required'
+  }),
+  cost_per_6_inches: Joi.number().min(0).required().messages({
+    'number.base': 'cost_per_6_inches must be a number',
+    'number.min': 'cost_per_6_inches must be non-negative'
+  })
+}).unknown(false);
+
+export const updateHandrailProductSchema = createHandrailProductSchema;
+
+// Landing tread product schemas
+export const createLandingTreadProductSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(255).required().messages({
+    'string.empty': 'Name is required'
+  }),
+  cost_per_6_inches: Joi.number().min(0).required().messages({
+    'number.base': 'cost_per_6_inches must be a number',
+    'number.min': 'cost_per_6_inches must be non-negative'
+  }),
+  labor_install_cost: Joi.number().min(0).required().messages({
+    'number.base': 'labor_install_cost must be a number',
+    'number.min': 'labor_install_cost must be non-negative'
+  })
+}).unknown(false);
+
+export const updateLandingTreadProductSchema = createLandingTreadProductSchema;
+
+// Rail parts product schemas
+export const createRailPartsProductSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(255).required().messages({
+    'string.empty': 'Name is required'
+  }),
+  base_price: Joi.number().min(0).required().messages({
+    'number.base': 'base_price must be a number',
+    'number.min': 'base_price must be non-negative'
+  }),
+  labor_install_cost: Joi.number().min(0).required().messages({
+    'number.base': 'labor_install_cost must be a number',
+    'number.min': 'labor_install_cost must be non-negative'
+  })
+}).unknown(false);
+
+export const updateRailPartsProductSchema = createRailPartsProductSchema;

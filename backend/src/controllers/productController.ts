@@ -74,13 +74,17 @@ export const createHandrailProduct = async (req: Request, res: Response, next: N
     const { name, cost_per_6_inches } = req.body;
     
     // Validation
-    if (!name || !cost_per_6_inches) {
+    const validName = typeof name === 'string' && name.trim().length > 0;
+    const costNum = Number(cost_per_6_inches);
+    const hasCost = Number.isFinite(costNum);
+
+    if (!validName || !hasCost) {
       return res.status(400).json({ 
         error: 'Name and cost_per_6_inches are required' 
       });
     }
     
-    if (cost_per_6_inches < 0) {
+    if (costNum < 0) {
       return res.status(400).json({ 
         error: 'Cost must be non-negative' 
       });
@@ -102,7 +106,7 @@ export const createHandrailProduct = async (req: Request, res: Response, next: N
       // Create handrail-specific data
       const handrailResult = await client.query(
         'INSERT INTO handrail_products (product_id, cost_per_6_inches) VALUES ($1, $2) RETURNING *',
-        [productId, cost_per_6_inches]
+        [productId, costNum]
       );
       
       await client.query('COMMIT');
@@ -132,13 +136,17 @@ export const updateHandrailProduct = async (req: Request, res: Response, next: N
     const { name, cost_per_6_inches } = req.body;
     
     // Validation
-    if (!name || !cost_per_6_inches) {
+    const validName = typeof name === 'string' && name.trim().length > 0;
+    const costNum = Number(cost_per_6_inches);
+    const hasCost = Number.isFinite(costNum);
+
+    if (!validName || !hasCost) {
       return res.status(400).json({ 
         error: 'Name and cost_per_6_inches are required' 
       });
     }
     
-    if (cost_per_6_inches < 0) {
+    if (costNum < 0) {
       return res.status(400).json({ 
         error: 'Cost must be non-negative' 
       });
@@ -162,7 +170,7 @@ export const updateHandrailProduct = async (req: Request, res: Response, next: N
       // Update handrail-specific data
       const handrailResult = await client.query(
         'UPDATE handrail_products SET cost_per_6_inches = $1 WHERE product_id = $2 RETURNING *',
-        [cost_per_6_inches, id]
+        [costNum, id]
       );
       
       await client.query('COMMIT');
@@ -209,13 +217,19 @@ export const createLandingTreadProduct = async (req: Request, res: Response, nex
     const { name, cost_per_6_inches, labor_install_cost } = req.body;
     
     // Validation
-    if (!name || !cost_per_6_inches || labor_install_cost === undefined) {
+    const validName = typeof name === 'string' && name.trim().length > 0;
+    const costNum = Number(cost_per_6_inches);
+    const laborNum = Number(labor_install_cost);
+    const hasCost = Number.isFinite(costNum);
+    const hasLabor = Number.isFinite(laborNum);
+
+    if (!validName || !hasCost || !hasLabor) {
       return res.status(400).json({ 
         error: 'Name, cost_per_6_inches, and labor_install_cost are required' 
       });
     }
     
-    if (cost_per_6_inches < 0 || labor_install_cost < 0) {
+    if (costNum < 0 || laborNum < 0) {
       return res.status(400).json({ 
         error: 'Cost and labor values must be non-negative' 
       });
@@ -237,7 +251,7 @@ export const createLandingTreadProduct = async (req: Request, res: Response, nex
       // Create landing tread-specific data
       const landingTreadResult = await client.query(
         'INSERT INTO landing_tread_products (product_id, cost_per_6_inches, labor_install_cost) VALUES ($1, $2, $3) RETURNING *',
-        [productId, cost_per_6_inches, labor_install_cost]
+        [productId, costNum, laborNum]
       );
       
       await client.query('COMMIT');
@@ -268,13 +282,19 @@ export const updateLandingTreadProduct = async (req: Request, res: Response, nex
     const { name, cost_per_6_inches, labor_install_cost } = req.body;
     
     // Validation
-    if (!name || !cost_per_6_inches || labor_install_cost === undefined) {
+    const validName = typeof name === 'string' && name.trim().length > 0;
+    const costNum = Number(cost_per_6_inches);
+    const laborNum = Number(labor_install_cost);
+    const hasCost = Number.isFinite(costNum);
+    const hasLabor = Number.isFinite(laborNum);
+
+    if (!validName || !hasCost || !hasLabor) {
       return res.status(400).json({ 
         error: 'Name, cost_per_6_inches, and labor_install_cost are required' 
       });
     }
     
-    if (cost_per_6_inches < 0 || labor_install_cost < 0) {
+    if (costNum < 0 || laborNum < 0) {
       return res.status(400).json({ 
         error: 'Cost and labor values must be non-negative' 
       });
@@ -298,7 +318,7 @@ export const updateLandingTreadProduct = async (req: Request, res: Response, nex
       // Update landing tread-specific data
       const landingTreadResult = await client.query(
         'UPDATE landing_tread_products SET cost_per_6_inches = $1, labor_install_cost = $2 WHERE product_id = $3 RETURNING *',
-        [cost_per_6_inches, labor_install_cost, id]
+        [costNum, laborNum, id]
       );
       
       await client.query('COMMIT');
@@ -346,13 +366,19 @@ export const createRailPartsProduct = async (req: Request, res: Response, next: 
     const { name, base_price, labor_install_cost } = req.body;
     
     // Validation
-    if (!name || !base_price || labor_install_cost === undefined) {
+    const validName = typeof name === 'string' && name.trim().length > 0;
+    const baseNum = Number(base_price);
+    const laborNum = Number(labor_install_cost);
+    const hasBase = Number.isFinite(baseNum);
+    const hasLabor = Number.isFinite(laborNum);
+
+    if (!validName || !hasBase || !hasLabor) {
       return res.status(400).json({ 
         error: 'Name, base_price, and labor_install_cost are required' 
       });
     }
     
-    if (base_price < 0 || labor_install_cost < 0) {
+    if (baseNum < 0 || laborNum < 0) {
       return res.status(400).json({ 
         error: 'Price and labor values must be non-negative' 
       });
@@ -374,7 +400,7 @@ export const createRailPartsProduct = async (req: Request, res: Response, next: 
       // Create rail parts-specific data
       const railPartsResult = await client.query(
         'INSERT INTO rail_parts_products (product_id, base_price, labor_install_cost) VALUES ($1, $2, $3) RETURNING *',
-        [productId, base_price, labor_install_cost]
+        [productId, baseNum, laborNum]
       );
       
       await client.query('COMMIT');
@@ -405,13 +431,19 @@ export const updateRailPartsProduct = async (req: Request, res: Response, next: 
     const { name, base_price, labor_install_cost } = req.body;
     
     // Validation
-    if (!name || !base_price || labor_install_cost === undefined) {
+    const validName = typeof name === 'string' && name.trim().length > 0;
+    const baseNum = Number(base_price);
+    const laborNum = Number(labor_install_cost);
+    const hasBase = Number.isFinite(baseNum);
+    const hasLabor = Number.isFinite(laborNum);
+
+    if (!validName || !hasBase || !hasLabor) {
       return res.status(400).json({ 
         error: 'Name, base_price, and labor_install_cost are required' 
       });
     }
     
-    if (base_price < 0 || labor_install_cost < 0) {
+    if (baseNum < 0 || laborNum < 0) {
       return res.status(400).json({ 
         error: 'Price and labor values must be non-negative' 
       });
@@ -435,7 +467,7 @@ export const updateRailPartsProduct = async (req: Request, res: Response, next: 
       // Update rail parts-specific data
       const railPartsResult = await client.query(
         'UPDATE rail_parts_products SET base_price = $1, labor_install_cost = $2 WHERE product_id = $3 RETURNING *',
-        [base_price, labor_install_cost, id]
+        [baseNum, laborNum, id]
       );
       
       await client.query('COMMIT');

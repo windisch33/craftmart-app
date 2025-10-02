@@ -96,23 +96,39 @@ const Products: React.FC = () => {
           break;
 
         case 'special_parts':
-          console.log('Loading special parts data...');
           const specialPartsData = await stairProductService.getSpecialParts();
-          console.log('Special parts data:', specialPartsData);
           setSpecialParts(specialPartsData || []);
           break;
         default:
           break;
       }
     } catch (err) {
-      console.error('Error loading data for tab:', activeTab, err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
       
-      // Initialize empty arrays to prevent blank screens
+      // Reset tab data on error to avoid stale UI
       switch (activeTab) {
-
+        case 'handrails':
+          setHandrailProducts([]);
+          break;
+        case 'landing_treads':
+          setLandingTreadProducts([]);
+          break;
+        case 'rail_parts':
+          setRailPartsProducts([]);
+          break;
+        case 'materials':
+          setMaterials([]);
+          break;
+        case 'stair_materials':
+          setStairMaterials([]);
+          break;
+        case 'board_types':
+          setBoardTypes([]);
+          break;
         case 'special_parts':
           setSpecialParts([]);
+          break;
+        default:
           break;
       }
     } finally {
