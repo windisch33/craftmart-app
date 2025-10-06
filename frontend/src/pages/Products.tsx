@@ -728,6 +728,105 @@ const Products: React.FC = () => {
                 action={{ label: 'Add Board Type', onClick: handleCreateBoardType }}
               />
             )}
+
+            {/* Pricing Preview Panel */}
+            {boardTypes.length > 0 && (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px 16px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                background: '#f9fafb'
+              }}>
+                <h3 style={{ fontSize: '16px', margin: 0 }}>Pricing Preview</h3>
+                <p style={{ color: '#6b7280', fontSize: '13px', margin: '8px 0 12px 0' }}>
+                  Examples (material 1.0×): Tread sample at 38" × 11"; Landing tread at 38" × 3.5".
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                  {boardTypes.map((bt: any) => {
+                    const bp = Number(bt.base_price || 0);
+                    const lenIncPrice = Number(bt.length_increment_price || 0);
+                    const widIncPrice = Number(bt.width_increment_price || 0);
+                    const mitre = Number(bt.mitre_price || 0);
+                    const baseLen = Number(bt.base_length || 0) || 36;
+                    const baseWid = Number(bt.base_width || 0) || 9;
+                    const lenStep = Number(bt.length_increment_size || 0) || 6;
+                    const widStep = Number(bt.width_increment_size || 0) || 1;
+
+                    const sampleLen = 38; // inches
+                    const sampleWid = 11; // inches
+
+                    const extraLen = Math.max(0, sampleLen - baseLen);
+                    const lenSteps = lenStep > 0 ? Math.ceil(extraLen / lenStep) : 0;
+                    const lenCharge = lenSteps * lenIncPrice;
+
+                    const extraWid = Math.max(0, sampleWid - baseWid);
+                    const widSteps = widStep > 0 ? extraWid / widStep : 0;
+                    const widCharge = widSteps * widIncPrice;
+
+                    const treadNoMitre = bp + lenCharge + widCharge;
+                    const treadWithMitre = treadNoMitre + mitre;
+
+                    const landWid = 3.5;
+                    const landExtraWid = Math.max(0, landWid - baseWid);
+                    const landWidSteps = widStep > 0 ? landExtraWid / widStep : 0;
+                    const landWidCharge = landWidSteps * widIncPrice;
+                    const landLenSteps = lenStep > 0 ? Math.ceil(Math.max(0, sampleLen - baseLen) / lenStep) : 0;
+                    const landLenCharge = landLenSteps * lenIncPrice;
+                    const landing = bp + landLenCharge + landWidCharge;
+
+                    return (
+                      <div key={bt.id} style={{ padding: '8px 10px', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px' }}>
+                        <div style={{ fontWeight: 600 }}>{bt.brdtyp_des}</div>
+                        {bp > 0 ? (
+                          <div style={{ color: '#374151', fontSize: '13px', marginTop: '4px' }}>
+                            <div>
+                              38"×11": ${treadNoMitre.toFixed(2)} {mitre > 0 && <span>(+Mitre ${mitre.toFixed(2)} → {(treadWithMitre).toFixed(2)})</span>}
+                              <details style={{ display: 'inline-block', marginLeft: 8 }}>
+                                <summary style={{ cursor: 'pointer', color: '#2563eb', display: 'inline' }}>i</summary>
+                                <div style={{ paddingTop: 6 }}>
+                                  <div>Base: ${bp.toFixed(2)}</div>
+                                  {lenSteps > 0 && (
+                                    <div>Length: {lenSteps} × ${lenIncPrice.toFixed(2)} = ${lenCharge.toFixed(2)} (over {baseLen}")</div>
+                                  )}
+                                  {widSteps > 0 && (
+                                    <div>Width: {widSteps} × ${widIncPrice.toFixed(2)} = ${widCharge.toFixed(2)} (over {baseWid}")</div>
+                                  )}
+                                  {mitre > 0 && (
+                                    <div>Mitre: ${mitre.toFixed(2)}</div>
+                                  )}
+                                  <div>Total: ${treadNoMitre.toFixed(2)} {mitre > 0 && <span>(Mitre → {(treadWithMitre).toFixed(2)})</span>}</div>
+                                </div>
+                              </details>
+                            </div>
+                            <div>
+                              Landing 38"×3.5": ${landing.toFixed(2)}
+                              <details style={{ display: 'inline-block', marginLeft: 8 }}>
+                                <summary style={{ cursor: 'pointer', color: '#2563eb', display: 'inline' }}>i</summary>
+                                <div style={{ paddingTop: 6 }}>
+                                  <div>Base: ${bp.toFixed(2)}</div>
+                                  {landLenSteps > 0 && (
+                                    <div>Length: {landLenSteps} × ${lenIncPrice.toFixed(2)} = ${landLenCharge.toFixed(2)} (over {baseLen}")</div>
+                                  )}
+                                  {landWidSteps > 0 && (
+                                    <div>Width: {landWidSteps} × ${widIncPrice.toFixed(2)} = ${landWidCharge.toFixed(2)} (over {baseWid}")</div>
+                                  )}
+                                  <div>Total: ${landing.toFixed(2)}</div>
+                                </div>
+                              </details>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
+                            No pricing configured
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

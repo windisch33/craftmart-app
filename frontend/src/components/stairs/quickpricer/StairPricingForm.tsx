@@ -41,6 +41,18 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
       {/* Basic Configuration */}
       <div className="form-row">
         <div className="form-group">
+          <label>Job ID (optional)</label>
+          <input
+            type="number"
+            value={stairFormData.jobId ?? ''}
+            onChange={(e) => setStairFormData(prev => ({ ...prev, jobId: e.target.value ? Number(e.target.value) : undefined }))}
+            min="1"
+            placeholder="Enter job ID to use its tax rate"
+          />
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
           <label>Floor to Floor Height (inches)</label>
           <input
             type="number"
@@ -463,6 +475,16 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
               ))}
             </select>
             
+            <select
+              value={(part as any).materialId ?? stairMaterials[0]?.mat_seq_n ?? ''}
+              onChange={(e) => updateSpecialPart(index, 'materialId', parseInt(e.target.value))}
+            >
+              <option value="">Material...</option>
+              {stairMaterials.map(m => (
+                <option key={m.mat_seq_n} value={m.mat_seq_n}>{m.matrl_nam}</option>
+              ))}
+            </select>
+
             <input
               type="number"
               value={part.quantity}

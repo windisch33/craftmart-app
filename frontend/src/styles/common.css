@@ -716,10 +716,12 @@
 .stair-configurator {
   background-color: var(--color-background, #ffffff);
   border-radius: 12px;
-  padding: 24px;
+  /* Remove container padding; apply padding per section */
+  padding: 0;
   width: 90%;
   max-height: 85vh;
-  overflow: hidden;
+  /* Use outer container scroll to avoid inner scrollbars */
+  overflow: auto;
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -743,9 +745,13 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: inherit;
-  padding: 14px 16px;
+  background: var(--color-background, #ffffff);
+  padding: 14px 24px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  /* Flush to container edges */
+  margin: 0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .modal-title {
@@ -764,17 +770,23 @@
 }
 
 .modal-body {
-  overflow: auto;
-  padding: 16px 20px;
+  /* Allow content to flow; scrolling handled by .modal-content */
+  overflow: visible;
+  padding: 16px 24px;
 }
 
 .modal-footer {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: inherit;
+  /* Solid footer background for readability over scrolled content */
+  background: var(--color-background, #ffffff);
   border-top: 1px solid rgba(148, 163, 184, 0.2);
-  padding: 12px 16px;
+  padding: 12px 24px;
+  /* Flush to container edges */
+  margin: 0;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
 }
 
 /* Close buttons (shared) */

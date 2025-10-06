@@ -234,6 +234,9 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   const treadItems = items.filter(item => item.item_type === 'tread');
   const specialItems = items.filter(item => item.item_type === 'special_part');
   
+  // Determine if landing tread should be shown
+  const includeLandingTread = Array.isArray(treadItems) && treadItems.length === (num_risers - 1);
+  
   // Count different tread types and get their specific widths
   const boxTreads = treadItems.filter(t => t.item_type === 'tread' && t.tread_type === 'box');
   const openRightTreads = treadItems.filter(t => t.item_type === 'tread' && t.tread_type === 'open_right');
@@ -304,7 +307,9 @@ const formatStairConfigurationForPDF = (stairConfig: StairConfigurationData): st
   const treadMaterial = mapMaterialLabel(tread_material_name || 'Oak');
   const riserMaterial = mapMaterialLabel(riser_material_name || 'Primed');
   output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Treads, ${riserMaterial} Risers<br>`;
-  output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Landing Tread<br>`;
+  if (includeLandingTread) {
+    output += `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${treadMaterial} Landing Tread<br>`;
+  }
   
   // Stringers - display individual configurations if available, otherwise fallback to legacy format
   if (left_stringer_width && right_stringer_width) {

@@ -31,12 +31,12 @@ import {
   getJobStairConfigurations,
   deleteStairConfiguration
 } from '../controllers/stairConfigurationController';
-import { authenticateToken } from '../middleware/auth';
+import { validateBody } from '../middleware/validation';
+import { calculateStairPriceSchema, createStairConfigurationApiSchema } from '../validation/schemas';
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(authenticateToken);
+// Auth is enforced at the parent router (/stairs)
 
 // ============================================
 // STAIR MATERIALS ROUTES
@@ -58,9 +58,7 @@ router.delete('/board-types/:id', deleteBoardType);
 // BOARD PRICING ROUTES
 // ============================================
 router.get('/price-rules', getStairPriceRules);
-router.post('/price-rules', createBoardPrice);
-router.put('/price-rules/:id', updateBoardPrice);
-router.delete('/price-rules/:id', deleteBoardPrice);
+// Legacy board pricing mutation routes removed in favor of simplified pricing table
 
 // ============================================
 // SPECIAL PARTS ROUTES
@@ -75,12 +73,12 @@ router.delete('/special-parts/:id', deleteSpecialPart);
 // ============================================
 router.get('/configurations/:id', getStairConfiguration);
 router.get('/jobs/:jobId/configurations', getJobStairConfigurations);
-router.post('/configurations', createStairConfiguration);
+router.post('/configurations', validateBody(createStairConfigurationApiSchema), createStairConfiguration);
 router.delete('/configurations/:id', deleteStairConfiguration);
 
 // ============================================
 // PRICING CALCULATION ROUTE
 // ============================================
-router.post('/calculate-price', calculateStairPrice);
+router.post('/calculate-price', validateBody(calculateStairPriceSchema), calculateStairPrice);
 
 export default router;

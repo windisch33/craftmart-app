@@ -128,16 +128,13 @@ const Customers: React.FC = () => {
   };
 
   const handleViewCustomer = async (customer: Customer) => {
-    try {
-      // Fetch customer by ID to trigger visit tracking
-      await customerService.getCustomerById(customer.id);
-      // Navigate to Jobs overview filtered by this customer (show jobs, not job items)
-      const q = encodeURIComponent(customer.name);
+    const q = encodeURIComponent(customer.name);
+    // Fire-and-forget visit tracking; navigation should proceed regardless of result
+    customerService.getCustomerById(customer.id).catch(err => {
+      console.warn('visit tracking failed for customer', customer.id, err);
+    }).finally(() => {
       navigate(`/jobs?q=${q}`);
-    } catch (err) {
-      console.error('Error viewing customer:', err);
-      showToast('Failed to open customer details', { type: 'error' });
-    }
+    });
   };
 
   const formatPhoneNumber = (phone?: string) => {

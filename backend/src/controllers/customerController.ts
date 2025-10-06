@@ -63,8 +63,8 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
 export const getCustomerById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    // Update last_visited_at timestamp (no-op if archived)
-    await pool.query('UPDATE customers SET last_visited_at = NOW() WHERE id = $1 AND is_active = TRUE', [id]);
+    // Update last_visited_at timestamp
+    await pool.query('UPDATE customers SET last_visited_at = NOW() WHERE id = $1', [id]);
     
     // Get the updated customer data
     const result = await pool.query('SELECT * FROM customers WHERE id = $1', [id]);

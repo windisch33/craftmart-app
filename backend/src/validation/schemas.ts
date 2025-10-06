@@ -328,3 +328,120 @@ export const createRailPartsProductSchema = Joi.object({
 }).unknown(false);
 
 export const updateRailPartsProductSchema = createRailPartsProductSchema;
+
+// ============================================
+// Stairs API Schemas
+// ============================================
+
+// POST /api/stairs/calculate-price
+export const calculateStairPriceSchema = Joi.object({
+  jobId: Joi.number().integer().optional(),
+  floorToFloor: Joi.number().positive().required(),
+  numRisers: Joi.number().integer().min(1).max(30).required(),
+  treads: Joi.array().items(
+    Joi.object({
+      riserNumber: Joi.number().integer().min(1).required(),
+      type: Joi.string().valid('box', 'open_left', 'open_right', 'double_open').required(),
+      stairWidth: Joi.number().positive().required()
+    }).unknown(false)
+  ).min(0).required(),
+  treadMaterialId: Joi.number().integer().required(),
+  riserMaterialId: Joi.number().integer().required(),
+  roughCutWidth: Joi.number().min(8).max(20).optional(),
+  noseSize: Joi.number().min(0.5).max(3).optional(),
+  stringerType: Joi.string().pattern(/^\d+(?:\.\d+)?x\d+(?:\.\d+)?$/).optional(),
+  stringerMaterialId: Joi.number().integer().optional(),
+  numStringers: Joi.number().integer().min(0).max(5).optional(),
+  centerHorses: Joi.number().integer().min(0).max(5).optional(),
+  fullMitre: Joi.boolean().optional(),
+  bracketType: Joi.string().trim().max(255).allow('', null).optional(),
+  specialParts: Joi.array().items(
+    Joi.object({
+      partId: Joi.number().integer().required(),
+      materialId: Joi.number().integer().optional(),
+      quantity: Joi.number().integer().min(1).default(1),
+      position: Joi.string().trim().max(100).allow('', null)
+    }).unknown(false)
+  ).default([]),
+  includeLandingTread: Joi.boolean().optional(),
+  individualStringers: Joi.object({
+    left: Joi.object({
+      width: Joi.number().positive().required(),
+      thickness: Joi.number().positive().required(),
+      materialId: Joi.number().integer().required()
+    }).optional(),
+    right: Joi.object({
+      width: Joi.number().positive().required(),
+      thickness: Joi.number().positive().required(),
+      materialId: Joi.number().integer().required()
+    }).optional(),
+    center: Joi.alternatives().try(
+      Joi.object({
+        width: Joi.number().positive().required(),
+        thickness: Joi.number().positive().required(),
+        materialId: Joi.number().integer().required()
+      }),
+      Joi.valid(null)
+    ).optional()
+  }).optional()
+}).unknown(false);
+
+// POST /api/stairs/configurations
+export const createStairConfigurationApiSchema = Joi.object({
+  jobId: Joi.number().integer().required(),
+  configName: Joi.string().trim().min(1).max(255).required(),
+  floorToFloor: Joi.number().positive().required(),
+  numRisers: Joi.number().integer().min(1).max(30).required(),
+  treadMaterialId: Joi.number().integer().required(),
+  riserMaterialId: Joi.number().integer().required(),
+  treadSize: Joi.string().trim().max(50).allow('', null),
+  roughCutWidth: Joi.number().min(8).max(20).required(),
+  noseSize: Joi.number().min(0.5).max(3).required(),
+  stringerType: Joi.string().trim().max(50).allow('', null),
+  stringerMaterialId: Joi.number().integer().allow(null),
+  numStringers: Joi.number().integer().min(0).max(5).allow(null),
+  centerHorses: Joi.number().integer().min(0).max(5).allow(null),
+  fullMitre: Joi.boolean().required(),
+  bracketType: Joi.string().trim().max(255).allow('', null),
+  subtotal: Joi.number().min(0).required(),
+  laborTotal: Joi.number().min(0).required(),
+  taxAmount: Joi.number().min(0).required(),
+  totalAmount: Joi.number().min(0).required(),
+  specialNotes: Joi.string().trim().max(2000).allow('', null),
+  items: Joi.array().items(
+    Joi.object({
+      itemType: Joi.string().valid('tread', 'riser', 'stringer', 'special_part').required(),
+      riserNumber: Joi.number().integer().min(1).allow(null),
+      treadType: Joi.string().valid('box', 'open_left', 'open_right', 'double_open').allow(null),
+      stairWidth: Joi.number().positive().allow(null),
+      boardTypeId: Joi.number().integer().allow(null),
+      materialId: Joi.number().integer().allow(null),
+      specialPartId: Joi.number().integer().allow(null),
+      quantity: Joi.number().integer().min(1).required(),
+      unitPrice: Joi.number().min(0).required(),
+      laborPrice: Joi.number().min(0).required(),
+      totalPrice: Joi.number().min(0).required(),
+      notes: Joi.string().trim().max(1000).allow(null)
+    }).unknown(false)
+  ).default([]),
+  individualStringers: Joi.object({
+    left: Joi.object({
+      width: Joi.number().positive().required(),
+      thickness: Joi.number().positive().required(),
+      materialId: Joi.number().integer().required()
+    }).optional(),
+    right: Joi.object({
+      width: Joi.number().positive().required(),
+      thickness: Joi.number().positive().required(),
+      materialId: Joi.number().integer().required()
+    }).optional(),
+    center: Joi.alternatives().try(
+      Joi.object({
+        width: Joi.number().positive().required(),
+        thickness: Joi.number().positive().required(),
+        materialId: Joi.number().integer().required()
+      }),
+      Joi.valid(null)
+    ).optional()
+  }).optional()
+}).unknown(true);

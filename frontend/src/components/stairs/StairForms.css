@@ -159,6 +159,34 @@ textarea.error {
 }
 
 /* Mobile responsiveness */
+/* Prefer outer scroll (content) over inner for stair forms */
+.stair-form-modal {
+  max-height: 95vh;
+  overflow-y: auto !important;
+  /* Remove container padding so header/footer can be flush */
+  padding: 0 !important;
+}
+
+.stair-form-modal .modal-body {
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 16px 24px !important;
+}
+
+.stair-form-modal .modal-header {
+  margin: 0 !important;
+  padding: 14px 24px !important;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.stair-form-modal .modal-footer {
+  margin: 0 !important;
+  padding: 12px 24px !important;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
 @media (max-width: 768px) {
   .form-row {
     flex-direction: column;

@@ -75,10 +75,12 @@ export const calculateStairPrice = async (
   // Add special parts configurations
   const specialPartsConfig = specialParts.map(part => ({
     partId: part.stpart_id,
-    quantity: part.quantity ?? 1
+    quantity: part.quantity ?? 1,
+    materialId: (part as any).materialId
   }));
 
   const request = {
+    jobId: stairFormData.jobId,
     floorToFloor: stairFormData.floorToFloor,
     numRisers: stairFormData.numRisers,
     treads: generatedTreads,

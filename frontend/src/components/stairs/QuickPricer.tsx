@@ -182,7 +182,8 @@ const QuickPricer: React.FC = () => {
         matrl_nam: availableSpecialParts[0].matrl_nam,
         quantity: 1 as any,
         is_active: true as any
-      };
+      } as any;
+      (newPart as any).materialId = availableSpecialParts[0].mat_seq_n;
       setSpecialParts(prev => [...prev, newPart]);
     }
   };

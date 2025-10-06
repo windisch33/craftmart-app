@@ -189,6 +189,7 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
       const equivalentStringerType = `${avgThickness}x${avgWidth}`;
       
       const request = {
+        jobId: jobId,
         floorToFloor: formData.floorToFloor,
         numRisers: formData.numRisers,
         treads: generatedTreads,

@@ -4,34 +4,36 @@ import pool from '../config/database';
 // Get pricing rules for validation
 export const getStairPriceRules = async (req: Request, res: Response) => {
   try {
-    const { boardTypeId, materialId } = req.query;
-    
+    const { boardTypeId } = req.query as { boardTypeId?: string };
+
+    // Use simplified pricing table; material multipliers are applied at calculation time
     let query = `
-      SELECT bp.*, bt.brdtyp_des, sm.matrl_nam
-      FROM stair_board_prices bp
-      JOIN stair_board_types bt ON bp.brd_typ_id = bt.brd_typ_id
-      JOIN stair_materials sm ON bp.mat_seq_n = sm.mat_seq_n
-      WHERE bp.is_active = true
-        AND CURRENT_DATE BETWEEN bp.begin_date AND bp.end_date
+      SELECT 
+        sp.id,
+        sp.board_type_id AS brd_typ_id,
+        bt.brdtyp_des,
+        sp.base_price,
+        sp.length_increment_price,
+        sp.width_increment_price,
+        sp.mitre_price,
+        sp.base_length,
+        sp.base_width,
+        sp.length_increment_size,
+        sp.width_increment_size,
+        sp.is_active
+      FROM stair_pricing_simple sp
+      LEFT JOIN stair_board_types bt ON bt.brd_typ_id = sp.board_type_id
+      WHERE sp.is_active = true
     `;
-    
+
     const params: any[] = [];
-    let paramCount = 0;
-    
     if (boardTypeId) {
-      paramCount++;
-      query += ` AND bp.brd_typ_id = $${paramCount}`;
       params.push(boardTypeId);
+      query += ` AND sp.board_type_id = $${params.length}`;
     }
-    
-    if (materialId) {
-      paramCount++;
-      query += ` AND bp.mat_seq_n = $${paramCount}`;
-      params.push(materialId);
-    }
-    
-    query += ` ORDER BY bp.brd_typ_id, bp.mat_seq_n, bp.brdlen_min, bp.brdwid_min`;
-    
+
+    query += ` ORDER BY sp.board_type_id`;
+    console.log('[PRICE_RULES] Query:', query, 'Params:', params);
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {
@@ -45,6 +47,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
   try {
     const {
       floorToFloor,
+      jobId,
       numRisers,
       treads,
       treadMaterialId,
@@ -102,57 +105,74 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
 
       if (priceResult.rows.length > 0) {
         const price = priceResult.rows[0];
+        const basePrice = parseFloat(price.base_price || 0);
+        const lengthCharge = parseFloat(price.length_charge || 0);
+        const widthCharge = parseFloat(price.width_charge || 0);
+        const mitreCharge = parseFloat(price.mitre_charge || 0);
+        const unitPrice = parseFloat(price.unit_price || 0);
+        const totalPrice = parseFloat(price.total_price || 0);
         breakdown.treads.push({
           riserNumber,
           type,
           stairWidth,
-          basePrice: parseFloat(price.base_price || 0),
-          lengthCharge: parseFloat(price.length_charge || 0),
-          widthCharge: parseFloat(price.width_charge || 0),
+          basePrice,
+          lengthCharge,
+          widthCharge,
+          oversizedCharge: lengthCharge + widthCharge,
           materialMultiplier: parseFloat(price.material_multiplier || 1),
-          mitreCharge: parseFloat(price.mitre_charge || 0),
-          unitPrice: parseFloat(price.unit_price || 0),
-          totalPrice: parseFloat(price.total_price || 0)
-        });
-        subtotal += parseFloat(price.total_price || 0);
+          mitreCharge,
+          unitPrice,
+          totalPrice
+        } as any);
+        subtotal += totalPrice;
       }
     }
 
-    // Calculate landing tread price (3.5" total width including nose, same material as regular treads)
-    const landingTreadWidth = 3.5; // Fixed total width for landing tread (includes nose)
-    const landingStairWidth = treads[0]?.stairWidth || 38; // Default to 38" if no treads configured
-    
-    console.log('Calculating landing tread:', {
-      boardType: 1,
-      material: treadMaterialId,
-      length: landingStairWidth,
-      width: landingTreadWidth,
-      fullMitre
-    });
-    
-    const landingTreadResult = await pool.query(
-      `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-      [1, treadMaterialId, landingStairWidth, landingTreadWidth, 1, fullMitre]
-    );
-
-    if (landingTreadResult.rows.length > 0) {
-      const price = landingTreadResult.rows[0];
-      console.log('Landing tread price result:', price);
-      breakdown.landingTread = {
-        type: 'box',
+    // Calculate landing tread price only if requested
+    if (includeLandingTread) {
+      const landingTreadWidth = 3.5; // Fixed total width for landing tread (includes nose)
+      const landingStairWidth = treads[0]?.stairWidth || 38; // Default to 38" if no treads configured
+      
+      console.log('Calculating landing tread:', {
+        boardType: 1,
+        material: treadMaterialId,
+        length: landingStairWidth,
         width: landingTreadWidth,
-        stairWidth: landingStairWidth,
-        basePrice: parseFloat(price.base_price || 0),
-        lengthCharge: parseFloat(price.length_charge || 0),
-        widthCharge: parseFloat(price.width_charge || 0),
-        materialMultiplier: parseFloat(price.material_multiplier || 1),
-        mitreCharge: parseFloat(price.mitre_charge || 0),
-        unitPrice: parseFloat(price.unit_price || 0),
-        totalPrice: parseFloat(price.total_price || 0)
-      };
-      subtotal += parseFloat(price.total_price || 0);
-    } else {
-      console.error('Failed to calculate landing tread price - no matching price rule found');
+        fullMitre
+      });
+      
+      const landingTreadResult = await pool.query(
+        `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
+        [1, treadMaterialId, landingStairWidth, landingTreadWidth, 1, fullMitre]
+      );
+
+      if (landingTreadResult.rows.length > 0) {
+        const price = landingTreadResult.rows[0];
+        console.log('Landing tread price result:', price);
+        const basePrice = parseFloat(price.base_price || 0);
+        const lengthCharge = parseFloat(price.length_charge || 0);
+        const widthCharge = parseFloat(price.width_charge || 0);
+        const mitreCharge = parseFloat(price.mitre_charge || 0);
+        const unitPrice = parseFloat(price.unit_price || 0);
+        const totalPrice = parseFloat(price.total_price || 0);
+        breakdown.landingTread = {
+          riserNumber: numRisers,
+          type: 'box',
+          width: landingTreadWidth,
+          stairWidth: landingStairWidth,
+          basePrice,
+          lengthCharge,
+          widthCharge,
+          oversizedCharge: lengthCharge + widthCharge,
+          materialMultiplier: parseFloat(price.material_multiplier || 1),
+          mitreCharge,
+          unitPrice,
+          totalPrice
+        } as any;
+        subtotal += totalPrice;
+      } else {
+        console.error('Failed to calculate landing tread price - no matching price rule found');
+      }
     }
 
     // Calculate riser prices by type - each tread type requires a corresponding riser
@@ -346,7 +366,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
           widthCharge: parseFloat(price.width_charge || 0),
           thicknessCharge: parseFloat(price.length_charge || 0),
           materialMultiplier: parseFloat(price.material_multiplier || 1),
-          unitPricePerRiser: parseFloat(price.unit_price || 0) / numStringers,
+          unitPricePerRiser: parseFloat(price.unit_price || 0),
           totalPrice: parseFloat(price.total_price || 0)
         });
         subtotal += parseFloat(price.total_price || 0);
@@ -354,7 +374,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
     }
 
     // Calculate center horse prices (dimension-based pricing, board type 6)
-    if (centerHorses > 0) {
+    if (centerHorses > 0 && !(individualStringers && individualStringers.center)) {
       // Center horses typically use same dimensions as stringers
       let horseThickness = 2; // Default 2" thick
       let horseWidth = 9.25; // Default 9.25" wide
@@ -364,9 +384,10 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
         horseWidth = parseFloat(horseMatch[2]);
       }
       
+      const centerMaterialId = (stringerMaterialId ?? treadMaterialId ?? 20);
       const centerHorseResult = await pool.query(
         `SELECT * FROM calculate_stair_price_simple($1, $2, $3, $4, $5, $6)`,
-        [6, 20, horseThickness, horseWidth, numRisers * centerHorses, false] // Using Red Oak as default
+        [6, centerMaterialId, horseThickness, horseWidth, numRisers * centerHorses, false]
       );
       
       if (centerHorseResult.rows.length > 0) {
@@ -375,7 +396,7 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
           type: 'Center Horse',
           quantity: centerHorses,
           risers: numRisers,
-          unitPricePerRiser: 5.00,
+          unitPricePerRiser: parseFloat(price.unit_price || 0),
           totalPrice: parseFloat(price.total_price || 0)
         });
         subtotal += parseFloat(price.total_price || 0);
@@ -418,7 +439,20 @@ export const calculateStairPrice = async (req: Request, res: Response) => {
     });
 
     // Calculate totals
-    const taxRate = 0.06; // Default 6% tax, should be based on location
+    // Resolve tax rate: prefer job's tax_rate when provided
+    let taxRate = 0.06;
+    if (jobId) {
+      try {
+        const taxRes = await pool.query('SELECT tax_rate FROM jobs WHERE id = $1', [jobId]);
+        const tr = taxRes.rows?.[0]?.tax_rate;
+        if (tr !== undefined && tr !== null) {
+          const parsed = parseFloat(tr);
+          if (!Number.isNaN(parsed)) taxRate = parsed;
+        }
+      } catch (e) {
+        console.warn('[STAIR_CALC] Failed to resolve job tax_rate for jobId', jobId, e);
+      }
+    }
     const taxAmount = subtotal * taxRate;
     const total = subtotal + laborTotal + taxAmount;
 

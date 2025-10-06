@@ -129,7 +129,7 @@ const BoardTypeForm: React.FC<BoardTypeFormProps> = ({ boardType, onClose }) => 
   const titleId = 'board-type-form-title';
 
   return (
-    <AccessibleModal isOpen={true} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content">
+    <AccessibleModal isOpen={true} onClose={onClose} labelledBy={titleId} overlayClassName="modal-overlay" contentClassName="modal-content stair-form-modal">
         <div className="modal-header">
           <h2 id={titleId}>{boardType ? 'Edit Board Type & Pricing' : 'Add Board Type & Pricing'}</h2>
           <button className="close-btn" onClick={onClose} aria-label="Close dialog">×</button>
