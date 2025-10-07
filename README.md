@@ -26,6 +26,10 @@ A comprehensive staircase manufacturing management system designed for small-to-
 - 🔄 **Bulk Operations** - Multi-select with bulk delete, export, and status updates
 - ⚡ **Real-time Updates** - Live calculations and instant feedback
 - 🔐 **JWT Authentication** - Secure user sessions with role-based access
+- 🪜 **Stair Configurator**
+  - Preloads existing configurations (including left/right/center stringers)
+  - Accepts decimals and fractions in inputs (e.g., 36.25, 36 1/2, 1-3/8)
+  - Values commit on blur/Enter to avoid interrupting typing
 
 ## 🚀 Quick Start
 

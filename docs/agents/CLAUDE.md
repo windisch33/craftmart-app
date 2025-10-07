@@ -101,6 +101,8 @@ Price = (Base Price + Length Charge + Width Charge) × Material Multiplier + Mit
 - **BoardTypeForm**: Simplified structure, disabled ID editing for existing items
 - **StairConfigurator**: Enhanced dimension display for stringers
 - **Products Page**: Cleaner interface without selection clutter
+ - **Stair Configurator Inputs**: Accepts decimals and fractions (e.g., 1/2, 1 3/8), commits on blur/Enter
+ - **Stair Editing**: Preloads saved stringer widths/thickness/materials when editing an existing stair item
 
 ## Component Architecture (August 2025 Refactoring)
 - **Target**: Keep components under 400 lines
