@@ -53,7 +53,12 @@ const ProjectList: React.FC<ProjectListProps> = ({
   return (
     <div className="customers-grid">
       {projects.map(project => (
-        <div key={project.id} className="customer-card">
+        <div
+          key={project.id}
+          className="customer-card"
+          onClick={() => onViewProject(project)}
+          title="View Job"
+        >
           <div className="customer-header">
             <div className="customer-info">
               <h3 className="customer-name">{project.name}</h3>
@@ -86,14 +91,14 @@ const ProjectList: React.FC<ProjectListProps> = ({
           <div className="customer-actions">
             <button 
               className="action-btn" 
-              onClick={() => onViewProject(project)}
+              onClick={(e) => { e.stopPropagation(); onViewProject(project); }}
               title="View Job"
             >
               <span className="contact-icon"><EyeIcon /></span> View
             </button>
             <button 
               className="action-btn" 
-              onClick={() => onEditProject(project)}
+              onClick={(e) => { e.stopPropagation(); onEditProject(project); }}
               title="Edit Job"
             >
               <span className="contact-icon"><EditIcon /></span> Edit
@@ -101,7 +106,7 @@ const ProjectList: React.FC<ProjectListProps> = ({
             {(project.job_count || 0) === 0 && (
               <button 
                 className="action-btn action-btn-danger" 
-                onClick={() => onDeleteProject(project.id)}
+                onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
                 title="Delete Job"
               >
                 <span className="contact-icon"><TrashIcon /></span> Delete
