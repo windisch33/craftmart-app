@@ -1,6 +1,6 @@
 # CraftMart Database Schema Documentation
 
-Generated on: Fri Sep 19 02:09:53 PM UTC 2025
+Generated on: Thu Oct  2 02:49:38 PM UTC 2025
 
 ## Database Overview
 
@@ -171,12 +171,19 @@ Main job records - quotes, orders, and invoices (ACTIVE workflow table)
  shops_run         | boolean                     |           |          | false                            | plain    |             |              | Indicates if shop cut sheets have been generated for this job
  shops_run_date    | timestamp without time zone |           |          |                                  | plain    |             |              | Timestamp when shops were last generated for this job
  job_id            | integer                     |           | not null |                                  | plain    |             |              | Required reference to projects table. Jobs inherit customer from their project.
+ invoice_date      | date                        |           |          |                                  | plain    |             |              | 
+ net_terms_days    | integer                     |           |          | 30                               | plain    |             |              | 
+ due_date          | date                        |           |          |                                  | plain    |             |              | 
+ po_number         | character varying(100)      |           |          |                                  | extended |             |              | 
 Indexes:
     "jobs_pkey" PRIMARY KEY, btree (id)
     "idx_job_items_created_at" btree (created_at DESC)
     "idx_job_items_customer_id" btree (customer_id)
     "idx_job_items_delivery_date" btree (delivery_date)
+    "idx_job_items_due_date" btree (due_date)
+    "idx_job_items_invoice_date" btree (invoice_date)
     "idx_job_items_job_id" btree (job_id)
+    "idx_job_items_po_number" btree (po_number)
     "idx_job_items_salesman_id" btree (salesman_id)
     "idx_job_items_status" btree (status)
     "idx_jobs_shops_run" btree (shops_run)
@@ -194,6 +201,9 @@ Referenced by:
     TABLE "shop_jobs" CONSTRAINT "shop_jobs_job_id_fkey" FOREIGN KEY (job_id) REFERENCES job_items(id) ON DELETE CASCADE
     TABLE "shops" CONSTRAINT "shops_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
     TABLE "stair_configurations" CONSTRAINT "stair_configurations_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
+Triggers:
+    trg_set_invoice_dates_insert BEFORE INSERT ON job_items FOR EACH ROW EXECUTE FUNCTION set_invoice_dates()
+    trg_set_invoice_dates_update BEFORE UPDATE ON job_items FOR EACH ROW EXECUTE FUNCTION set_invoice_dates()
 Access method: heap
 
 
@@ -610,6 +620,7 @@ Indexes:
     "idx_deposits_customer_check_number" UNIQUE, btree (customer_id, reference_number) WHERE payment_method::text = 'check'::text AND reference_number IS NOT NULL
     "idx_deposits_customer_id" btree (customer_id)
     "idx_deposits_deposit_date" btree (deposit_date)
+    "idx_deposits_payment_date" btree (payment_date)
     "idx_deposits_payment_method" btree (payment_method)
     "idx_deposits_reference_number" btree (reference_number)
 Check constraints:
@@ -642,6 +653,7 @@ Indexes:
     "deposit_allocations_pkey" PRIMARY KEY, btree (id)
     "idx_deposit_allocations_deposit_id" btree (deposit_id)
     "idx_deposit_allocations_job_id" btree (job_id)
+    "idx_deposit_allocations_job_item_date" btree (job_item_id, allocation_date)
     "idx_deposit_allocations_job_item_id" btree (job_item_id)
 Check constraints:
     "deposit_allocations_amount_check" CHECK (amount > 0::numeric)
@@ -652,6 +664,7 @@ Foreign-key constraints:
     "deposit_allocations_job_item_id_fkey" FOREIGN KEY (job_item_id) REFERENCES job_items(id) ON DELETE CASCADE
 Triggers:
     check_allocation_total_trigger BEFORE INSERT OR UPDATE ON deposit_allocations FOR EACH ROW EXECUTE FUNCTION check_allocation_total()
+    check_item_allocation_total_trigger BEFORE INSERT OR UPDATE ON deposit_allocations FOR EACH ROW EXECUTE FUNCTION check_item_allocation_total()
     update_job_deposits_trigger AFTER INSERT OR DELETE OR UPDATE ON deposit_allocations FOR EACH ROW EXECUTE FUNCTION update_job_deposit_totals()
     validate_deposit_allocation_links_trigger BEFORE INSERT OR UPDATE ON deposit_allocations FOR EACH ROW EXECUTE FUNCTION validate_deposit_allocation_links()
 Access method: heap
@@ -936,11 +949,13 @@ View definition:
  public | deposit_allocations    | deposit_allocations_pkey               | CREATE UNIQUE INDEX deposit_allocations_pkey ON public.deposit_allocations USING btree (id)
  public | deposit_allocations    | idx_deposit_allocations_deposit_id     | CREATE INDEX idx_deposit_allocations_deposit_id ON public.deposit_allocations USING btree (deposit_id)
  public | deposit_allocations    | idx_deposit_allocations_job_id         | CREATE INDEX idx_deposit_allocations_job_id ON public.deposit_allocations USING btree (job_id)
+ public | deposit_allocations    | idx_deposit_allocations_job_item_date  | CREATE INDEX idx_deposit_allocations_job_item_date ON public.deposit_allocations USING btree (job_item_id, allocation_date)
  public | deposit_allocations    | idx_deposit_allocations_job_item_id    | CREATE INDEX idx_deposit_allocations_job_item_id ON public.deposit_allocations USING btree (job_item_id)
  public | deposits               | deposits_pkey                          | CREATE UNIQUE INDEX deposits_pkey ON public.deposits USING btree (id)
  public | deposits               | idx_deposits_customer_check_number     | CREATE UNIQUE INDEX idx_deposits_customer_check_number ON public.deposits USING btree (customer_id, reference_number) WHERE (((payment_method)::text = 'check'::text) AND (reference_number IS NOT NULL))
  public | deposits               | idx_deposits_customer_id               | CREATE INDEX idx_deposits_customer_id ON public.deposits USING btree (customer_id)
  public | deposits               | idx_deposits_deposit_date              | CREATE INDEX idx_deposits_deposit_date ON public.deposits USING btree (deposit_date)
+ public | deposits               | idx_deposits_payment_date              | CREATE INDEX idx_deposits_payment_date ON public.deposits USING btree (payment_date)
  public | deposits               | idx_deposits_payment_method            | CREATE INDEX idx_deposits_payment_method ON public.deposits USING btree (payment_method)
  public | deposits               | idx_deposits_reference_number          | CREATE INDEX idx_deposits_reference_number ON public.deposits USING btree (reference_number)
  public | handrail_products      | handrail_products_pkey                 | CREATE UNIQUE INDEX handrail_products_pkey ON public.handrail_products USING btree (id)
@@ -949,7 +964,10 @@ View definition:
  public | job_items              | idx_job_items_created_at               | CREATE INDEX idx_job_items_created_at ON public.job_items USING btree (created_at DESC)
  public | job_items              | idx_job_items_customer_id              | CREATE INDEX idx_job_items_customer_id ON public.job_items USING btree (customer_id)
  public | job_items              | idx_job_items_delivery_date            | CREATE INDEX idx_job_items_delivery_date ON public.job_items USING btree (delivery_date)
+ public | job_items              | idx_job_items_due_date                 | CREATE INDEX idx_job_items_due_date ON public.job_items USING btree (due_date)
+ public | job_items              | idx_job_items_invoice_date             | CREATE INDEX idx_job_items_invoice_date ON public.job_items USING btree (invoice_date)
  public | job_items              | idx_job_items_job_id                   | CREATE INDEX idx_job_items_job_id ON public.job_items USING btree (job_id)
+ public | job_items              | idx_job_items_po_number                | CREATE INDEX idx_job_items_po_number ON public.job_items USING btree (po_number)
  public | job_items              | idx_job_items_salesman_id              | CREATE INDEX idx_job_items_salesman_id ON public.job_items USING btree (salesman_id)
  public | job_items              | idx_job_items_status                   | CREATE INDEX idx_job_items_status ON public.job_items USING btree (status)
  public | job_items              | idx_jobs_shops_run                     | CREATE INDEX idx_jobs_shops_run ON public.job_items USING btree (shops_run)
@@ -1006,7 +1024,7 @@ View definition:
  public | users                  | idx_users_role                         | CREATE INDEX idx_users_role ON public.users USING btree (role)
  public | users                  | users_email_key                        | CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)
  public | users                  | users_pkey                             | CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)
-(76 rows)
+(81 rows)
 
 
 ## Foreign Key Relationships
