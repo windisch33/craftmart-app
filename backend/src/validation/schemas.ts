@@ -343,6 +343,55 @@ export const updateProjectApiSchema = Joi.object({
 }).unknown(false);
 
 // ============================================
+// Job Item (child of project) API Schemas
+// ============================================
+
+export const createJobItemApiSchema = Joi.object({
+  customer_id: Joi.number().integer().positive(),
+  project_id: Joi.number().integer().positive(),
+  salesman_id: Joi.number().integer().positive().allow(null),
+  title: Joi.string().trim().min(1).max(255).required(),
+  description: Joi.string().trim().max(2000).allow('', null),
+  status: Joi.string().valid('quote', 'order', 'invoice').default('quote'),
+  delivery_date: Joi.alternatives().try(Joi.date().iso(), Joi.string().trim().allow('')).allow(null),
+  job_location: Joi.string().trim().max(255).allow('', null),
+  order_designation: Joi.string().trim().max(100).allow('', null),
+  model_name: Joi.string().trim().max(100).allow('', null),
+  installer: Joi.string().trim().max(100).allow('', null),
+  terms: Joi.string().trim().max(2000).allow('', null),
+  show_line_pricing: Joi.boolean().default(true)
+}).xor('customer_id', 'project_id').unknown(false);
+
+export const updateJobItemApiSchema = Joi.object({
+  customer_id: Joi.number().integer().positive(),
+  job_id: Joi.number().integer().positive(), // allow switching project linkage
+  salesman_id: Joi.number().integer().positive().allow(null),
+  title: Joi.string().trim().min(1).max(255),
+  description: Joi.string().trim().max(2000).allow('', null),
+  status: Joi.string().valid('quote', 'order', 'invoice'),
+  delivery_date: Joi.alternatives().try(Joi.date().iso(), Joi.string().trim().allow('')).allow(null),
+  job_location: Joi.string().trim().max(255).allow('', null),
+  order_designation: Joi.string().trim().max(100).allow('', null),
+  model_name: Joi.string().trim().max(100).allow('', null),
+  installer: Joi.string().trim().max(100).allow('', null),
+  terms: Joi.string().trim().max(2000).allow('', null),
+  show_line_pricing: Joi.boolean()
+}).min(1).unknown(false);
+
+// Job Sections
+export const createJobSectionApiSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(100).required(),
+  display_order: Joi.number().integer().min(0).default(0)
+}).unknown(false);
+
+export const updateJobSectionApiSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(100),
+  display_order: Joi.number().integer().min(0)
+}).min(1).unknown(false);
+
+// Quote Items schemas appended after stair schemas (see below for exports)
+
+// ============================================
 // Stairs API Schemas
 // ============================================
 
@@ -458,3 +507,30 @@ export const createStairConfigurationApiSchema = Joi.object({
     ).optional()
   }).optional()
 }).unknown(true);
+
+// ============================================
+// Quote Items (depend on stair configuration schema)
+// ============================================
+
+export const addQuoteItemApiSchema = Joi.object({
+  part_number: Joi.string().trim().max(100).allow('', null),
+  description: Joi.string().trim().min(1).max(2000).required(),
+  quantity: Joi.number().min(0).required(),
+  unit_price: Joi.number().min(0).required(),
+  is_taxable: Joi.boolean().optional(),
+  product_id: Joi.number().integer().positive().optional(),
+  length_inches: Joi.number().integer().min(6).max(240).optional(),
+  stair_configuration: createStairConfigurationApiSchema.optional()
+}).unknown(false);
+
+export const updateQuoteItemApiSchema = Joi.object({
+  part_number: Joi.string().trim().max(100).allow('', null),
+  description: Joi.string().trim().min(1).max(2000),
+  quantity: Joi.number().min(0),
+  unit_price: Joi.number().min(0),
+  is_taxable: Joi.boolean(),
+  product_id: Joi.number().integer().positive(),
+  length_inches: Joi.number().integer().min(6).max(240),
+  stair_configuration: createStairConfigurationApiSchema,
+  stair_config_id: Joi.number().integer().positive()
+}).min(1).unknown(false);

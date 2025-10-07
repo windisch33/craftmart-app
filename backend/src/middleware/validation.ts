@@ -113,6 +113,38 @@ export const idParamSchema = Joi.object({
   })
 });
 
+export const jobIdParamSchema = Joi.object({
+  jobId: Joi.number().integer().positive().required().messages({
+    'number.base': 'jobId must be a number',
+    'number.integer': 'jobId must be an integer',
+    'number.positive': 'jobId must be positive',
+    'any.required': 'jobId parameter is required'
+  })
+});
+
+export const sectionIdParamSchema = Joi.object({
+  sectionId: Joi.number().integer().positive().required().messages({
+    'number.base': 'sectionId must be a number',
+    'number.integer': 'sectionId must be an integer',
+    'number.positive': 'sectionId must be positive',
+    'any.required': 'sectionId parameter is required'
+  })
+});
+
+export const itemIdParamSchema = Joi.object({
+  itemId: Joi.number().integer().positive().required().messages({
+    'number.base': 'itemId must be a number',
+    'number.integer': 'itemId must be an integer',
+    'number.positive': 'itemId must be positive',
+    'any.required': 'itemId parameter is required'
+  })
+});
+
+export const jobAndSectionParamSchema = Joi.object({
+  jobId: Joi.number().integer().positive().required(),
+  sectionId: Joi.number().integer().positive().required()
+});
+
 /**
  * Utility function to create consistent error responses
  */
