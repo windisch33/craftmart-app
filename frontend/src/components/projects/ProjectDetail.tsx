@@ -168,6 +168,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                 }
               </p>
             )}
+            {project && (project.address || project.city || project.state || project.zip_code) && (
+              <p className="modal-subtitle" aria-label="Job address">
+                {project.address ? `${project.address}, ` : ''}
+                {[project.city, project.state].filter(Boolean).join(', ')} {project.zip_code || ''}
+              </p>
+            )}
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Close dialog">
             ✕

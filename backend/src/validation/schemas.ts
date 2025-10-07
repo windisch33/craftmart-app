@@ -335,12 +335,20 @@ export const updateRailPartsProductSchema = createRailPartsProductSchema;
 
 export const createProjectApiSchema = Joi.object({
   customer_id: Joi.number().integer().positive().required(),
-  name: Joi.string().trim().min(1).max(255).required()
+  name: Joi.string().trim().min(1).max(255).required(),
+  address: Joi.string().trim().max(500).allow('', null),
+  city: Joi.string().trim().max(100).allow('', null),
+  state: Joi.string().trim().length(2).uppercase().allow('', null),
+  zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null)
 }).unknown(false);
 
 export const updateProjectApiSchema = Joi.object({
-  name: Joi.string().trim().min(1).max(255).required()
-}).unknown(false);
+  name: Joi.string().trim().min(1).max(255),
+  address: Joi.string().trim().max(500).allow('', null),
+  city: Joi.string().trim().max(100).allow('', null),
+  state: Joi.string().trim().length(2).uppercase().allow('', null),
+  zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null)
+}).min(1).unknown(false);
 
 // ============================================
 // Job Item (child of project) API Schemas

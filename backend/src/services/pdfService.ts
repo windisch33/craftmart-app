@@ -44,6 +44,10 @@ interface JobData {
   
   // Project info
   project_name?: string;
+  project_address?: string | null;
+  project_city?: string | null;
+  project_state?: string | null;
+  project_zip_code?: string | null;
   
   // Sections with items
   sections: Array<{
@@ -769,6 +773,12 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
         <div class="job-details">
             <div class="section-title">Job: ${jobData.title}</div>
             ${jobData.project_name ? `<div><strong>Project:</strong> ${jobData.project_name}</div>` : ''}
+            ${(jobData.project_address || jobData.project_city || jobData.project_state || jobData.project_zip_code) ? `
+              <div><strong>Job Address:</strong><br>
+                ${jobData.project_address ? `${jobData.project_address}<br>` : ''}
+                ${jobData.project_city ? jobData.project_city + ', ' : ''}${jobData.project_state || ''} ${jobData.project_zip_code || ''}
+              </div>
+            ` : ''}
             ${jobData.job_location ? `<div><strong>Directions:</strong><br>${jobData.job_location}</div>` : ''}
         </div>
     </div>
@@ -901,6 +911,10 @@ export const generateJobPDF = async (jobId: number, showLinePricing: boolean = t
              s.first_name as salesman_first_name, s.last_name as salesman_last_name,
              s.email as salesman_email, s.phone as salesman_phone,
              p.name as project_name,
+             p.address as project_address,
+             p.city as project_city,
+             p.state as project_state,
+             p.zip_code as project_zip_code,
              COALESCE(da.deposit_total, 0) AS deposit_total,
              CAST(COALESCE(j.total_amount, 0) - COALESCE(da.deposit_total, 0) AS FLOAT) AS balance_due
       FROM job_items j 

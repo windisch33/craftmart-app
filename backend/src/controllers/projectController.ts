@@ -11,6 +11,10 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         p.name,
         p.created_at,
         p.updated_at,
+        p.address as address,
+        p.city as city,
+        p.state as state,
+        p.zip_code as zip_code,
         c.name as customer_name,
         c.city as customer_city,
         c.state as customer_state,
@@ -51,6 +55,10 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
         p.name,
         p.created_at,
         p.updated_at,
+        p.address as address,
+        p.city as city,
+        p.state as state,
+        p.zip_code as zip_code,
         c.name as customer_name,
         c.email as customer_email,
         c.phone as customer_phone,
@@ -97,7 +105,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
 // Create new project (row in table "jobs")
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { customer_id, name } = req.body;
+    const { customer_id, name, address = null, city = null, state = null, zip_code = null } = req.body;
 
     const customerId = typeof customer_id === 'string'
       ? Number.parseInt(customer_id, 10)
@@ -119,12 +127,12 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
     }
 
     const query = `
-      INSERT INTO jobs (customer_id, name)
-      VALUES ($1, $2)
+      INSERT INTO jobs (customer_id, name, address, city, state, zip_code)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
-    const result = await pool.query(query, [customerId, nameValue]);
+    const result = await pool.query(query, [customerId, nameValue, address, city, state, zip_code]);
     
     // Return project with customer info
     const newProject = result.rows[0];
@@ -157,22 +165,47 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
     if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
-    const { name } = req.body;
+    const { name, address = undefined, city = undefined, state = undefined, zip_code = undefined } = req.body as any;
 
-    const nameValue = typeof name === 'string' ? name.trim() : '';
+    const updates: string[] = [];
+    const values: any[] = [];
 
-    if (!nameValue) {
-      return res.status(400).json({ error: 'Name is required' });
+    if (typeof name === 'string' && name.trim()) {
+      updates.push('name = $' + (values.length + 1));
+      values.push(name.trim());
     }
+    if (address !== undefined) {
+      updates.push('address = $' + (values.length + 1));
+      values.push(address);
+    }
+    if (city !== undefined) {
+      updates.push('city = $' + (values.length + 1));
+      values.push(city);
+    }
+    if (state !== undefined) {
+      updates.push('state = $' + (values.length + 1));
+      values.push(state);
+    }
+    if (zip_code !== undefined) {
+      updates.push('zip_code = $' + (values.length + 1));
+      values.push(zip_code);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(projectId);
 
     const query = `
       UPDATE jobs 
-      SET name = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2
+      SET ${updates.join(', ')}
+      WHERE id = $${values.length}
       RETURNING *
     `;
 
-    const result = await pool.query(query, [nameValue, projectId]);
+    const result = await pool.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Project not found' });

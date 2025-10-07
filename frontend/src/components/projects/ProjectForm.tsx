@@ -10,7 +10,7 @@ interface ProjectFormProps {
   customers: Customer[];
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { customer_id?: number; name: string }) => void;
+  onSubmit: (data: { customer_id?: number; name: string; address?: string | null; city?: string | null; state?: string | null; zip_code?: string | null }) => void;
   onCustomerCreate?: (customerData: any) => Promise<Customer>;
 }
 
@@ -24,7 +24,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     customer_id: '',
-    name: ''
+    name: '',
+    address: '',
+    city: '',
+    state: '',
+    zip_code: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [customerQuery, setCustomerQuery] = useState('');
@@ -38,13 +42,21 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       // Editing mode
       setFormData({
         customer_id: project.customer_id.toString(),
-        name: project.name
+        name: project.name,
+        address: (project as any).address || '',
+        city: (project as any).city || '',
+        state: (project as any).state || '',
+        zip_code: (project as any).zip_code || ''
       });
     } else {
       // Create mode
       setFormData({
         customer_id: '',
-        name: ''
+        name: '',
+        address: '',
+        city: '',
+        state: '',
+        zip_code: ''
       });
     }
     setErrors({});
@@ -74,6 +86,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     if (!formData.name.trim()) {
       newErrors.name = 'Job name is required';
     }
+    if (formData.state && formData.state.length > 0 && formData.state.length !== 2) {
+      newErrors.state = 'Use 2-letter state code';
+    }
+    if (formData.zip_code && !/^\d{5}(-\d{4})?$/.test(formData.zip_code)) {
+      newErrors.zip_code = 'Invalid ZIP format';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -90,7 +108,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       setLoading(true);
       
       const submitData: any = {
-        name: formData.name.trim()
+        name: formData.name.trim(),
+        address: formData.address?.trim() || null,
+        city: formData.city?.trim() || null,
+        state: formData.state?.trim().toUpperCase() || null,
+        zip_code: formData.zip_code?.trim() || null
       };
 
       // Only include customer_id for new projects
@@ -208,6 +230,72 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                 {errors.name && (
                   <span className="error-message">{errors.name}</span>
                 )}
+              </div>
+
+              {/* Job Address */}
+              <div className="form-group">
+                <label className="form-label">Job Address</label>
+                {!project && !!formData.customer_id && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        const customer = localCustomers.find(c => c.id === Number(formData.customer_id));
+                        if (customer) {
+                          setFormData(prev => ({
+                            ...prev,
+                            address: customer.address || '',
+                            city: customer.city || '',
+                            state: (customer.state || '').toUpperCase(),
+                            zip_code: customer.zip_code || ''
+                          }));
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      Use customer address
+                    </button>
+                  </div>
+                )}
+                <input
+                  type="text"
+                  placeholder="Street address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="form-control"
+                  disabled={loading}
+                />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="City"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="form-control"
+                    disabled={loading}
+                  />
+                  <input
+                    type="text"
+                    placeholder="State (e.g., MD)"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
+                    className={`form-control ${errors.state ? 'error' : ''}`}
+                    style={{ maxWidth: '120px' }}
+                    disabled={loading}
+                  />
+                  <input
+                    type="text"
+                    placeholder="ZIP"
+                    value={formData.zip_code}
+                    onChange={(e) => setFormData({ ...formData, zip_code: e.target.value })}
+                    className={`form-control ${errors.zip_code ? 'error' : ''}`}
+                    style={{ maxWidth: '160px' }}
+                    disabled={loading}
+                  />
+                </div>
+                {errors.state && (<span className="error-message">{errors.state}</span>)}
+                {errors.zip_code && (<span className="error-message">{errors.zip_code}</span>)}
               </div>
 
               {/* Customer Info Display - for editing mode */}

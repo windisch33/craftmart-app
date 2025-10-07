@@ -68,6 +68,12 @@ const ProjectList: React.FC<ProjectListProps> = ({
                   ` • ${project.customer_city}, ${project.customer_state}`
                 }
               </p>
+              {(project.address || project.city || project.state || project.zip_code) && (
+                <p className="customer-location" aria-label="Job address">
+                  {project.address ? `${project.address}, ` : ''}
+                  {[project.city, project.state].filter(Boolean).join(', ')} {project.zip_code || ''}
+                </p>
+              )}
             </div>
           </div>
 

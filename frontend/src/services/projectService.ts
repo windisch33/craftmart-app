@@ -10,6 +10,10 @@ export interface Project {
   name: string;
   created_at: string;
   updated_at: string;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
   // Aggregated/joined fields
   customer_name?: string;
   customer_city?: string;
