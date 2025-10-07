@@ -415,6 +415,7 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
     const { 
       customer_id, project_id, salesman_id, title, description, status = 'quote',
       delivery_date, job_location, order_designation, model_name, installer, terms,
+      po_number,
       show_line_pricing = true
     } = req.body;
     
@@ -449,11 +450,11 @@ export const createJob = async (req: Request, res: Response, next: NextFunction)
       `INSERT INTO job_items (
         customer_id, job_id, salesman_id, title, description, status,
         delivery_date, job_location, order_designation, model_name, installer, terms,
-        show_line_pricing, tax_rate
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *`,
+        po_number, show_line_pricing, tax_rate
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`,
       [finalCustomerId, project_id || null, salesman_id, title, description, status,
        delivery_date, job_location, order_designation, model_name, installer, terms,
-       show_line_pricing, taxRate]
+       po_number || null, show_line_pricing, taxRate]
     );
     
     res.status(201).json(result.rows[0]);
@@ -471,7 +472,7 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
     const allowedFields = [
       'customer_id', 'job_id', 'salesman_id', 'title', 'description', 'status',
       'delivery_date', 'job_location', 'order_designation', 'model_name', 
-      'installer', 'terms', 'show_line_pricing'
+      'installer', 'terms', 'po_number', 'show_line_pricing'
     ];
     
     const updates: string[] = [];

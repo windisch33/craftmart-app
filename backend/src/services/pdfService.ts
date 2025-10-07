@@ -24,6 +24,7 @@ interface JobData {
   deposit_total: number;
   balance_due: number;
   created_at: string;
+  po_number?: string | null;
   
   // Customer info
   customer_name: string;
@@ -804,6 +805,14 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             <td>${jobData.delivery_date ? formatDate(jobData.delivery_date) : ''}</td>
             <td>${jobData.installer || ''}</td>
             <td>${jobData.order_designation || 'INSTALL'}</td>
+        </tr>
+        <tr>
+            <th>PO Number</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td colspan="3">${jobData.po_number || ''}</td>
         </tr>
         <tr>
             <th>Payment Terms</th>

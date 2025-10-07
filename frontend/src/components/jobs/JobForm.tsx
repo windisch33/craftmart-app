@@ -194,7 +194,8 @@ const JobFormInner: React.FC<JobFormProps> = ({
         order_designation: formData.order_designation || undefined,
         model_name: formData.model_name || undefined,
         installer: formData.installer || undefined,
-        terms: formData.terms || undefined
+        terms: formData.terms || undefined,
+        po_number: formData.po_number?.trim() ? formData.po_number : undefined
       };
 
       // Call the original onSubmit which will create the job and sections

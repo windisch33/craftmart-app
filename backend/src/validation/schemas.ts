@@ -376,6 +376,7 @@ export const createJobItemApiSchema = Joi.object({
   model_name: Joi.string().trim().max(100).allow('', null),
   installer: Joi.string().trim().max(100).allow('', null),
   terms: Joi.string().trim().max(2000).allow('', null),
+  po_number: Joi.string().trim().max(100).allow('', null),
   show_line_pricing: Joi.boolean().default(true)
 }).xor('customer_id', 'project_id').unknown(false);
 
@@ -392,6 +393,7 @@ export const updateJobItemApiSchema = Joi.object({
   model_name: Joi.string().trim().max(100).allow('', null),
   installer: Joi.string().trim().max(100).allow('', null),
   terms: Joi.string().trim().max(2000).allow('', null),
+  po_number: Joi.string().trim().max(100).allow('', null),
   show_line_pricing: Joi.boolean()
 }).min(1).unknown(false);
 

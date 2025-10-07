@@ -11,6 +11,7 @@ type EditableJobData = {
   model_name: string;
   installer: string;
   terms: string;
+  po_number?: string;
 };
 
 type ValidationErrors = {
@@ -79,6 +80,15 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ data, errors, salesmen, onCha
 
         <div className="form-section">
           <div className="form-field">
+            <label>PO Number (optional):</label>
+            <input
+              type="text"
+              value={data.po_number || ''}
+              onChange={(e) => onChange({ ...data, po_number: e.target.value })}
+              placeholder="Customer PO Number"
+            />
+          </div>
+          <div className="form-field">
             <label>Order Type:</label>
             <input
               type="text"
@@ -124,4 +134,3 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ data, errors, salesmen, onCha
 };
 
 export default EditJobForm;
-

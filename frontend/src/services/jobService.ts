@@ -18,6 +18,7 @@ export interface Job {
   model_name?: string;
   installer?: string;
   terms?: string;
+  po_number?: string | null;
   show_line_pricing: boolean;
   subtotal: number;
   labor_total: number;
@@ -79,6 +80,7 @@ export interface CreateJobData {
   model_name?: string;
   installer?: string;
   terms?: string;
+  po_number?: string | null;
 }
 
 export type UpdateJobData = Partial<CreateJobData>;
