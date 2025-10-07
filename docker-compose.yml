@@ -68,6 +68,7 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: craftmart-tunnel
     restart: unless-stopped
+    # Legacy token-based run. Kept during migration; will be removed after cutover.
     command: tunnel --no-autoupdate run
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}

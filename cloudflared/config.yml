@@ -1,16 +1,22 @@
-# Cloudflare Tunnel Configuration for CraftMart App
-# This file configures how traffic is routed through the Cloudflare Tunnel
+# Cloudflare Tunnel Configuration (Token-based run)
+# This config is used by `cloudflared tunnel run` with TUNNEL_TOKEN.
+# No tunnel ID or credentials-file are required here.
 
 ingress:
-  # Route www.cmioe.com to nginx reverse proxy (handles both frontend and API)
+  # Route hostnames to nginx reverse proxy (serves frontend and proxies /api)
   - hostname: www.cmioe.com
     service: http://nginx:80
-  
+  - hostname: cmioe.com
+    service: http://nginx:80
+
   # Catch-all rule (required as the last rule)
   - service: http_status:404
 
-# Optional: Enable metrics for monitoring
+# Metrics endpoint (prometheus)
 metrics: 0.0.0.0:2000
 
-# Optional: Log level (debug, info, warn, error, fatal)
+# Log level (debug, info, warn, error, fatal)
 loglevel: info
+
+# Prefer QUIC; Cloudflared will fall back to HTTP/2 automatically
+protocol: quic

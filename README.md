@@ -148,6 +148,37 @@ docker-compose exec -T postgres psql -U craftmart_user -d craftmart < database/m
 docker-compose exec backend npm run test
 ```
 
+### **Cloudflared (Argo Tunnel)**
+
+This project uses the token-based Cloudflare Tunnel in Docker Compose. To set it up:
+
+1) Configure your token
+
+```
+# .env (project root)
+TUNNEL_TOKEN=your_cloudflare_tunnel_token_here
+```
+
+2) Ensure DNS points to your tunnel domain
+
+- In Cloudflare Dashboard → cmioe.com → DNS → Records
+- Set `www` (and optionally the apex `@`) as CNAMEs to your tunnel domain
+- Keep Proxy enabled (orange cloud)
+
+3) Start the tunnel with the app
+
+```
+docker-compose up -d
+```
+
+4) Check logs
+
+```
+docker-compose logs cloudflared
+```
+
+See docs/guides/CLOUDFLARE_TUNNEL_SETUP.md for a detailed walkthrough.
+
 ### **Docker Commands**
 ```bash
 # Start all services
