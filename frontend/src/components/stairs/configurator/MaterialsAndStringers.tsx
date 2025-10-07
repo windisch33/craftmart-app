@@ -1,6 +1,8 @@
 import React from 'react';
 import { TreeIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
+import FractionalInput from './FractionalInput';
+import { parseNumberLike } from '../../../utils/numberParsing';
 import type { StairMaterial } from '../../../services/stairService';
 
 interface MaterialsAndStringersProps {
@@ -123,22 +125,18 @@ const MaterialsAndStringers: React.FC<MaterialsAndStringersProps> = ({
               <div className="stringer-fields">
                 <div className="form-group">
                   <label>Thickness (in)</label>
-                  <input
-                    type="number"
-                    value={leftStringerThickness || ''}
-                    onChange={(e) => setLeftStringerThickness(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.25"
+                  <FractionalInput
+                    value={leftStringerThickness}
+                    onCommit={(v) => { if (Number.isFinite(v)) setLeftStringerThickness(v); }}
+                    placeholder="e.g., 1, 1 1/4"
                   />
                 </div>
                 <div className="form-group">
                   <label>Width (in)</label>
-                  <input
-                    type="number"
-                    value={leftStringerWidth || ''}
-                    onChange={(e) => setLeftStringerWidth(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.25"
+                  <FractionalInput
+                    value={leftStringerWidth}
+                    onCommit={(v) => { if (Number.isFinite(v)) setLeftStringerWidth(v); }}
+                    placeholder="e.g., 9 1/4"
                   />
                 </div>
                 <div className="form-group">
@@ -164,22 +162,18 @@ const MaterialsAndStringers: React.FC<MaterialsAndStringersProps> = ({
               <div className="stringer-fields">
                 <div className="form-group">
                   <label>Thickness (in)</label>
-                  <input
-                    type="number"
-                    value={rightStringerThickness || ''}
-                    onChange={(e) => setRightStringerThickness(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.25"
+                  <FractionalInput
+                    value={rightStringerThickness}
+                    onCommit={(v) => { if (Number.isFinite(v)) setRightStringerThickness(v); }}
+                    placeholder="e.g., 1, 1 1/4"
                   />
                 </div>
                 <div className="form-group">
                   <label>Width (in)</label>
-                  <input
-                    type="number"
-                    value={rightStringerWidth || ''}
-                    onChange={(e) => setRightStringerWidth(parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.25"
+                  <FractionalInput
+                    value={rightStringerWidth}
+                    onCommit={(v) => { if (Number.isFinite(v)) setRightStringerWidth(v); }}
+                    placeholder="e.g., 9 1/4"
                   />
                 </div>
                 <div className="form-group">
@@ -215,22 +209,18 @@ const MaterialsAndStringers: React.FC<MaterialsAndStringersProps> = ({
                 <div className="stringer-fields">
                   <div className="form-group">
                     <label>Thickness (in)</label>
-                    <input
-                      type="number"
-                      value={centerStringerThickness || ''}
-                      onChange={(e) => setCenterStringerThickness(parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.25"
+                    <FractionalInput
+                      value={centerStringerThickness}
+                      onCommit={(v) => { if (Number.isFinite(v)) setCenterStringerThickness(v); }}
+                      placeholder="e.g., 1, 1 1/4"
                     />
                   </div>
                   <div className="form-group">
                     <label>Width (in)</label>
-                    <input
-                      type="number"
-                      value={centerStringerWidth || ''}
-                      onChange={(e) => setCenterStringerWidth(parseFloat(e.target.value) || 0)}
-                      min="0"
-                      step="0.25"
+                    <FractionalInput
+                      value={centerStringerWidth}
+                      onCommit={(v) => { if (Number.isFinite(v)) setCenterStringerWidth(v); }}
+                      placeholder="e.g., 9 1/4"
                     />
                   </div>
                   <div className="form-group">

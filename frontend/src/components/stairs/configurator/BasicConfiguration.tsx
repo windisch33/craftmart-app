@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { RulerIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
+import { parseNumberLike, parseIntegerLike } from '../../../utils/numberParsing';
 
 interface BasicConfigurationProps {
   formData: FormData;
@@ -13,7 +14,18 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
   errors,
   onFormChange
 }) => {
-  const riserHeight = formData.floorToFloor / formData.numRisers;
+  const [floorToFloorText, setFloorToFloorText] = useState(String(formData.floorToFloor ?? ''));
+  const [numRisersText, setNumRisersText] = useState(String(formData.numRisers ?? ''));
+  const [roughCutWidthText, setRoughCutWidthText] = useState(String(formData.roughCutWidth ?? ''));
+  const [noseSizeText, setNoseSizeText] = useState(String(formData.noseSize ?? ''));
+
+  // Sync local text when formData changes externally (e.g., editing existing config)
+  useEffect(() => { setFloorToFloorText(String(formData.floorToFloor ?? '')); }, [formData.floorToFloor]);
+  useEffect(() => { setNumRisersText(String(formData.numRisers ?? '')); }, [formData.numRisers]);
+  useEffect(() => { setRoughCutWidthText(String(formData.roughCutWidth ?? '')); }, [formData.roughCutWidth]);
+  useEffect(() => { setNoseSizeText(String(formData.noseSize ?? '')); }, [formData.noseSize]);
+
+  const riserHeight = (Number(formData.floorToFloor) / (Number(formData.numRisers) || 1));
 
   return (
     <div className="basic-config-section">
@@ -35,10 +47,17 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
         <div className="form-group">
           <label htmlFor="floorToFloor">Floor to Floor Height (inches)&nbsp;*</label>
           <input
-            type="number"
+            type="text"
             id="floorToFloor"
-            value={formData.floorToFloor}
-            onChange={(e) => onFormChange('floorToFloor', parseFloat(e.target.value))}
+            value={floorToFloorText}
+            onChange={(e) => setFloorToFloorText(e.target.value)}
+            onBlur={() => {
+              const v = parseNumberLike(floorToFloorText);
+              if (Number.isFinite(v)) {
+                onFormChange('floorToFloor', v);
+                setFloorToFloorText(String(v));
+              }
+            }}
             min="60"
             max="180"
             step="0.25"
@@ -50,10 +69,17 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
         <div className="form-group">
           <label htmlFor="numRisers">Number of Risers *</label>
           <input
-            type="number"
+            type="text"
             id="numRisers"
-            value={formData.numRisers}
-            onChange={(e) => onFormChange('numRisers', parseInt(e.target.value))}
+            value={numRisersText}
+            onChange={(e) => setNumRisersText(e.target.value)}
+            onBlur={() => {
+              const v = parseIntegerLike(numRisersText);
+              if (Number.isFinite(v)) {
+                onFormChange('numRisers', v);
+                setNumRisersText(String(v));
+              }
+            }}
             min="1"
             max="30"
             className={errors.numRisers ? 'error' : ''}
@@ -67,13 +93,17 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
             <div className="tread-input-group">
               <label htmlFor="roughCutWidth">Rough Cut Width (inches)</label>
               <input
-                type="number"
+                type="text"
                 id="roughCutWidth"
-                value={formData.roughCutWidth}
-                onChange={(e) => {
-                  const newWidth = parseFloat(e.target.value) || 0;
-                  onFormChange('roughCutWidth', newWidth);
-                  onFormChange('treadSize', `${newWidth}x${formData.noseSize}`);
+                value={roughCutWidthText}
+                onChange={(e) => setRoughCutWidthText(e.target.value)}
+                onBlur={() => {
+                  const newWidth = parseNumberLike(roughCutWidthText);
+                  if (Number.isFinite(newWidth)) {
+                    onFormChange('roughCutWidth', newWidth);
+                    onFormChange('treadSize', `${newWidth}x${formData.noseSize}`);
+                    setRoughCutWidthText(String(newWidth));
+                  }
                 }}
                 min="8"
                 max="20"
@@ -87,13 +117,17 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
             <div className="tread-input-group">
               <label htmlFor="noseSize">Nose Size (inches)</label>
               <input
-                type="number"
+                type="text"
                 id="noseSize"
-                value={formData.noseSize}
-                onChange={(e) => {
-                  const newNose = parseFloat(e.target.value) || 0;
-                  onFormChange('noseSize', newNose);
-                  onFormChange('treadSize', `${formData.roughCutWidth}x${newNose}`);
+                value={noseSizeText}
+                onChange={(e) => setNoseSizeText(e.target.value)}
+                onBlur={() => {
+                  const newNose = parseNumberLike(noseSizeText);
+                  if (Number.isFinite(newNose)) {
+                    onFormChange('noseSize', newNose);
+                    onFormChange('treadSize', `${formData.roughCutWidth}x${newNose}`);
+                    setNoseSizeText(String(newNose));
+                  }
                 }}
                 min="0.5"
                 max="3"
@@ -111,7 +145,7 @@ const BasicConfiguration: React.FC<BasicConfigurationProps> = ({
               </div>
               <div className="calc-item-compact">
                 <span className="calc-label">Total Tread:</span>
-                <span className="calc-value">{(formData.roughCutWidth + formData.noseSize).toFixed(2)}"</span>
+                <span className="calc-value">{(Number(formData.roughCutWidth) + Number(formData.noseSize)).toFixed(2)}"</span>
               </div>
             </div>
           </div>

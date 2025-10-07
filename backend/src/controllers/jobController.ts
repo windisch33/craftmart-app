@@ -228,7 +228,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
       }
     }
 
-    // Amount range filter
+    // Amount range filter (allow 0 as a valid boundary)
     if (amountRangeMin !== undefined || amountRangeMax !== undefined) {
       const amountField = (() => {
         switch (amountRangeType?.toString()) {
@@ -241,14 +241,20 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
         }
       })();
 
-      if (amountRangeMin !== undefined && parseFloat(amountRangeMin.toString()) > 0) {
-        conditions.push(`${amountField} >= $${queryParams.length + 1}`);
-        queryParams.push(parseFloat(amountRangeMin.toString()));
+      if (amountRangeMin !== undefined) {
+        const minVal = parseFloat(amountRangeMin.toString());
+        if (!Number.isNaN(minVal) && minVal >= 0) {
+          conditions.push(`${amountField} >= $${queryParams.length + 1}`);
+          queryParams.push(minVal);
+        }
       }
 
-      if (amountRangeMax !== undefined && parseFloat(amountRangeMax.toString()) > 0) {
-        conditions.push(`${amountField} <= $${queryParams.length + 1}`);
-        queryParams.push(parseFloat(amountRangeMax.toString()));
+      if (amountRangeMax !== undefined) {
+        const maxVal = parseFloat(amountRangeMax.toString());
+        if (!Number.isNaN(maxVal) && maxVal >= 0) {
+          conditions.push(`${amountField} <= $${queryParams.length + 1}`);
+          queryParams.push(maxVal);
+        }
       }
     }
 
@@ -636,9 +642,23 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
   try {
     const { jobId, sectionId } = req.params;
     const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true, stair_configuration, product_id, length_inches } = req.body;
-    
+
     if (!description) {
       return res.status(400).json({ error: 'Description is required' });
+    }
+
+    // Validate that the section belongs to the specified job
+    try {
+      const ownership = await pool.query(
+        'SELECT 1 FROM job_sections WHERE id = $1 AND job_item_id = $2',
+        [sectionId, jobId]
+      );
+      if (ownership.rowCount === 0) {
+        return res.status(400).json({ error: 'Section does not belong to specified job' });
+      }
+    } catch (e) {
+      console.error('Ownership validation failed:', e);
+      return res.status(500).json({ error: 'Failed to validate section ownership' });
     }
     
     // Validate handrail length if this is a handrail product

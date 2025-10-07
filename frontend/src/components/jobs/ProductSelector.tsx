@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import stairService from '../../services/stairService';
 import productService from '../../services/productService';
 import materialService from '../../services/materialService';
 import jobService from '../../services/jobService';
@@ -218,20 +219,21 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         if (match) {
           configId = parseInt(match[1]);
           console.log('Found config ID from part_number:', configId);
-        } else if (item.part_number === 'STAIR-CONFIG') {
-          // Handle generic STAIR-CONFIG format - find config by job_id
+        } else if (item.part_number === 'STAIR-CONFIG' && jobId) {
+          // Handle generic STAIR-CONFIG format - find config(s) by job_id
           console.log('Part number is STAIR-CONFIG, searching for config by job_id:', jobId);
-          const response = await axios.get(`/api/stairs/configurations?jobId=${jobId}`);
-          if (response.data && response.data.length > 0) {
-            configId = response.data[0].id; // Get the latest config for this job
+          const configs = await stairService.getJobConfigurations(jobId);
+          if (configs && configs.length > 0) {
+            // Prefer most recently updated/created
+            const latest = configs[configs.length - 1];
+            configId = latest.id;
             console.log('Found config ID by job search:', configId);
           }
         }
         
         if (configId) {
-          // Fetch the stair configuration data
-          const response = await axios.get(`/api/stairs/configurations/${configId}`);
-          const stairConfig = response.data;
+          // Fetch the stair configuration data (normalized keys)
+          const stairConfig = await stairService.getConfiguration(configId);
           
           // Attach the configuration data to the item
           const itemWithConfig = {
@@ -475,34 +477,35 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         const sc: any = stairConfig as any;
         const stairItem: CreateQuoteItemData = {
           part_number: 'STAIR-CONFIG',
-          description: sc.config_name || stairConfig.configName || 'Straight Staircase',
+          description: (sc.config_name ?? stairConfig.configName) || 'Straight Staircase',
           quantity: 1,
-          unit_price: sc.total_amount || stairConfig.totalAmount || 0,
+          unit_price: (sc.total_amount ?? stairConfig.totalAmount ?? 0) as number,
           is_taxable: true,
           // Include the full stair configuration data
           stair_configuration: {
-            configName: sc.config_name || stairConfig.configName,
-            floorToFloor: sc.floor_to_floor || stairConfig.floorToFloor,
-            numRisers: sc.num_risers || stairConfig.numRisers,
-            riserHeight: sc.riser_height || stairConfig.riserHeight,
-            treadMaterialId: sc.tread_material_id || stairConfig.treadMaterialId,
-            riserMaterialId: sc.riser_material_id || stairConfig.riserMaterialId,
-            treadSize: sc.tread_size || stairConfig.treadSize,
-            roughCutWidth: sc.rough_cut_width || stairConfig.roughCutWidth,
-            noseSize: sc.nose_size || stairConfig.noseSize,
-            stringerType: sc.stringer_type || stairConfig.stringerType,
-            stringerMaterialId: sc.stringer_material_id || stairConfig.stringerMaterialId,
-            numStringers: sc.num_stringers || stairConfig.numStringers,
-            centerHorses: sc.center_horses || stairConfig.centerHorses,
-            fullMitre: sc.full_mitre || stairConfig.fullMitre,
-            bracketType: sc.bracket_type || stairConfig.bracketType,
-            specialNotes: sc.special_notes || stairConfig.specialNotes,
-            subtotal: stairConfig.subtotal,
-            laborTotal: sc.labor_total || stairConfig.laborTotal,
-            taxAmount: sc.tax_amount || stairConfig.taxAmount,
-            totalAmount: sc.total_amount || stairConfig.totalAmount,
-            items: stairConfig.items,
-            individualStringers: stairConfig.individualStringers
+            jobId: jobId!,
+            configName: sc.config_name ?? stairConfig.configName,
+            floorToFloor: sc.floor_to_floor ?? stairConfig.floorToFloor,
+            numRisers: sc.num_risers ?? stairConfig.numRisers,
+            riserHeight: sc.riser_height ?? stairConfig.riserHeight,
+            treadMaterialId: sc.tread_material_id ?? stairConfig.treadMaterialId,
+            riserMaterialId: sc.riser_material_id ?? stairConfig.riserMaterialId,
+            treadSize: sc.tread_size ?? stairConfig.treadSize,
+            roughCutWidth: sc.rough_cut_width ?? stairConfig.roughCutWidth,
+            noseSize: sc.nose_size ?? stairConfig.noseSize,
+            stringerType: sc.stringer_type ?? stairConfig.stringerType,
+            stringerMaterialId: sc.stringer_material_id ?? stairConfig.stringerMaterialId,
+            numStringers: sc.num_stringers ?? stairConfig.numStringers,
+            centerHorses: sc.center_horses ?? stairConfig.centerHorses,
+            fullMitre: (sc.full_mitre ?? stairConfig.fullMitre ?? false) as boolean,
+            bracketType: sc.bracket_type ?? stairConfig.bracketType,
+            specialNotes: sc.special_notes ?? stairConfig.specialNotes,
+            subtotal: (stairConfig.subtotal ?? sc.subtotal ?? 0) as number,
+            laborTotal: (sc.labor_total ?? stairConfig.laborTotal ?? 0) as number,
+            taxAmount: (sc.tax_amount ?? stairConfig.taxAmount ?? 0) as number,
+            totalAmount: (sc.total_amount ?? stairConfig.totalAmount ?? 0) as number,
+            items: stairConfig.items ?? sc.items ?? [],
+            individualStringers: stairConfig.individualStringers ?? sc.individual_stringers
           }
         } as any;
         console.log('Quote item part_number:', stairItem.part_number);

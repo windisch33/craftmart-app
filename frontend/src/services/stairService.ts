@@ -233,6 +233,32 @@ export interface StairConfiguration {
 // Helpers to normalize API responses to our StairConfiguration shape
 export function normalizeStairConfiguration(data: any): StairConfiguration {
   if (!data) return data as StairConfiguration;
+  // Derive individual stringers from flat DB fields if nested not present
+  const deriveIndividual = () => {
+    const leftW = data.left_stringer_width ?? data.leftStringerWidth;
+    const leftT = data.left_stringer_thickness ?? data.leftStringerThickness;
+    const leftM = data.left_stringer_material_id ?? data.leftStringerMaterialId;
+    const rightW = data.right_stringer_width ?? data.rightStringerWidth;
+    const rightT = data.right_stringer_thickness ?? data.rightStringerThickness;
+    const rightM = data.right_stringer_material_id ?? data.rightStringerMaterialId;
+    const centerW = data.center_stringer_width ?? data.centerStringerWidth;
+    const centerT = data.center_stringer_thickness ?? data.centerStringerThickness;
+    const centerM = data.center_stringer_material_id ?? data.centerStringerMaterialId;
+
+    const left = (leftW != null || leftT != null || leftM != null)
+      ? { width: Number(leftW), thickness: Number(leftT), materialId: Number(leftM) }
+      : undefined;
+    const right = (rightW != null || rightT != null || rightM != null)
+      ? { width: Number(rightW), thickness: Number(rightT), materialId: Number(rightM) }
+      : undefined;
+    const center = (centerW != null || centerT != null || centerM != null)
+      ? { width: Number(centerW), thickness: Number(centerT), materialId: Number(centerM) }
+      : null;
+    if (!left && !right && center == null) return undefined;
+    return { left, right, center };
+  };
+
+  const individual = data.individualStringers ?? data.individual_stringers ?? deriveIndividual();
   return {
     id: data.id,
     jobId: data.jobId ?? data.job_id,
@@ -257,7 +283,7 @@ export function normalizeStairConfiguration(data: any): StairConfiguration {
     totalAmount: data.totalAmount ?? data.total_amount ?? 0,
     specialNotes: data.specialNotes ?? data.special_notes,
     items: data.items,
-    individualStringers: data.individualStringers ?? data.individual_stringers,
+    individualStringers: individual,
     createdAt: data.createdAt ?? data.created_at,
     updatedAt: data.updatedAt ?? data.updated_at,
   };

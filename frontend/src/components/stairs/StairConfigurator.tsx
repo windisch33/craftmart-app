@@ -35,21 +35,26 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   initialConfig
 }) => {
   const { addDraftConfiguration } = useStairConfiguration();
+  const toNum = (v: any, d: number) => {
+    if (v === null || v === undefined) return d;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : d;
+  };
   const [showPricing, setShowPricing] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     configName: initialConfig?.configName || '',
-    floorToFloor: initialConfig?.floorToFloor || 108, // 9 feet default
-    numRisers: initialConfig?.numRisers || 14,
-    treadMaterialId: initialConfig?.treadMaterialId || 5, // Oak default
-    riserMaterialId: initialConfig?.riserMaterialId || 5, // Oak default
+    floorToFloor: toNum(initialConfig?.floorToFloor, 108), // 9 feet default
+    numRisers: toNum(initialConfig?.numRisers, 14),
+    treadMaterialId: toNum(initialConfig?.treadMaterialId, 5), // Oak default
+    riserMaterialId: toNum(initialConfig?.riserMaterialId, 5), // Oak default
     treadSize: initialConfig?.treadSize || '10x1.25', // Legacy field
-    roughCutWidth: initialConfig?.roughCutWidth || 10.0, // New flexible field
-    noseSize: initialConfig?.noseSize || 1.25,
+    roughCutWidth: toNum(initialConfig?.roughCutWidth, 10.0), // New flexible field
+    noseSize: toNum(initialConfig?.noseSize, 1.25),
     stringerType: initialConfig?.stringerType || '1x9.25',
-    stringerMaterialId: initialConfig?.stringerMaterialId || 7, // Poplar default
-    numStringers: initialConfig?.numStringers || 2,
-    centerHorses: initialConfig?.centerHorses || 0,
-    fullMitre: initialConfig?.fullMitre || false,
+    stringerMaterialId: toNum(initialConfig?.stringerMaterialId, 7), // Poplar default
+    numStringers: toNum(initialConfig?.numStringers, 2),
+    centerHorses: toNum(initialConfig?.centerHorses, 0),
+    fullMitre: Boolean(initialConfig?.fullMitre) || false,
     bracketType: initialConfig?.bracketType || 'Standard Bracket',
     specialNotes: initialConfig?.specialNotes || ''
   });
@@ -95,6 +100,112 @@ const StairConfigurator: React.FC<StairConfiguratorProps> = ({
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  // When editing an existing configuration, prefill advanced state from initialConfig
+  useEffect(() => {
+    if (!initialConfig) return;
+
+    // Prefill individual stringers
+    const ind = (initialConfig as any).individualStringers || (initialConfig as any).individual_stringers;
+    if (ind && typeof ind === 'object') {
+      if (ind.left) {
+        setLeftStringerWidth(Number(ind.left.width) || leftStringerWidth);
+        setLeftStringerThickness(Number(ind.left.thickness) || leftStringerThickness);
+        setLeftStringerMaterial(Number(ind.left.materialId ?? ind.left.material_id) || leftStringerMaterial);
+      }
+      if (ind.right) {
+        setRightStringerWidth(Number(ind.right.width) || rightStringerWidth);
+        setRightStringerThickness(Number(ind.right.thickness) || rightStringerThickness);
+        setRightStringerMaterial(Number(ind.right.materialId ?? ind.right.material_id) || rightStringerMaterial);
+      }
+      if (ind.center) {
+        setHasCenter(true);
+        setCenterStringerWidth(Number(ind.center.width) || centerStringerWidth);
+        setCenterStringerThickness(Number(ind.center.thickness) || centerStringerThickness);
+        setCenterStringerMaterial(Number(ind.center.materialId ?? ind.center.material_id) || centerStringerMaterial);
+      } else {
+        setHasCenter(false);
+      }
+    } else {
+      // Fallback: derive from stringerType like "1x9.25" and numStringers/centerHorses
+      const st = (initialConfig as any).stringerType || (initialConfig as any).stringer_type;
+      if (typeof st === 'string' && st.includes('x')) {
+        const [thk, wid] = st.split('x');
+        const t = Number(thk);
+        const w = Number(wid);
+        if (Number.isFinite(t)) {
+          setLeftStringerThickness(t);
+          setRightStringerThickness(t);
+          setCenterStringerThickness(t);
+        }
+        if (Number.isFinite(w)) {
+          setLeftStringerWidth(w);
+          setRightStringerWidth(w);
+          setCenterStringerWidth(w);
+        }
+      }
+      const ns = Number((initialConfig as any).numStringers ?? (initialConfig as any).num_stringers);
+      const ch = Number((initialConfig as any).centerHorses ?? (initialConfig as any).center_horses);
+      setHasCenter(Boolean((Number.isFinite(ns) && ns > 2) || (Number.isFinite(ch) && ch > 0)));
+    }
+
+    // Prefill treads and special parts from items if available
+    const items = (initialConfig as any).items as any[] | undefined;
+    if (Array.isArray(items) && items.length) {
+      let boxCount = 0;
+      let openLeftCount = 0;
+      let openRightCount = 0;
+      let doubleOpenCount = 0;
+      let boxWidth: number | undefined;
+      let openWidth: number | undefined;
+      let doubleWidth: number | undefined;
+      const specials: SpecialPartConfiguration[] = [];
+
+      for (const it of items) {
+        const itemType = it.itemType ?? it.item_type;
+        if (itemType === 'tread') {
+          const tType = it.treadType ?? it.tread_type;
+          const widthVal = Number(it.stairWidth ?? it.width);
+          if (tType === 'box') {
+            boxCount += 1;
+            if (boxWidth === undefined && !Number.isNaN(widthVal)) boxWidth = widthVal;
+          } else if (tType === 'open_left') {
+            openLeftCount += 1;
+            if (openWidth === undefined && !Number.isNaN(widthVal)) openWidth = widthVal;
+          } else if (tType === 'open_right') {
+            openRightCount += 1;
+            if (openWidth === undefined && !Number.isNaN(widthVal)) openWidth = widthVal;
+          } else if (tType === 'double_open') {
+            doubleOpenCount += 1;
+            if (doubleWidth === undefined && !Number.isNaN(widthVal)) doubleWidth = widthVal;
+          }
+        } else if (itemType === 'special_part') {
+          specials.push({
+            partId: Number(it.specialPartId ?? it.special_part_id ?? it.partId ?? it.part_id) || 0,
+            materialId: it.materialId ?? it.material_id,
+            quantity: Number(it.quantity) || 1,
+            position: it.position,
+          });
+        }
+      }
+
+      setBoxTreadCount(boxCount);
+      if (boxWidth !== undefined) setBoxTreadWidth(boxWidth);
+      const totalOpen = openLeftCount + openRightCount;
+      setOpenTreadCount(totalOpen);
+      if (openWidth !== undefined) setOpenTreadWidth(openWidth);
+      setOpenTreadDirection(openLeftCount >= openRightCount ? 'left' : 'right');
+      setDoubleOpenCount(doubleOpenCount);
+      if (doubleWidth !== undefined) setDoubleOpenWidth(doubleWidth);
+      if (specials.length) setSpecialParts(specials);
+
+      // If there were any open/double treads and the original used fullMitre, reflect it
+      if (initialConfig.fullMitre) {
+        if (totalOpen > 0) setOpenTreadFullMitre(true);
+        if (doubleOpenCount > 0) setDoubleOpenFullMitre(true);
+      }
+    }
+  }, [initialConfig]);
 
   // Initialize treads when numRisers changes
   useEffect(() => {

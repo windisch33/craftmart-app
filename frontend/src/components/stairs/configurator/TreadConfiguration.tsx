@@ -1,5 +1,7 @@
 import React from 'react';
 import { WarningIcon } from '../../common/icons';
+import { parseIntegerLike } from '../../../utils/numberParsing';
+import FractionalInput from './FractionalInput';
 import type { FormData, FormErrors } from './types';
 
 interface TreadConfigurationProps {
@@ -69,25 +71,22 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Box Treads</label>
-              <input
-                type="number"
-                value={boxTreadCount || ''}
-                onChange={(e) => setBoxTreadCount(parseInt(e.target.value) || 0)}
-                min="0"
-                max={formData.numRisers}
+              <FractionalInput
+                value={boxTreadCount}
+                onCommit={(v) => {
+                  const rounded = parseIntegerLike(v);
+                  const clamped = Math.max(0, Math.min(rounded, formData.numRisers));
+                  if (Number.isFinite(clamped)) setBoxTreadCount(clamped);
+                }}
                 placeholder="0"
               />
             </div>
             <div className="form-group">
               <label>Width (inches)</label>
-              <input
-                type="number"
-                value={boxTreadWidth || ''}
-                onChange={(e) => setBoxTreadWidth(parseFloat(e.target.value) || 0)}
-                min="30"
-                max="120"
-                step="0.25"
-                placeholder="Enter width"
+              <FractionalInput
+                value={boxTreadWidth}
+                onCommit={(v) => { if (Number.isFinite(v)) setBoxTreadWidth(v); }}
+                placeholder="e.g., 36, 36 1/2"
                 disabled={boxTreadCount === 0}
               />
             </div>
@@ -100,25 +99,22 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Open Treads</label>
-              <input
-                type="number"
-                value={openTreadCount || ''}
-                onChange={(e) => setOpenTreadCount(parseInt(e.target.value) || 0)}
-                min="0"
-                max={formData.numRisers}
+              <FractionalInput
+                value={openTreadCount}
+                onCommit={(v) => {
+                  const rounded = parseIntegerLike(v);
+                  const clamped = Math.max(0, Math.min(rounded, formData.numRisers));
+                  if (Number.isFinite(clamped)) setOpenTreadCount(clamped);
+                }}
                 placeholder="0"
               />
             </div>
             <div className="form-group">
               <label>Width (inches)</label>
-              <input
-                type="number"
-                value={openTreadWidth || ''}
-                onChange={(e) => setOpenTreadWidth(parseFloat(e.target.value) || 0)}
-                min="30"
-                max="120"
-                step="0.25"
-                placeholder="Enter width"
+              <FractionalInput
+                value={openTreadWidth}
+                onCommit={(v) => { if (Number.isFinite(v)) setOpenTreadWidth(v); }}
+                placeholder="e.g., 36, 36 1/2"
                 disabled={openTreadCount === 0}
               />
             </div>
@@ -172,25 +168,22 @@ const TreadConfiguration: React.FC<TreadConfigurationProps> = ({
           <div className="tread-inputs two-column">
             <div className="form-group">
               <label>Number of Double Open Treads</label>
-              <input
-                type="number"
-                value={doubleOpenCount || ''}
-                onChange={(e) => setDoubleOpenCount(parseInt(e.target.value) || 0)}
-                min="0"
-                max={formData.numRisers}
+              <FractionalInput
+                value={doubleOpenCount}
+                onCommit={(v) => {
+                  const rounded = parseIntegerLike(v);
+                  const clamped = Math.max(0, Math.min(rounded, formData.numRisers));
+                  if (Number.isFinite(clamped)) setDoubleOpenCount(clamped);
+                }}
                 placeholder="0"
               />
             </div>
             <div className="form-group">
               <label>Width (inches)</label>
-              <input
-                type="number"
-                value={doubleOpenWidth || ''}
-                onChange={(e) => setDoubleOpenWidth(parseFloat(e.target.value) || 0)}
-                min="30"
-                max="120"
-                step="0.25"
-                placeholder="Enter width"
+              <FractionalInput
+                value={doubleOpenWidth}
+                onCommit={(v) => { if (Number.isFinite(v)) setDoubleOpenWidth(v); }}
+                placeholder="e.g., 36, 36 1/2"
                 disabled={doubleOpenCount === 0}
               />
             </div>
