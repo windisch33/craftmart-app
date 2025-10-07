@@ -57,7 +57,10 @@ const Projects: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const projectsData = await jobsService.getAllProjects();
+      const params: any = {};
+      const q = searchTerm.trim();
+      if (q) params.q = q;
+      const projectsData = await jobsService.getAllProjects(params);
       setProjects(projectsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load projects');

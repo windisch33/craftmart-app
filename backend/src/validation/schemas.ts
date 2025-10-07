@@ -350,6 +350,15 @@ export const updateProjectApiSchema = Joi.object({
   zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null)
 }).min(1).unknown(false);
 
+// GET /api/jobs query schema (projects list)
+export const getProjectsQuerySchema = Joi.object({
+  q: Joi.string().trim().max(255).optional(),
+  address: Joi.string().trim().max(500).optional(),
+  city: Joi.string().trim().max(100).optional(),
+  state: Joi.string().trim().length(2).uppercase().optional(),
+  zip: Joi.string().trim().max(20).optional()
+}).unknown(false);
+
 // ============================================
 // Job Item (child of project) API Schemas
 // ============================================

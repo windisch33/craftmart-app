@@ -42,8 +42,17 @@ class ProjectService {
     };
   }
 
-  async getAllProjects(): Promise<Project[]> {
-    const response = await axios.get(`${API_BASE_URL}/api/jobs`, {
+  async getAllProjects(params?: { q?: string; address?: string; city?: string; state?: string; zip?: string }): Promise<Project[]> {
+    const qs = new URLSearchParams();
+    if (params?.q) qs.append('q', params.q);
+    if (params?.address) qs.append('address', params.address);
+    if (params?.city) qs.append('city', params.city);
+    if (params?.state) qs.append('state', params.state);
+    if (params?.zip) qs.append('zip', params.zip);
+
+    const query = qs.toString();
+    const url = query ? `${API_BASE_URL}/api/jobs?${query}` : `${API_BASE_URL}/api/jobs`;
+    const response = await axios.get(url, {
       headers: this.getAuthHeaders(),
     });
     return response.data;

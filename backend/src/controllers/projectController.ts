@@ -4,7 +4,9 @@ import pool from '../config/database';
 // Get all projects (stored in table "jobs") with customer info and job item count
 export const getAllProjects = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = `
+    const { q, address, city, state, zip } = (req.query || {}) as Record<string, string | undefined>;
+
+    let query = `
       SELECT 
         p.id,
         p.customer_id,
@@ -23,11 +25,52 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
       FROM jobs p
       JOIN customers c ON p.customer_id = c.id
       LEFT JOIN job_items ji ON ji.job_id = p.id
-      GROUP BY p.id, c.name, c.city, c.state
-      ORDER BY p.created_at DESC
     `;
-    
-    const result = await pool.query(query);
+
+    const params: any[] = [];
+    const where: string[] = [];
+
+    // General search across project and address fields
+    if (q && q.trim()) {
+      const term = `%${q.trim()}%`;
+      params.push(term);
+      where.push(`(
+        p.name ILIKE $${params.length} OR
+        c.name ILIKE $${params.length} OR
+        p.address ILIKE $${params.length} OR
+        p.city ILIKE $${params.length} OR
+        p.state ILIKE $${params.length} OR
+        p.zip_code ILIKE $${params.length}
+      )`);
+    }
+
+    if (address && address.trim()) {
+      params.push(`%${address.trim()}%`);
+      where.push(`p.address ILIKE $${params.length}`);
+    }
+
+    if (city && city.trim()) {
+      params.push(`%${city.trim()}%`);
+      where.push(`p.city ILIKE $${params.length}`);
+    }
+
+    if (state && state.trim()) {
+      params.push(state.trim().toUpperCase());
+      where.push(`p.state = $${params.length}`);
+    }
+
+    if (zip && zip.trim()) {
+      params.push(`%${zip.trim()}%`);
+      where.push(`p.zip_code ILIKE $${params.length}`);
+    }
+
+    if (where.length > 0) {
+      query += ` WHERE ${where.join(' AND ')}`;
+    }
+
+    query += ` GROUP BY p.id, c.name, c.city, c.state ORDER BY p.created_at DESC`;
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {
     next(error);
