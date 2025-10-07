@@ -80,12 +80,7 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
 // Get project (row in table "jobs") by ID with all its job items
 export const getProjectById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const rawProjectId = req.params.id;
-    if (typeof rawProjectId !== 'string') {
-      return res.status(400).json({ error: 'Invalid project ID' });
-    }
-
-    const projectId = Number.parseInt(rawProjectId, 10);
+    const projectId = Number((req.params as any).id);
     if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -199,12 +194,7 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
 // Update project (name only) in table "jobs"
 export const updateProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const rawProjectId = req.params.id;
-    if (typeof rawProjectId !== 'string') {
-      return res.status(400).json({ error: 'Invalid project ID' });
-    }
-
-    const projectId = Number.parseInt(rawProjectId, 10);
+    const projectId = Number((req.params as any).id);
     if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
@@ -275,12 +265,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 // Delete project (only if no job items exist)
 export const deleteProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const rawProjectId = req.params.id;
-    if (typeof rawProjectId !== 'string') {
-      return res.status(400).json({ error: 'Invalid project ID' });
-    }
-
-    const projectId = Number.parseInt(rawProjectId, 10);
+    const projectId = Number((req.params as any).id);
     if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
