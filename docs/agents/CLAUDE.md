@@ -35,6 +35,7 @@ craftmart-app/
 - `docs/plans/outline.txt` - Original requirements (READ FIRST)
 - `docs/stair/STAIR_PRICING_FORMULA.txt` - Current simplified pricing model
 - `docs/stair/STAIR_PRICING_IMPLEMENTATION_PLAN.md` - Feature progress tracker
+- `docs/stair/STAIR_CONFIGURATOR_GUIDE.md` - Editing, inputs (fractions), and save behavior
 - `database/init/01-init.sql` - Complete schema
 - `database/migrations/` - Schema updates
 

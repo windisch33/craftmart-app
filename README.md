@@ -467,3 +467,5 @@ For technical support or questions:
 ## 📄 License
 
 Private repository - All rights reserved to CraftMart Manufacturing.
+### **Documentation**
+- Stair Configurator Guide: docs/stair/STAIR_CONFIGURATOR_GUIDE.md
