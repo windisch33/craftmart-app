@@ -304,7 +304,7 @@ class JobService {
   // Job Sections operations
   async getJobSections(jobId: number): Promise<JobSection[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/jobs/${jobId}/sections`, {
+      const response = await axios.get(`${API_BASE_URL}/api/job-items/${jobId}/sections`, {
         headers: this.getAuthHeaders()
       });
       return response.data;

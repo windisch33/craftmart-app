@@ -487,6 +487,26 @@ export const updateJob = async (req: Request, res: Response, next: NextFunction)
         paramCounter++;
       }
     }
+
+    // If customer_id is changing, recompute tax_rate based on the new customer's state
+    if (Object.prototype.hasOwnProperty.call(updateFields, 'customer_id')) {
+      const newCustomerId = updateFields.customer_id;
+      if (newCustomerId !== undefined && newCustomerId !== null) {
+        try {
+          const customerResult = await pool.query('SELECT state FROM customers WHERE id = $1', [newCustomerId]);
+          if (customerResult.rows.length === 0) {
+            return res.status(400).json({ error: 'Customer not found' });
+          }
+          const customerState = customerResult.rows[0].state as string | null;
+          const newTaxRate = customerState ? await calculateTaxForState(customerState) : 0;
+          updates.push(`tax_rate = $${paramCounter}`);
+          values.push(newTaxRate);
+          paramCounter++;
+        } catch (e) {
+          console.error('Failed to recompute tax_rate on customer change:', e);
+        }
+      }
+    }
     
     if (updates.length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });

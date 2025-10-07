@@ -330,6 +330,19 @@ export const createRailPartsProductSchema = Joi.object({
 export const updateRailPartsProductSchema = createRailPartsProductSchema;
 
 // ============================================
+// Project (Jobs parent) API Schemas
+// ============================================
+
+export const createProjectApiSchema = Joi.object({
+  customer_id: Joi.number().integer().positive().required(),
+  name: Joi.string().trim().min(1).max(255).required()
+}).unknown(false);
+
+export const updateProjectApiSchema = Joi.object({
+  name: Joi.string().trim().min(1).max(255).required()
+}).unknown(false);
+
+// ============================================
 // Stairs API Schemas
 // ============================================
 
