@@ -276,6 +276,12 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                           <span className="detail-label">Total:</span>
                           <span className="detail-value">{jobService.formatCurrency(job.total_amount || 0)}</span>
                         </div>
+                        {job.po_number && (
+                          <div className="job-detail-row">
+                            <span className="detail-label">PO#:</span>
+                            <span className="detail-value">{job.po_number}</span>
+                          </div>
+                        )}
                         {job.delivery_date && (
                           <div className="job-detail-row">
                             <span className="detail-label">Delivery:</span>

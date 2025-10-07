@@ -132,6 +132,7 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
           'j.description',
           'c.name',
           '(s.first_name || \' \' || s.last_name)',
+          'j.po_number',
           'j.id::text'
         ];
         
@@ -163,6 +164,9 @@ export const getAllJobs = async (req: Request, res: Response, next: NextFunction
             break;
           case 'salesman':
             fieldName = '(s.first_name || \' \' || s.last_name)';
+            break;
+          case 'poNumber':
+            fieldName = 'j.po_number';
             break;
           default:
             fieldName = 'j.title';

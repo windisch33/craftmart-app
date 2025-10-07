@@ -34,6 +34,11 @@ const Summary: React.FC<SummaryProps> = ({ job, getJobNumber, getStatusColor, pr
           >
             {getJobNumber(job)}
           </div>
+          {job.po_number && (
+            <span className="job-financial-chip">
+              PO: {job.po_number}
+            </span>
+          )}
           {typeof job.deposit_total === 'number' && job.deposit_total > 0 && (
             <span className="job-financial-chip">
               Payments: {formatCurrency(job.deposit_total)}

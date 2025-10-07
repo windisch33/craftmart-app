@@ -34,6 +34,12 @@ const JobInfoGrid: React.FC<JobInfoGridProps> = ({ job }) => (
     <div className="info-section">
       <h4>Job Details</h4>
       <div className="info-items">
+        {job.po_number && (
+          <div className="info-item">
+            <label>PO Number:</label>
+            <span>{job.po_number}</span>
+          </div>
+        )}
         {job.order_designation && (
           <div className="info-item">
             <label>Order Type:</label>
@@ -64,4 +70,3 @@ const JobInfoGrid: React.FC<JobInfoGridProps> = ({ job }) => (
 );
 
 export default JobInfoGrid;
-

@@ -118,6 +118,7 @@ interface EditableJobData {
   model_name: string;
   installer: string;
   terms: string;
+  po_number?: string;
 }
 
 interface EditableSection {
@@ -236,7 +237,8 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
       order_designation: job.order_designation || '',
       model_name: job.model_name || '',
       installer: job.installer || '',
-      terms: job.terms || ''
+      terms: job.terms || '',
+      po_number: job.po_number || ''
     });
 
     // Initialize sections for editing
@@ -489,6 +491,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
         model_name: job.model_name,
         installer: job.installer,
         terms: job.terms,
+        po_number: job.po_number || undefined,
         project_id: finalProjectId
       };
 
