@@ -90,7 +90,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                 
                 // If this is a stair configuration, include the stair data
                 if (item.part_number === 'STAIR-CONFIG' && item.stair_configuration) {
-                  itemData.stair_configuration = item.stair_configuration;
+                  itemData.stair_configuration = {
+                    ...item.stair_configuration,
+                    jobId: newJob.id
+                  };
                 }
                 
                 await jobService.addQuoteItem(newJob.id, newSection.id, itemData);
@@ -294,26 +297,69 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                         </div>
                       </div>
 
-                      <div className="job-actions">
+                      <div 
+                        className="job-actions" 
+                        style={{ 
+                          display: 'flex', 
+                          gap: '8px', 
+                          marginTop: '12px', 
+                          paddingTop: '12px', 
+                          borderTop: '1px solid #f3f4f6',
+                          flexWrap: 'wrap'
+                        }}
+                      >
                         <button 
-                          className="action-btn"
                           onClick={(e) => { e.stopPropagation(); handleViewJob(job.id); }}
                           title="View Details"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            padding: '8px 12px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            background: '#fff',
+                            color: '#374151',
+                            cursor: 'pointer'
+                          }}
                         >
                           👁 Details
                         </button>
                         <button 
-                          className="action-btn"
                           onClick={(e) => { e.stopPropagation(); handleViewPDF(job.id, job.title); }}
                           title="View PDF"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            padding: '8px 12px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            background: '#fff',
+                            color: '#374151',
+                            cursor: 'pointer'
+                          }}
                         >
                           <FileIcon /> PDF
                         </button>
                         {job.status !== 'invoice' && (
                           <button 
-                            className="action-btn action-btn-warning"
                             onClick={(e) => { e.stopPropagation(); handleNextStage(job); }}
                             title="Next Stage"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 6,
+                              padding: '8px 12px',
+                              border: 'none',
+                              borderRadius: 8,
+                              background: 'var(--color-primary)',
+                              color: '#fff',
+                              cursor: 'pointer'
+                            }}
                           >
                             <ArrowRightIcon width={16} height={16} /> Next
                           </button>

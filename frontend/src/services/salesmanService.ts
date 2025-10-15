@@ -139,8 +139,10 @@ class SalesmanService {
     return `${salesman.first_name} ${salesman.last_name}`;
   }
 
-  formatCommissionRate(rate: number): string {
-    return `${rate.toFixed(2)}%`;
+  formatCommissionRate(rate: number | string | null | undefined): string {
+    const n = Number(rate);
+    if (!Number.isFinite(n)) return '--';
+    return `${n.toFixed(2)}%`;
   }
 }
 

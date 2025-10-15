@@ -274,9 +274,12 @@ class JobService {
         headers: this.getAuthHeaders()
       });
       return this.mapJobRecord(response.data);
-    } catch (error) {
-      console.error('Error creating job:', error);
-      throw error;
+    } catch (error: any) {
+      const baseMsg = error?.response?.data?.error || error?.response?.data?.message || 'Failed to create job';
+      const details = Array.isArray(error?.response?.data?.details) ? error.response.data.details : [];
+      const message = details.length ? `${baseMsg}: ${details[0]}` : baseMsg;
+      console.error('Error creating job:', message, error);
+      throw new Error(message);
     }
   }
 
@@ -360,9 +363,12 @@ class JobService {
         { headers: this.getAuthHeaders() }
       );
       return response.data;
-    } catch (error) {
-      console.error('Error adding quote item:', error);
-      throw error;
+    } catch (error: any) {
+      const baseMsg = error?.response?.data?.error || error?.response?.data?.message || 'Failed to add quote item';
+      const details = Array.isArray(error?.response?.data?.details) ? error.response.data.details : [];
+      const message = details.length ? `${baseMsg}: ${details[0]}` : baseMsg;
+      console.error('Error adding quote item:', message, error);
+      throw new Error(message);
     }
   }
 

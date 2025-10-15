@@ -27,14 +27,14 @@ import JobDetailErrorBoundary from './job-detail/JobDetailErrorBoundary';
 
 const isPresent = (value: unknown): boolean => value !== null && value !== undefined;
 
-const buildStairConfigurationCopyPayload = (config: StairConfigurationDetails) => {
+const buildStairConfigurationCopyPayload = (config: StairConfigurationDetails, jobId: number) => {
   const configName = config.config_name ?? (config as any).configName;
-  const floorToFloor = Number(config.floor_to_floor ?? (config as any).floorToFloor ?? 0);
-  const numRisers = Number(config.num_risers ?? (config as any).numRisers ?? 0);
+  const floorToFloor = Number(config.floor_to_floor ?? (config as any).floorToFloor ?? 108);
+  const numRisers = Number(config.num_risers ?? (config as any).numRisers ?? 14);
   const riserHeight = config.riser_height ?? (config as any).riserHeight ?? undefined;
-  const treadMaterialId = config.tread_material_id ?? (config as any).treadMaterialId;
-  const riserMaterialId = config.riser_material_id ?? (config as any).riserMaterialId;
-  const stringerMaterialId = config.stringer_material_id ?? (config as any).stringerMaterialId;
+  const treadMaterialId = config.tread_material_id ?? (config as any).treadMaterialId ?? 5;
+  const riserMaterialId = config.riser_material_id ?? (config as any).riserMaterialId ?? 4;
+  const stringerMaterialId = config.stringer_material_id ?? (config as any).stringerMaterialId ?? 7;
 
   const buildStringer = (
     width?: number | null,
@@ -64,14 +64,12 @@ const buildStairConfigurationCopyPayload = (config: StairConfigurationDetails) =
 
   const items = (config.items || []).map((item: any) => {
     const width = item.stairWidth ?? item.width;
-    const totalWidth = item.totalWidth ?? item.length ?? undefined;
 
     return {
       itemType: item.itemType ?? item.item_type ?? 'tread',
       riserNumber: item.riserNumber ?? item.riser_number ?? null,
       treadType: item.treadType ?? item.tread_type ?? 'box',
       stairWidth: isPresent(width) ? Number(width) : 0,
-      totalWidth: isPresent(totalWidth) ? Number(totalWidth) : undefined,
       boardTypeId: item.boardTypeId ?? item.board_type_id ?? undefined,
       materialId: item.materialId ?? item.material_id ?? treadMaterialId,
       specialPartId: item.specialPartId ?? item.special_part_id ?? undefined,
@@ -84,6 +82,7 @@ const buildStairConfigurationCopyPayload = (config: StairConfigurationDetails) =
   });
 
   return {
+    jobId,
     configName: configName ?? 'Stair Configuration',
     floorToFloor,
     numRisers,
@@ -91,11 +90,11 @@ const buildStairConfigurationCopyPayload = (config: StairConfigurationDetails) =
     treadMaterialId,
     riserMaterialId,
     treadSize: config.tread_size ?? (config as any).treadSize ?? '',
-    roughCutWidth: Number(config.rough_cut_width ?? (config as any).roughCutWidth ?? 0),
-    noseSize: Number(config.nose_size ?? (config as any).noseSize ?? 0),
+    roughCutWidth: Number(config.rough_cut_width ?? (config as any).roughCutWidth ?? 10),
+    noseSize: Number(config.nose_size ?? (config as any).noseSize ?? 1.25),
     stringerType: config.stringer_type ?? (config as any).stringerType ?? undefined,
     stringerMaterialId,
-    numStringers: Number(config.num_stringers ?? (config as any).numStringers ?? 0),
+    numStringers: Number(config.num_stringers ?? (config as any).numStringers ?? 2),
     centerHorses: Number(config.center_horses ?? (config as any).centerHorses ?? 0),
     fullMitre: Boolean(config.full_mitre ?? (config as any).fullMitre ?? false),
     bracketType: config.bracket_type ?? (config as any).bracketType ?? undefined,
@@ -471,39 +470,53 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
       setIsCopying(true);
       
       // Determine the final project ID - either the target or current project
-      // Note: job.job_id is the actual database field name (maps to project)
-      const finalProjectId = targetProjectId || currentProject?.id || job.job_id;
+      // Backends sometimes expose the relation as job_id or project_id; prefer target, then current, then either field from job
+      const finalProjectId = targetProjectId || currentProject?.id || (job as any).job_id || (job as any).project_id;
       
       if (!finalProjectId) {
         throw new Error('No valid project ID found for copy operation');
       }
 
       // Create a copy of the job data
+      const targetProjectInfo = targetProjectId ? availableProjects.find(p => p.id === targetProjectId) : currentProject;
+      const effectiveCustomerId = targetProjectInfo?.customer_id ?? job.customer_id;
+
+      // API requires exactly one of customer_id or project_id (XOR)
       const copyData = {
-        customer_id: job.customer_id,
-        salesman_id: job.salesman_id,
+        ...(finalProjectId
+          ? { project_id: Number(finalProjectId) }
+          : { customer_id: Number(effectiveCustomerId) }),
+        salesman_id: (job.salesman_id ?? undefined) as number | undefined,
         title: newTitle,
-        description: job.description,
+        description: job.description || undefined,
         status: 'quote' as const, // Always start as quote
-        delivery_date: job.delivery_date,
-        job_location: job.job_location,
-        order_designation: job.order_designation,
-        model_name: job.model_name,
-        installer: job.installer,
-        terms: job.terms,
-        po_number: job.po_number || undefined,
-        project_id: finalProjectId
+        delivery_date: job.delivery_date || undefined,
+        job_location: job.job_location || undefined,
+        order_designation: job.order_designation || undefined,
+        model_name: job.model_name || undefined,
+        installer: job.installer || undefined,
+        terms: job.terms || undefined,
+        po_number: job.po_number || undefined
       };
 
       // Create the new job
       const newJob = await jobService.createJob(copyData);
 
       // Preload stair configurations referenced by quote items so we can clone them
+      // Collect IDs from either `stair_config_id` or a part_number like "STAIR-123"
       const stairConfigIds = new Set<number>();
+      const stairIdFromPartNumber = (pn?: string | null) => {
+        if (!pn) return null;
+        const m = pn.match(/STAIR-(\d+)/i);
+        return m ? Number(m[1]) : null;
+      };
       (job.sections || []).forEach(section => {
         (section.items || []).forEach(item => {
           if (item.stair_config_id) {
             stairConfigIds.add(item.stair_config_id);
+          } else {
+            const parsed = stairIdFromPartNumber(item.part_number as any);
+            if (parsed) stairConfigIds.add(parsed);
           }
         });
       });
@@ -546,14 +559,26 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
               is_taxable: item.is_taxable
             };
 
-            if (item.stair_config_id) {
-              const sourceConfig = stairConfigsById.get(item.stair_config_id);
-              if (!sourceConfig) {
-                throw new Error(`Unable to locate stair configuration ${item.stair_config_id} for copy.`);
-              }
+            // Determine stair configuration source: explicit ID, part_number ref, or embedded payload
+            let cfgId: number | null = null;
+            if (item.stair_config_id) cfgId = item.stair_config_id;
+            else {
+              const parsed = stairIdFromPartNumber(item.part_number as any);
+              if (parsed) cfgId = parsed;
+            }
 
+            if (cfgId) {
+              const sourceConfig = stairConfigsById.get(cfgId);
+              if (!sourceConfig) {
+                throw new Error(`Unable to locate stair configuration ${cfgId} for copy.`);
+              }
               payload.part_number = 'STAIR-CONFIG';
-              payload.stair_configuration = buildStairConfigurationCopyPayload(sourceConfig);
+              payload.stair_configuration = buildStairConfigurationCopyPayload(sourceConfig, newJob.id);
+            } else if ((item as any).stair_configuration) {
+              // Fall back to embedded configuration payload if provided on the item
+              // Normalize via builder to satisfy Joi schema with safe defaults
+              payload.part_number = 'STAIR-CONFIG';
+              payload.stair_configuration = buildStairConfigurationCopyPayload((item as any).stair_configuration as any, newJob.id);
             }
 
             await jobService.addQuoteItem(newJob.id, newSection.id, payload);
@@ -588,7 +613,8 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
     } catch (error) {
       console.error('Error copying job:', error);
       setIsCopying(false);
-      showToast('Failed to copy job item', { type: 'error' });
+      const message = error instanceof Error ? error.message : 'Failed to copy job item';
+      showToast(message, { type: 'error' });
     }
   };
 

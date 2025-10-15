@@ -158,7 +158,8 @@
   border-radius: 0.75rem;
   padding: 1rem;
   flex: 1 1 calc(33.333% - 1rem);
-  min-width: 250px;
+  /* Give cards a larger minimum width so inputs feel roomier */
+  min-width: 360px;
 }
 
 .tread-type-section h4 {
@@ -178,7 +179,8 @@
 }
 
 .tread-inputs.two-column {
-  grid-template-columns: 2fr 3fr;
+  /* Stack number/width fields vertically for longer inputs */
+  grid-template-columns: 1fr;
 }
 
 .tread-inputs.three-column {

@@ -163,7 +163,8 @@
 }
 
 .tread-inputs.two-column {
-  grid-template-columns: 2fr 3fr;
+  /* Stack inputs for longer fields */
+  grid-template-columns: 1fr;
 }
 
 .tread-inputs.three-column {

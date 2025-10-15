@@ -45,7 +45,8 @@ const JobFormInner: React.FC<JobFormProps> = ({
     order_designation: 'INSTALL',
     model_name: '',
     installer: '',
-    terms: '1/2 DN BAL C.O.D.'
+    terms: '1/2 DN BAL C.O.D.',
+    po_number: ''
   });
 
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -238,12 +239,25 @@ const JobFormInner: React.FC<JobFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
+    let nextVal: any;
+    if (type === 'checkbox') {
+      nextVal = (e.target as HTMLInputElement).checked;
+    } else if (name === 'customer_id') {
+      // Ensure customer_id is a number (0 when unselected)
+      nextVal = value === '' ? 0 : Number(value);
+    } else if (name === 'salesman_id') {
+      // Ensure salesman_id is a number (undefined when unselected)
+      nextVal = value === '' ? undefined : Number(value);
+    } else if (type === 'number') {
+      nextVal = value === '' ? 0 : parseFloat(value);
+    } else {
+      nextVal = value;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
-               type === 'number' ? (value === '' ? 0 : parseFloat(value)) :
-               value
+      [name]: nextVal
     }));
 
     // Clear error when user starts typing
@@ -408,9 +422,9 @@ const JobFormInner: React.FC<JobFormProps> = ({
               </div>
             </div>
 
-            {/* Customer & Salesman Selection */}
+            {/* Salesman Selection (Customer shown only when not in project context) */}
             <div className="job-form-section">
-              <h3 className="section-title">Customer & Salesman</h3>
+              <h3 className="section-title">{projectId ? 'Salesman' : 'Customer & Salesman'}</h3>
               
               <div className="form-row">
                 {!projectId && (
@@ -420,7 +434,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
                       <select
                         id="customer_id"
                         name="customer_id"
-                        value={formData.customer_id}
+                        value={formData.customer_id || ''}
                         onChange={handleChange}
                         className={errors.customer_id ? 'error' : ''}
                         disabled={isLoading}
@@ -482,7 +496,7 @@ const JobFormInner: React.FC<JobFormProps> = ({
                   {selectedSalesman && (
                     <div className="selected-info">
                       <small>
-                        📧 {selectedSalesman.email} • 📞 {selectedSalesman.phone} • 💼 {salesmanService.formatCommissionRate(selectedSalesman.commission_rate)}
+                        👤 {salesmanService.formatSalesmanName(selectedSalesman)}
                       </small>
                     </div>
                   )}
@@ -568,8 +582,18 @@ const JobFormInner: React.FC<JobFormProps> = ({
                     placeholder="e.g., 1/2 DN BAL C.O.D."
                   />
                 </div>
-
-
+                <div className="form-field">
+                  <label htmlFor="po_number">PO Number</label>
+                  <input
+                    type="text"
+                    id="po_number"
+                    name="po_number"
+                    value={formData.po_number || ''}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    placeholder="Customer PO Number"
+                  />
+                </div>
               </div>
 
               <div className="form-field">
@@ -649,6 +673,11 @@ const JobFormInner: React.FC<JobFormProps> = ({
                       {formData.delivery_date && (
                         <div className="summary-item">
                           <strong>Delivery:</strong> {new Date(formData.delivery_date).toLocaleDateString()}
+                        </div>
+                      )}
+                      {formData.po_number && (
+                        <div className="summary-item">
+                          <strong>PO #:</strong> {formData.po_number}
                         </div>
                       )}
                     </div>

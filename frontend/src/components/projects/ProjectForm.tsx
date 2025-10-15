@@ -36,6 +36,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+  // Typeahead state
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState<number>(-1);
 
   useEffect(() => {
     if (project) {
@@ -66,15 +69,32 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
 
   useEffect(() => {
     const t = setTimeout(async () => {
-      if (!customerQuery.trim()) return;
+      const q = customerQuery.trim();
+      if (!q) {
+        // Restore original customer list when search query is cleared
+        setLocalCustomers(customers);
+        return;
+      }
       try {
         setSearching(true);
-        const results = await customerService.searchCustomers(customerQuery.trim());
+        const results = await customerService.searchCustomers(q);
         setLocalCustomers(results);
       } catch (_e) { /* ignore */ } finally { setSearching(false); }
     }, 250);
     return () => clearTimeout(t);
-  }, [customerQuery]);
+  }, [customerQuery, customers]);
+
+  // Helper to format the display string for a customer
+  // Display name only per request (no city/state)
+  const formatCustomerLabel = (c: Customer) => c.name;
+
+  const selectCustomer = (c: Customer) => {
+    setFormData(prev => ({ ...prev, customer_id: c.id.toString() }));
+    setCustomerQuery(formatCustomerLabel(c));
+    setErrors(prev => ({ ...prev, customer_id: '' }));
+    setShowSuggestions(false);
+    setHighlightIndex(-1);
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -171,32 +191,95 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                   <label htmlFor="customer_id" className="form-label">
                     Customer <span className="required">*</span>
                   </label>
-                  <div className="select-with-add">
-                    <input
-                      type="text"
-                      placeholder="Search customer..."
-                      value={customerQuery}
-                      onChange={(e)=> setCustomerQuery(e.target.value)}
-                      className="form-control"
-                      style={{marginBottom:'8px'}}
-                      disabled={loading}
-                    />
-                    <select
-                      id="customer_id"
-                      value={formData.customer_id}
-                      onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
-                      className={`form-control ${errors.customer_id ? 'error' : ''}`}
-                      disabled={loading}
-                    >
-                      <option value="">Select a customer...</option>
-                      {localCustomers.map(customer => (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name}
-                          {customer.city && customer.state && ` (${customer.city}, ${customer.state})`}
-                        </option>
-                      ))}
-                    </select>
-                    {searching && <small className="help-text">Searching…</small>}
+                  <div className="select-with-add" style={{ alignItems: 'flex-start' }}>
+                    {/* Search input with suggestions */}
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <input
+                        type="text"
+                        placeholder="Search customer..."
+                        value={customerQuery}
+                        onChange={(e)=> { 
+                          const q = e.target.value; 
+                          setCustomerQuery(q); 
+                          setShowSuggestions(true);
+                          // Clear any previous selection if user edits text
+                          setFormData(prev => ({ ...prev, customer_id: '' }));
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+                        onKeyDown={(e) => {
+                          if (!showSuggestions) return;
+                          const max = localCustomers.length;
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setHighlightIndex(i => (i + 1) % Math.max(max, 1));
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setHighlightIndex(i => (i - 1 + Math.max(max, 1)) % Math.max(max, 1));
+                          } else if (e.key === 'Enter') {
+                            if (highlightIndex >= 0 && highlightIndex < localCustomers.length) {
+                              e.preventDefault();
+                              selectCustomer(localCustomers[highlightIndex]);
+                            }
+                          } else if (e.key === 'Escape') {
+                            setShowSuggestions(false);
+                          }
+                        }}
+                        className="form-control"
+                        style={{ width: '100%', fontSize: '18px', padding: '12px 14px', minHeight: '52px' }}
+                        disabled={loading}
+                        aria-autocomplete="list"
+                        aria-expanded={showSuggestions}
+                        aria-controls="customer-suggestions"
+                      />
+                      {showSuggestions && (
+                        <ul
+                          id="customer-suggestions"
+                          role="listbox"
+                          style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 4px)',
+                            left: 0,
+                            right: 0,
+                            zIndex: 10,
+                            maxHeight: 240,
+                            overflowY: 'auto',
+                            background: '#fff',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+                            padding: 0,
+                            margin: 0,
+                            listStyle: 'none'
+                          }}
+                        >
+                          {searching && (
+                            <li style={{ padding: '10px 12px', color: '#6b7280' }}>Searching…</li>
+                          )}
+                          {!searching && localCustomers.length === 0 && (
+                            <li style={{ padding: '10px 12px', color: '#6b7280' }}>No customers found</li>
+                          )}
+                          {!searching && localCustomers.map((customer, idx) => (
+                            <li
+                              key={customer.id}
+                              role="option"
+                              aria-selected={idx === highlightIndex}
+                              onMouseDown={(e) => { e.preventDefault(); selectCustomer(customer); }}
+                              onMouseEnter={() => setHighlightIndex(idx)}
+                              style={{
+                                padding: '12px 14px',
+                                cursor: 'pointer',
+                                background: idx === highlightIndex ? '#f3f4f6' : '#fff',
+                                fontSize: '15px'
+                              }}
+                            >
+                              {formatCustomerLabel(customer)}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
                     <button
                       type="button"
                       className="add-button"
