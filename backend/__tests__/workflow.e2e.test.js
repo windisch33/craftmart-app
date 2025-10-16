@@ -109,7 +109,11 @@ function makeDbMock() {
     }
 
     // Projects (table: jobs)
-    if (sql.includes('INSERT INTO jobs (customer_id, name)') || (sql.includes('INSERT INTO jobs') && sql.includes('(customer_id, name)'))) {
+    // Accept both legacy and expanded column inserts (with address fields)
+    if (
+      sql.includes('INSERT INTO jobs (customer_id, name') ||
+      (sql.includes('INSERT INTO jobs') && sql.includes('(customer_id, name'))
+    ) {
       const [customer_id, name] = params;
       const row = { id: nextId('project'), customer_id: Number(customer_id), name, created_at: nowIso(), updated_at: nowIso() };
       state.projects.push(row);
