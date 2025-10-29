@@ -14,7 +14,7 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         p.created_at,
         p.updated_at,
         p.address as address,
-        p.unit_number as unit_number,
+        to_jsonb(p)->>'unit_number' as unit_number,
         p.city as city,
         p.state as state,
         p.zip_code as zip_code,
@@ -39,7 +39,7 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         p.name ILIKE $${params.length} OR
         c.name ILIKE $${params.length} OR
         p.address ILIKE $${params.length} OR
-        p.unit_number ILIKE $${params.length} OR
+        (to_jsonb(p)->>'unit_number') ILIKE $${params.length} OR
         p.city ILIKE $${params.length} OR
         p.state ILIKE $${params.length} OR
         p.zip_code ILIKE $${params.length}
@@ -96,7 +96,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
         p.created_at,
         p.updated_at,
         p.address as address,
-        p.unit_number as unit_number,
+        to_jsonb(p)->>'unit_number' as unit_number,
         p.city as city,
         p.state as state,
         p.zip_code as zip_code,
