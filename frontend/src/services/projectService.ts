@@ -43,6 +43,14 @@ class ProjectService {
     };
   }
 
+  private stripEmpty<T extends Record<string, any>>(obj: T): Partial<T> {
+    const out: Record<string, any> = {};
+    Object.entries(obj || {}).forEach(([k, v]) => {
+      if (v !== '' && v !== null && v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+
   async getAllProjects(params?: { q?: string; address?: string; city?: string; state?: string; zip?: string }): Promise<Project[]> {
     const qs = new URLSearchParams();
     if (params?.q) qs.append('q', params.q);
@@ -66,18 +74,50 @@ class ProjectService {
     return response.data;
   }
 
-  async createProject(data: CreateProjectData): Promise<Project> {
-    const response = await axios.post(`${API_BASE_URL}/api/jobs`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+  async createProject(data: any): Promise<Project> {
+    const payload = this.stripEmpty(data);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/jobs`, payload, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const hadUnit = Object.prototype.hasOwnProperty.call(data || {}, 'unit_number');
+      if (status === 400 && hadUnit) {
+        // Retry without unit_number for older servers
+        const fallback = { ...payload } as any;
+        delete fallback.unit_number;
+        const response = await axios.post(`${API_BASE_URL}/api/jobs`, fallback, {
+          headers: this.getAuthHeaders(),
+        });
+        return response.data;
+      }
+      throw error;
+    }
   }
 
-  async updateProject(id: number, data: UpdateProjectData): Promise<Project> {
-    const response = await axios.put(`${API_BASE_URL}/api/jobs/${id}`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+  async updateProject(id: number, data: any): Promise<Project> {
+    const payload = this.stripEmpty(data);
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/jobs/${id}`, payload, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const hadUnit = Object.prototype.hasOwnProperty.call(data || {}, 'unit_number');
+      if (status === 400 && hadUnit) {
+        // Retry without unit_number for older servers
+        const fallback = { ...payload } as any;
+        delete fallback.unit_number;
+        const response = await axios.put(`${API_BASE_URL}/api/jobs/${id}`, fallback, {
+          headers: this.getAuthHeaders(),
+        });
+        return response.data;
+      }
+      throw error;
+    }
   }
 
   async deleteProject(id: number): Promise<void> {

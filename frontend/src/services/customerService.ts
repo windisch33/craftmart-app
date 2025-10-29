@@ -41,6 +41,13 @@ export interface UpdateCustomerRequest extends CreateCustomerRequest {
 }
 
 class CustomerService {
+  private stripEmpty<T extends Record<string, any>>(obj: T): Partial<T> {
+    const out: Record<string, any> = {};
+    Object.entries(obj || {}).forEach(([k, v]) => {
+      if (v !== '' && v !== null && v !== undefined) out[k] = v;
+    });
+    return out;
+  }
   private getAuthHeaders() {
     const token = localStorage.getItem('authToken');
     return {
@@ -96,24 +103,52 @@ class CustomerService {
 
   async createCustomer(customerData: CreateCustomerRequest): Promise<Customer> {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/customers`, customerData, {
+      const payload = this.stripEmpty(customerData as any);
+      const response = await axios.post(`${API_BASE_URL}/api/customers`, payload, {
         headers: this.getAuthHeaders(),
       });
       return response.data;
     } catch (error: any) {
+      // Backwards-compat: retry without unit_number for older servers
+      const status = error?.response?.status;
+      const hadUnit = Object.prototype.hasOwnProperty.call(customerData as any, 'unit_number');
+      if (status === 400 && hadUnit) {
+        try {
+          const fallback: any = this.stripEmpty(customerData as any);
+          delete fallback.unit_number;
+          const response = await axios.post(`${API_BASE_URL}/api/customers`, fallback, {
+            headers: this.getAuthHeaders(),
+          });
+          return response.data;
+        } catch (_e) { /* fall through */ }
+      }
       throw new Error(error.response?.data?.error || 'Failed to create customer');
     }
   }
 
   async updateCustomer(id: number, customerData: CreateCustomerRequest): Promise<Customer> {
     try {
-      const response = await axios.put(`${API_BASE_URL}/api/customers/${id}`, customerData, {
+      const payload = this.stripEmpty(customerData as any);
+      const response = await axios.put(`${API_BASE_URL}/api/customers/${id}`, payload, {
         headers: this.getAuthHeaders(),
       });
       return response.data;
     } catch (error: any) {
-      if (error.response?.status === 404) {
+      const status = error?.response?.status;
+      if (status === 404) {
         throw new Error('Customer not found');
+      }
+      // Backwards-compat: retry without unit_number for older servers
+      const hadUnit = Object.prototype.hasOwnProperty.call(customerData as any, 'unit_number');
+      if (status === 400 && hadUnit) {
+        try {
+          const fallback: any = this.stripEmpty(customerData as any);
+          delete fallback.unit_number;
+          const response = await axios.put(`${API_BASE_URL}/api/customers/${id}`, fallback, {
+            headers: this.getAuthHeaders(),
+          });
+          return response.data;
+        } catch (_e) { /* fall through */ }
       }
       throw new Error(error.response?.data?.error || 'Failed to update customer');
     }
