@@ -19,6 +19,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
   const [formData, setFormData] = useState<CreateCustomerRequest>({
     name: '',
     address: '',
+    unit_number: '',
     city: '',
     state: '',
     zip_code: '',
@@ -41,6 +42,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
         setFormData({
           name: customer.name || '',
           address: customer.address || '',
+          unit_number: (customer as any).unit_number || '',
           city: customer.city || '',
           state: customer.state || '',
           zip_code: customer.zip_code || '',
@@ -56,6 +58,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
         setFormData({
           name: '',
           address: '',
+          unit_number: '',
           city: '',
           state: '',
           zip_code: '',
@@ -289,6 +292,23 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   className="form-input"
                   placeholder="123 Main Street"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="unit_number">
+                  Unit / Apt / Suite
+                </label>
+                <input
+                  id="unit_number"
+                  type="text"
+                  value={formData.unit_number || ''}
+                  onChange={(e) => handleInputChange('unit_number' as any, e.target.value)}
+                  className="form-input"
+                  placeholder="Apt 4B, Suite 210, Unit 5"
                   disabled={isSubmitting}
                 />
               </div>

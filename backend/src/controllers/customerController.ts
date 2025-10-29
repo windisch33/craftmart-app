@@ -81,10 +81,11 @@ export const getCustomerById = async (req: Request, res: Response, next: NextFun
 
 export const createCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes } = req.body;
+    const { name, address, unit_number, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes } = req.body;
     const normalized = {
       name: name?.trim(),
       address: address?.trim() || null,
+      unit_number: unit_number?.trim() || null,
       city: city?.trim() || null,
       state: state ? String(state).toUpperCase() : null,
       zip_code: zip_code?.trim() || null,
@@ -97,11 +98,12 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
     };
     
     const result = await pool.query(
-      `INSERT INTO customers (name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      `INSERT INTO customers (name, address, unit_number, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
       [
         normalized.name,
         normalized.address,
+        normalized.unit_number,
         normalized.city,
         normalized.state,
         normalized.zip_code,
@@ -123,10 +125,11 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
 export const updateCustomer = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { name, address, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes } = req.body;
+    const { name, address, unit_number, city, state, zip_code, phone, mobile, fax, email, accounting_email, notes } = req.body;
     const normalized = {
       name: name?.trim(),
       address: address?.trim() || null,
+      unit_number: unit_number?.trim() || null,
       city: city?.trim() || null,
       state: state ? String(state).toUpperCase() : null,
       zip_code: zip_code?.trim() || null,
@@ -139,12 +142,13 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
     };
     
     const result = await pool.query(
-      `UPDATE customers SET name = $1, address = $2, city = $3, state = $4, zip_code = $5, 
-       phone = $6, mobile = $7, fax = $8, email = $9, accounting_email = $10, notes = $11, updated_at = NOW()
-       WHERE id = $12 RETURNING *`,
+      `UPDATE customers SET name = $1, address = $2, unit_number = $3, city = $4, state = $5, zip_code = $6, 
+       phone = $7, mobile = $8, fax = $9, email = $10, accounting_email = $11, notes = $12, updated_at = NOW()
+       WHERE id = $13 RETURNING *`,
       [
         normalized.name,
         normalized.address,
+        normalized.unit_number,
         normalized.city,
         normalized.state,
         normalized.zip_code,

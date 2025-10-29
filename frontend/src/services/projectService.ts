@@ -11,6 +11,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   address?: string | null;
+  unit_number?: string | null;
   city?: string | null;
   state?: string | null;
   zip_code?: string | null;

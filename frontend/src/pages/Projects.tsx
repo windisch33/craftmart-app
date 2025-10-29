@@ -89,7 +89,7 @@ const Projects: React.FC = () => {
     });
   };
 
-  const handleCreateProject = async (projectData: { customer_id: number; name: string; address?: string | null; city?: string | null; state?: string | null; zip_code?: string | null }) => {
+  const handleCreateProject = async (projectData: { customer_id: number; name: string; address?: string | null; unit_number?: string | null; city?: string | null; state?: string | null; zip_code?: string | null }) => {
     try {
       await jobsService.createProject(projectData);
       await loadProjects();
@@ -204,6 +204,7 @@ const Projects: React.FC = () => {
       project.customer_city?.toLowerCase().includes(searchLower) ||
       project.customer_state?.toLowerCase().includes(searchLower) ||
       (project.address || '').toLowerCase().includes(searchLower) ||
+      ((project as any).unit_number || '').toLowerCase().includes(searchLower) ||
       (project.city || '').toLowerCase().includes(searchLower) ||
       (project.state || '').toLowerCase().includes(searchLower) ||
       (project.zip_code || '').toLowerCase().includes(searchLower)

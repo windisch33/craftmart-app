@@ -260,6 +260,7 @@ const apiEmail = Joi.string()
 export const createCustomerApiSchema = Joi.object({
   name: Joi.string().trim().min(1).max(255).required(),
   address: Joi.string().trim().max(500).allow('', null),
+  unit_number: Joi.string().trim().max(50).allow('', null),
   city: Joi.string().trim().max(100).allow('', null),
   state: Joi.string().trim().length(2).uppercase().allow('', null),
   zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null),
@@ -337,6 +338,7 @@ export const createProjectApiSchema = Joi.object({
   customer_id: Joi.number().integer().positive().required(),
   name: Joi.string().trim().min(1).max(255).required(),
   address: Joi.string().trim().max(500).allow('', null),
+  unit_number: Joi.string().trim().max(50).allow('', null),
   city: Joi.string().trim().max(100).allow('', null),
   state: Joi.string().trim().length(2).uppercase().allow('', null),
   zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null)
@@ -345,6 +347,7 @@ export const createProjectApiSchema = Joi.object({
 export const updateProjectApiSchema = Joi.object({
   name: Joi.string().trim().min(1).max(255),
   address: Joi.string().trim().max(500).allow('', null),
+  unit_number: Joi.string().trim().max(50).allow('', null),
   city: Joi.string().trim().max(100).allow('', null),
   state: Joi.string().trim().length(2).uppercase().allow('', null),
   zip_code: Joi.string().trim().pattern(/^\d{5}(-\d{4})?$/).allow('', null)

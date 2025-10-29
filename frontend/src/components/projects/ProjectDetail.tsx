@@ -171,9 +171,9 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
                 }
               </p>
             )}
-            {project && (project.address || project.city || project.state || project.zip_code) && (
+            {project && (project.address || (project as any).unit_number || project.city || project.state || project.zip_code) && (
               <p className="modal-subtitle" aria-label="Job address">
-                {project.address ? `${project.address}, ` : ''}
+                {project.address ? `${project.address}${(project as any).unit_number ? ' ' + (project as any).unit_number : ''}, ` : ''}
                 {[project.city, project.state].filter(Boolean).join(', ')} {project.zip_code || ''}
               </p>
             )}

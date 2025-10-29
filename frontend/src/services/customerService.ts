@@ -6,6 +6,7 @@ export interface Customer {
   id: number;
   name: string;
   address?: string;
+  unit_number?: string;
   city?: string;
   state?: string;
   zip_code?: string;
@@ -23,6 +24,7 @@ export interface Customer {
 export interface CreateCustomerRequest {
   name: string;
   address?: string;
+  unit_number?: string;
   city?: string;
   state?: string;
   zip_code?: string;

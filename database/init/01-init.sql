@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     address TEXT,
+    unit_number VARCHAR(50),
     city VARCHAR(100),
     state VARCHAR(50),
     zip_code VARCHAR(20),
@@ -70,6 +71,12 @@ CREATE TABLE IF NOT EXISTS jobs (
     tax_rate DECIMAL(5,4) DEFAULT 0,
     tax_amount DECIMAL(10,2) DEFAULT 0,
     total_amount DECIMAL(10,2) DEFAULT 0,
+    -- Project address fields
+    address TEXT,
+    unit_number VARCHAR(50),
+    city VARCHAR(100),
+    state VARCHAR(2),
+    zip_code VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -149,9 +156,9 @@ CREATE INDEX IF NOT EXISTS idx_quote_items_section_id ON quote_items(section_id)
 CREATE INDEX IF NOT EXISTS idx_tax_rates_state_code ON tax_rates(state_code);
 
 -- Insert sample data for development
-INSERT INTO customers (name, address, city, state, zip_code, phone, email, notes) VALUES
-('John Smith', '123 Main St', 'Springfield', 'IL', '62701', '(555) 123-4567', 'john@example.com', 'Preferred customer'),
-('ABC Construction', '456 Oak Ave', 'Chicago', 'IL', '60601', '(555) 987-6543', 'contact@abc-construction.com', 'Commercial contractor')
+INSERT INTO customers (name, address, unit_number, city, state, zip_code, phone, email, notes) VALUES
+('John Smith', '123 Main St', 'Apt 4B', 'Springfield', 'IL', '62701', '(555) 123-4567', 'john@example.com', 'Preferred customer'),
+('ABC Construction', '456 Oak Ave', NULL, 'Chicago', 'IL', '60601', '(555) 987-6543', 'contact@abc-construction.com', 'Commercial contractor')
 ON CONFLICT DO NOTHING;
 
 -- Insert sample users (password: 'password123' for all)

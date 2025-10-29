@@ -14,6 +14,7 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         p.created_at,
         p.updated_at,
         p.address as address,
+        p.unit_number as unit_number,
         p.city as city,
         p.state as state,
         p.zip_code as zip_code,
@@ -38,6 +39,7 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
         p.name ILIKE $${params.length} OR
         c.name ILIKE $${params.length} OR
         p.address ILIKE $${params.length} OR
+        p.unit_number ILIKE $${params.length} OR
         p.city ILIKE $${params.length} OR
         p.state ILIKE $${params.length} OR
         p.zip_code ILIKE $${params.length}
@@ -94,6 +96,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
         p.created_at,
         p.updated_at,
         p.address as address,
+        p.unit_number as unit_number,
         p.city as city,
         p.state as state,
         p.zip_code as zip_code,
@@ -143,7 +146,7 @@ export const getProjectById = async (req: Request, res: Response, next: NextFunc
 // Create new project (row in table "jobs")
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { customer_id, name, address = null, city = null, state = null, zip_code = null } = req.body;
+    const { customer_id, name, address = null, unit_number = null, city = null, state = null, zip_code = null } = req.body;
 
     const customerId = typeof customer_id === 'string'
       ? Number.parseInt(customer_id, 10)
@@ -165,12 +168,12 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
     }
 
     const query = `
-      INSERT INTO jobs (customer_id, name, address, city, state, zip_code)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO jobs (customer_id, name, address, unit_number, city, state, zip_code)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
 
-    const result = await pool.query(query, [customerId, nameValue, address, city, state, zip_code]);
+    const result = await pool.query(query, [customerId, nameValue, address, unit_number, city, state, zip_code]);
     
     // Return project with customer info
     const newProject = result.rows[0];
@@ -198,7 +201,7 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
     if (!Number.isInteger(projectId)) {
       return res.status(400).json({ error: 'Invalid project ID' });
     }
-    const { name, address = undefined, city = undefined, state = undefined, zip_code = undefined } = req.body as any;
+    const { name, address = undefined, unit_number = undefined, city = undefined, state = undefined, zip_code = undefined } = req.body as any;
 
     const updates: string[] = [];
     const values: any[] = [];
@@ -210,6 +213,10 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
     if (address !== undefined) {
       updates.push('address = $' + (values.length + 1));
       values.push(address);
+    }
+    if (unit_number !== undefined) {
+      updates.push('unit_number = $' + (values.length + 1));
+      values.push(unit_number);
     }
     if (city !== undefined) {
       updates.push('city = $' + (values.length + 1));

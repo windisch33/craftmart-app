@@ -10,7 +10,7 @@ interface ProjectFormProps {
   customers: Customer[];
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { customer_id?: number; name: string; address?: string | null; city?: string | null; state?: string | null; zip_code?: string | null }) => void;
+  onSubmit: (data: { customer_id?: number; name: string; address?: string | null; unit_number?: string | null; city?: string | null; state?: string | null; zip_code?: string | null }) => void;
   onCustomerCreate?: (customerData: any) => Promise<Customer>;
 }
 
@@ -26,6 +26,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     customer_id: '',
     name: '',
     address: '',
+    unit_number: '',
     city: '',
     state: '',
     zip_code: ''
@@ -47,6 +48,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         customer_id: project.customer_id.toString(),
         name: project.name,
         address: (project as any).address || '',
+        unit_number: (project as any).unit_number || '',
         city: (project as any).city || '',
         state: (project as any).state || '',
         zip_code: (project as any).zip_code || ''
@@ -57,6 +59,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         customer_id: '',
         name: '',
         address: '',
+        unit_number: '',
         city: '',
         state: '',
         zip_code: ''
@@ -130,6 +133,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       const submitData: any = {
         name: formData.name.trim(),
         address: formData.address?.trim() || null,
+        unit_number: formData.unit_number?.trim() || null,
         city: formData.city?.trim() || null,
         state: formData.state?.trim().toUpperCase() || null,
         zip_code: formData.zip_code?.trim() || null
@@ -329,6 +333,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                           setFormData(prev => ({
                             ...prev,
                             address: customer.address || '',
+                            unit_number: (customer as any).unit_number || '',
                             city: customer.city || '',
                             state: (customer.state || '').toUpperCase(),
                             zip_code: customer.zip_code || ''
@@ -349,6 +354,16 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                   className="form-control"
                   disabled={loading}
                 />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Unit / Apt / Suite"
+                    value={formData.unit_number}
+                    onChange={(e) => setFormData({ ...formData, unit_number: e.target.value })}
+                    className="form-control"
+                    disabled={loading}
+                  />
+                </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                   <input
                     type="text"

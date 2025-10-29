@@ -142,8 +142,14 @@ const Customers: React.FC = () => {
   };
 
   const formatAddress = (customer: Customer) => {
-    const parts = [customer.address, customer.city, customer.state, customer.zip_code]
-      .filter(Boolean);
+    const line1 = customer.address || '';
+    const unit = (customer as any).unit_number ? ` ${String((customer as any).unit_number)}` : '';
+    const cityStateZip = [customer.city, customer.state].filter(Boolean).join(', ');
+    const parts = [
+      line1 ? `${line1}${unit}`.trim() : undefined,
+      cityStateZip || undefined,
+      customer.zip_code || undefined
+    ].filter(Boolean);
     return parts.length > 0 ? parts.join(', ') : 'No address provided';
   };
 
