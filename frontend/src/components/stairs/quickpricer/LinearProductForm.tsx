@@ -74,16 +74,7 @@ const LinearProductForm: React.FC<LinearProductFormProps> = ({
         </div>
       </div>
 
-      <div className="form-group">
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={formData.includeLabor}
-            onChange={(e) => setFormData(prev => ({ ...prev, includeLabor: e.target.checked }))}
-          />
-          Include Labor Cost
-        </label>
-      </div>
+      {/* Labor cost toggle removed for Quick Pricer */}
     </div>
   );
 };

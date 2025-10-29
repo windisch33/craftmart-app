@@ -82,14 +82,14 @@ const QuickPricer: React.FC = () => {
     length: 72, // 6 feet default
     materialId: 1,
     quantity: 1,
-    includeLabor: true
+    includeLabor: false
   });
 
   const [railPartsFormData, setRailPartsFormData] = useState<RailPartsFormData>({
     productId: 0,
     materialId: 1,
     quantity: 1,
-    includeLabor: true
+    includeLabor: false
   });
 
   // Bulk tread configuration state
@@ -383,6 +383,7 @@ const QuickPricer: React.FC = () => {
             productType={productType}
             pricingResult={pricingResult}
             stairPricingDetails={stairPricingDetails}
+            hideLaborAndTax={true}
           />
         </div>
       </div>

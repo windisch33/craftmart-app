@@ -59,8 +59,11 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({
   const handleCreateJob = async (jobData: any, sections: any[]) => {
     try {
       // Add project_id to job data
+      // When creating within a project, the API expects exactly one of
+      // customer_id or project_id (xor). Drop customer_id to satisfy validation.
+      const { customer_id: _omitCustomerId, ...restJobData } = jobData || {};
       const jobDataWithProject = {
-        ...jobData,
+        ...restJobData,
         project_id: projectId
       };
 

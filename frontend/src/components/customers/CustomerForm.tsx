@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangleIcon, SaveIcon, UsersIcon } from '../common/icons';
 import type { Customer, CreateCustomerRequest } from '../../services/customerService';
 import './CustomerForm.css';
+import { formatPhoneInput } from '../../utils/phoneFormat';
 
 interface CustomerFormProps {
   customer?: Customer | null;
@@ -237,7 +238,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  onChange={(e) => handleInputChange('phone', formatPhoneInput(e.target.value))}
                   className="form-input"
                   placeholder="(555) 123-4567"
                   disabled={isSubmitting}
@@ -252,7 +253,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                   id="mobile"
                   type="tel"
                   value={formData.mobile}
-                  onChange={(e) => handleInputChange('mobile', e.target.value)}
+                  onChange={(e) => handleInputChange('mobile', formatPhoneInput(e.target.value))}
                   className="form-input"
                   placeholder="(555) 123-4567"
                   disabled={isSubmitting}
@@ -267,7 +268,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                   id="fax"
                   type="tel"
                   value={formData.fax}
-                  onChange={(e) => handleInputChange('fax', e.target.value)}
+                  onChange={(e) => handleInputChange('fax', formatPhoneInput(e.target.value))}
                   className="form-input"
                   placeholder="(555) 123-4567"
                   disabled={isSubmitting}

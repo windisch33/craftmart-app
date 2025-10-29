@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangleIcon, SaveIcon, UsersIcon } from '../common/icons';
 import type { Salesman, CreateSalesmanData } from '../../services/salesmanService';
 import './SalesmanForm.css';
+import { formatPhoneInput } from '../../utils/phoneFormat';
 
 interface SalesmanFormProps {
   salesman?: Salesman | null;
@@ -106,10 +107,11 @@ const SalesmanForm: React.FC<SalesmanFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+    const nextVal = name === 'phone' ? formatPhoneInput(value) : (type === 'number' ? parseFloat(value) || 0 : value);
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0 : value
+      [name]: nextVal as any
     }));
 
     // Clear error when user starts typing

@@ -38,19 +38,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
     <div className="stair-form-section">
       <h3>Stair Configuration</h3>
       
-      {/* Basic Configuration */}
-      <div className="form-row">
-        <div className="form-group">
-          <label>Job ID (optional)</label>
-          <input
-            type="number"
-            value={stairFormData.jobId ?? ''}
-            onChange={(e) => setStairFormData(prev => ({ ...prev, jobId: e.target.value ? Number(e.target.value) : undefined }))}
-            min="1"
-            placeholder="Enter job ID to use its tax rate"
-          />
-        </div>
-      </div>
+      {/* Basic Configuration - jobId removed for Quick Pricer */}
       <div className="form-row">
         <div className="form-group">
           <label>Floor to Floor Height (inches)</label>

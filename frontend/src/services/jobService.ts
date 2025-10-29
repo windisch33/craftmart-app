@@ -275,10 +275,14 @@ class JobService {
       });
       return this.mapJobRecord(response.data);
     } catch (error: any) {
-      const baseMsg = error?.response?.data?.error || error?.response?.data?.message || 'Failed to create job';
-      const details = Array.isArray(error?.response?.data?.details) ? error.response.data.details : [];
-      const message = details.length ? `${baseMsg}: ${details[0]}` : baseMsg;
-      console.error('Error creating job:', message, error);
+      const errData = error?.response?.data;
+      const baseMsg = errData?.message || errData?.error || 'Failed to create job';
+      const detailsArr = Array.isArray(errData?.details) ? errData.details : [];
+      const detailsText = detailsArr.length
+        ? detailsArr.map((d: any) => (d?.field ? `${d.field}: ${d.message}` : (d?.message ?? JSON.stringify(d)))).join('; ')
+        : '';
+      const message = detailsText ? `${baseMsg}: ${detailsText}` : baseMsg;
+      console.error('Error creating job:', message, errData || error);
       throw new Error(message);
     }
   }

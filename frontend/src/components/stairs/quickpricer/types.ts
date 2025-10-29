@@ -2,7 +2,6 @@ export type ProductType = 'stair' | 'handrail' | 'landing_tread' | 'rail_parts';
 
 // Stair form data interface
 export interface StairFormData {
-  jobId?: number;
   floorToFloor: number;
   numRisers: number;
   treadMaterialId: number;

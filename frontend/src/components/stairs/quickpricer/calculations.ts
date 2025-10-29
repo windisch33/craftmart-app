@@ -80,7 +80,6 @@ export const calculateStairPrice = async (
   }));
 
   const request = {
-    jobId: stairFormData.jobId,
     floorToFloor: stairFormData.floorToFloor,
     numRisers: stairFormData.numRisers,
     treads: generatedTreads,

@@ -6,12 +6,14 @@ interface PricingDisplayProps {
   productType: ProductType;
   pricingResult: PricingResult | null;
   stairPricingDetails: StairPriceResponse | null;
+  hideLaborAndTax?: boolean;
 }
 
 const PricingDisplay: React.FC<PricingDisplayProps> = ({
   productType,
   pricingResult,
-  stairPricingDetails
+  stairPricingDetails,
+  hideLaborAndTax = false
 }) => {
   if (!pricingResult) {
     return (
@@ -34,7 +36,7 @@ const PricingDisplay: React.FC<PricingDisplayProps> = ({
           <span>Material Subtotal:</span>
           <span>${(pricingResult?.subtotal || 0).toFixed(2)}</span>
         </div>
-        {(pricingResult?.laborCost || 0) > 0 && (
+        {!hideLaborAndTax && (pricingResult?.laborCost || 0) > 0 && (
           <div className="price-row">
             <span>Labor Cost:</span>
             <span>${(pricingResult?.laborCost || 0).toFixed(2)}</span>
@@ -42,7 +44,11 @@ const PricingDisplay: React.FC<PricingDisplayProps> = ({
         )}
         <div className="price-row total">
           <span>Total:</span>
-          <span>${(pricingResult?.total || 0).toFixed(2)}</span>
+          <span>${(
+            hideLaborAndTax
+              ? (pricingResult?.subtotal || 0)
+              : (pricingResult?.total || 0)
+          ).toFixed(2)}</span>
         </div>
       </div>
 
@@ -169,16 +175,23 @@ const PricingDisplay: React.FC<PricingDisplayProps> = ({
                   <div>
                     <span>{part.description} x{part.quantity}: ${(part.totalPrice || 0).toFixed(2)}</span>
                   </div>
-                  <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
-                    Unit: ${(part.unitPrice || 0).toFixed(2)} + Labor: ${(part.laborCost || 0).toFixed(2)} = ${((part.unitPrice || 0) + (part.laborCost || 0)).toFixed(2)} × {part.quantity} = ${(part.totalPrice || 0).toFixed(2)}
-                  </div>
+                  {!hideLaborAndTax && (
+                    <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                      Unit: ${(part.unitPrice || 0).toFixed(2)} + Labor: ${(part.laborCost || 0).toFixed(2)} = ${((part.unitPrice || 0) + (part.laborCost || 0)).toFixed(2)} × {part.quantity} = ${(part.totalPrice || 0).toFixed(2)}
+                    </div>
+                  )}
+                  {hideLaborAndTax && (
+                    <div style={{ fontSize: '0.8em', color: '#6b7280', marginLeft: '1rem', marginTop: '0.25rem' }}>
+                      Unit: ${(part.unitPrice || 0).toFixed(2)} × {part.quantity} = ${(part.totalPrice || 0).toFixed(2)}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
           {/* Labor */}
-          {stairPricingDetails.breakdown.labor && stairPricingDetails.breakdown.labor.length > 0 && (
+          {!hideLaborAndTax && stairPricingDetails.breakdown.labor && stairPricingDetails.breakdown.labor.length > 0 && (
             <div className="breakdown-section">
               <h5>Labor</h5>
               {stairPricingDetails.breakdown.labor.map((labor, index) => (
@@ -194,14 +207,18 @@ const PricingDisplay: React.FC<PricingDisplayProps> = ({
             <div className="summary-line">
               <span>Subtotal: ${stairPricingDetails.subtotal}</span>
             </div>
-            <div className="summary-line">
-              <span>Labor: ${stairPricingDetails.laborTotal}</span>
-            </div>
-            <div className="summary-line">
-              <span>Tax: ${stairPricingDetails.taxAmount}</span>
-            </div>
+            {!hideLaborAndTax && (
+              <div className="summary-line">
+                <span>Labor: ${stairPricingDetails.laborTotal}</span>
+              </div>
+            )}
+            {!hideLaborAndTax && (
+              <div className="summary-line">
+                <span>Tax: ${stairPricingDetails.taxAmount}</span>
+              </div>
+            )}
             <div className="summary-line total">
-              <span><strong>Total: ${stairPricingDetails.total}</strong></span>
+              <span><strong>Total: ${hideLaborAndTax ? stairPricingDetails.subtotal : stairPricingDetails.total}</strong></span>
             </div>
           </div>
                 </>
