@@ -99,7 +99,10 @@ class AuthService {
       const response = await axios.post(`${API_BASE_URL}/api/auth/users`, userData);
       return response.data.user;
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to create user');
+      const details = error?.response?.data?.details;
+      const firstDetailMsg = Array.isArray(details) && details.length ? details[0]?.message : undefined;
+      const message = error?.response?.data?.message || error?.response?.data?.error || firstDetailMsg || 'Failed to create user';
+      throw new Error(message);
     }
   }
 
@@ -108,7 +111,10 @@ class AuthService {
       const response = await axios.put(`${API_BASE_URL}/api/auth/users/${userId}`, updates);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to update user');
+      const details = error?.response?.data?.details;
+      const firstDetailMsg = Array.isArray(details) && details.length ? details[0]?.message : undefined;
+      const message = error?.response?.data?.message || error?.response?.data?.error || firstDetailMsg || 'Failed to update user';
+      throw new Error(message);
     }
   }
 
@@ -124,7 +130,10 @@ class AuthService {
     try {
       await axios.post(`${API_BASE_URL}/api/auth/users/${userId}/reset-password`, { newPassword });
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Failed to reset password');
+      const details = error?.response?.data?.details;
+      const firstDetailMsg = Array.isArray(details) && details.length ? details[0]?.message : undefined;
+      const message = error?.response?.data?.message || error?.response?.data?.error || firstDetailMsg || 'Failed to reset password';
+      throw new Error(message);
     }
   }
 

@@ -68,10 +68,19 @@ const UserForm: React.FC<UserFormProps> = ({
     }
 
     // Password required only for new users
-    if (!user && !formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (!user && formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    if (!user) {
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters';
+      } else {
+        const hasUpper = /[A-Z]/.test(formData.password);
+        const hasLower = /[a-z]/.test(formData.password);
+        const hasNumber = /[0-9]/.test(formData.password);
+        if (!hasUpper || !hasLower || !hasNumber) {
+          newErrors.password = 'Password must include uppercase, lowercase, and a number';
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -232,9 +241,16 @@ const UserForm: React.FC<UserFormProps> = ({
                   disabled={isSubmitting}
                   required
                   minLength={8}
-                  placeholder="Enter password (min 8 characters)"
+                  pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
+                  title="Must be 8+ chars with uppercase, lowercase, and a number"
+                  placeholder="8+ chars, uppercase, lowercase, and a number"
                 />
                 {errors.password && <span className="error-message">{errors.password}</span>}
+                {!errors.password && (
+                  <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                    Must be 8+ characters and include uppercase, lowercase, and a number.
+                  </div>
+                )}
               </div>
             </div>
           )}

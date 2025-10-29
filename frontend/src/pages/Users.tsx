@@ -267,6 +267,13 @@ const Users: React.FC = () => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
             const newPassword = formData.get('newPassword') as string;
+            const hasUpper = /[A-Z]/.test(newPassword);
+            const hasLower = /[a-z]/.test(newPassword);
+            const hasNumber = /[0-9]/.test(newPassword);
+            if (!newPassword || newPassword.length < 8 || !hasUpper || !hasLower || !hasNumber) {
+              showToast('Password must be 8+ chars and include uppercase, lowercase, and a number', { type: 'error' });
+              return;
+            }
             handleResetPasswordSubmit(newPassword);
           }}>
             <div className="form-group">
@@ -277,8 +284,13 @@ const Users: React.FC = () => {
                 name="newPassword"
                 required
                 minLength={8}
-                placeholder="Enter new password (min 8 characters)"
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}"
+                title="Must be 8+ chars with uppercase, lowercase, and a number"
+                placeholder="8+ chars, uppercase, lowercase, and a number"
               />
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                Must be 8+ characters and include uppercase, lowercase, and a number.
+              </div>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={() => setIsResetPasswordOpen(false)}>

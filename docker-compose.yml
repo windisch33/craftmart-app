@@ -27,6 +27,7 @@ services:
       DB_PASSWORD: your_secure_password
       PORT: 3001
       NODE_ENV: development
+      DISABLE_LOGIN_RATE_LIMIT: "true"
     volumes:
       - ./backend:/app
       - /app/node_modules

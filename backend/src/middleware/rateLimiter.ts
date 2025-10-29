@@ -10,8 +10,11 @@ export const loginRateLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting in test environment
-  skip: (req) => process.env.NODE_ENV === 'test'
+  // Skip rate limiting in test environment or when explicitly disabled for testing
+  skip: () => process.env.NODE_ENV === 'test'
+    || config.NODE_ENV !== 'production'
+    || process.env.DISABLE_LOGIN_RATE_LIMIT === 'true'
+    || process.env.DISABLE_LOGIN_RATE_LIMIT === '1'
 });
 
 // General API rate limiter (optional for future use)
