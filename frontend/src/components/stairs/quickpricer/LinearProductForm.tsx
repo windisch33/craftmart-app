@@ -20,6 +20,9 @@ const LinearProductForm: React.FC<LinearProductFormProps> = ({
   materials
 }) => {
   const productName = productType === 'handrail' ? 'Handrail' : 'Landing Tread';
+  const blurOnWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.currentTarget.blur();
+  };
 
   return (
     <div className="linear-product-form-section">
@@ -70,6 +73,7 @@ const LinearProductForm: React.FC<LinearProductFormProps> = ({
             value={formData.quantity}
             onChange={(e) => setFormData(prev => ({ ...prev, quantity: Number(e.target.value) }))}
             min="1"
+            onWheel={blurOnWheel}
           />
         </div>
       </div>

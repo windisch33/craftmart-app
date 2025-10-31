@@ -36,9 +36,10 @@ echo "→ Applying unit_number migration"
 
 if [[ -n "$COMPOSE_CMD" ]]; then
   echo "→ Using Docker Compose service '$SERVICE_NAME'"
-  echo "$SQL" | \ 
-    $COMPOSE_CMD exec -T "$SERVICE_NAME" bash -lc \
-      "PGPASSWORD=\"$DB_PASSWORD\" psql -h localhost -U \"$DB_USER\" -v ON_ERROR_STOP=1 \"$DB_NAME\""
+  # Feed SQL via STDIN to psql inside the container
+  $COMPOSE_CMD exec -T "$SERVICE_NAME" bash -lc \
+    "PGPASSWORD=\"$DB_PASSWORD\" psql -h localhost -U \"$DB_USER\" -v ON_ERROR_STOP=1 \"$DB_NAME\"" \
+    <<< "$SQL"
 else
   echo "→ No docker-compose found. Attempting local psql on host..."
   if ! command -v psql >/dev/null 2>&1; then
@@ -49,4 +50,3 @@ else
 fi
 
 echo "✔ Migration completed"
-

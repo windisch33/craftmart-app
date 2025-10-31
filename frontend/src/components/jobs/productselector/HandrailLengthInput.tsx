@@ -70,6 +70,7 @@ const HandrailLengthInput: React.FC<HandrailLengthInputProps> = ({
         onChange={handleInputChange}
         onBlur={handleInputBlur}
         onKeyPress={handleKeyPress}
+        onWheel={(e) => e.currentTarget.blur()}
         onFocus={(e) => e.target.select()}
         onClick={(e) => e.currentTarget.select()}
         min="6"

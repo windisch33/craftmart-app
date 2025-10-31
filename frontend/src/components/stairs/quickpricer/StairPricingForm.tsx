@@ -34,6 +34,11 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
 }) => {
   const totalTreads = bulkConfig.boxTreadCount + bulkConfig.openTreadCount + bulkConfig.doubleOpenCount;
 
+  // Prevent mouse wheel from changing number inputs when focused
+  const blurOnWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.currentTarget.blur();
+  };
+
   return (
     <div className="stair-form-section">
       <h3>Stair Configuration</h3>
@@ -48,6 +53,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
             onChange={(e) => setStairFormData(prev => ({ ...prev, floorToFloor: Number(e.target.value) }))}
             step="0.125"
             min="1"
+            onWheel={blurOnWheel}
           />
         </div>
         <div className="form-group">
@@ -57,6 +63,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
             value={stairFormData.numRisers}
             onChange={(e) => setStairFormData(prev => ({ ...prev, numRisers: Number(e.target.value) }))}
             min="1"
+            onWheel={blurOnWheel}
           />
         </div>
       </div>
@@ -70,6 +77,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
             onChange={(e) => setStairFormData(prev => ({ ...prev, roughCutWidth: Number(e.target.value) }))}
             step="0.25"
             min="1"
+            onWheel={blurOnWheel}
           />
         </div>
         <div className="form-group">
@@ -81,6 +89,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
             step="0.125"
             min="0.5"
             max="2"
+            onWheel={blurOnWheel}
           />
         </div>
       </div>
@@ -131,6 +140,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                 min="0"
                 max={stairFormData.numRisers}
                 placeholder="0"
+                onWheel={blurOnWheel}
               />
             </div>
             <div className="form-group">
@@ -144,6 +154,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                 step="0.25"
                 placeholder="Enter width"
                 disabled={bulkConfig.boxTreadCount === 0}
+                onWheel={blurOnWheel}
               />
             </div>
           </div>
@@ -162,6 +173,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                 min="0"
                 max={stairFormData.numRisers}
                 placeholder="0"
+                onWheel={blurOnWheel}
               />
             </div>
             <div className="form-group">
@@ -175,6 +187,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                 step="0.25"
                 placeholder="Enter width"
                 disabled={bulkConfig.openTreadCount === 0}
+                onWheel={blurOnWheel}
               />
             </div>
           </div>
@@ -234,6 +247,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                 min="0"
                 max={stairFormData.numRisers}
                 placeholder="0"
+                onWheel={blurOnWheel}
               />
             </div>
             <div className="form-group">
@@ -247,6 +261,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                 step="0.25"
                 placeholder="Enter width"
                 disabled={bulkConfig.doubleOpenCount === 0}
+                onWheel={blurOnWheel}
               />
             </div>
           </div>
@@ -316,6 +331,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                   onChange={(e) => setStringersConfig({ leftStringerThickness: parseFloat(e.target.value) || 0 })}
                   min="0"
                   step="0.25"
+                  onWheel={blurOnWheel}
                 />
               </div>
               <div className="form-group">
@@ -326,6 +342,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                   onChange={(e) => setStringersConfig({ leftStringerWidth: parseFloat(e.target.value) || 0 })}
                   min="0"
                   step="0.25"
+                  onWheel={blurOnWheel}
                 />
               </div>
               <div className="form-group">
@@ -408,6 +425,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                     onChange={(e) => setStringersConfig({ centerStringerThickness: parseFloat(e.target.value) || 0 })}
                     min="0"
                     step="0.25"
+                    onWheel={blurOnWheel}
                   />
                 </div>
                 <div className="form-group">
@@ -418,6 +436,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
                     onChange={(e) => setStringersConfig({ centerStringerWidth: parseFloat(e.target.value) || 0 })}
                     min="0"
                     step="0.25"
+                    onWheel={blurOnWheel}
                   />
                 </div>
                 <div className="form-group">
@@ -480,6 +499,7 @@ const StairPricingForm: React.FC<StairPricingFormProps> = ({
               min="1"
               max="10"
               placeholder="Qty"
+              onWheel={blurOnWheel}
             />
             
             <button

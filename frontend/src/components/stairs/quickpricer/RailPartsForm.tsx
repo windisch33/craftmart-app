@@ -16,6 +16,9 @@ const RailPartsForm: React.FC<RailPartsFormProps> = ({
   railPartsProducts,
   materials
 }) => {
+  const blurOnWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.currentTarget.blur();
+  };
   return (
     <div className="rail-parts-form-section">
       <h3>Rail Parts Configuration</h3>
@@ -57,6 +60,7 @@ const RailPartsForm: React.FC<RailPartsFormProps> = ({
           value={formData.quantity}
           onChange={(e) => setFormData(prev => ({ ...prev, quantity: Number(e.target.value) }))}
           min="1"
+          onWheel={blurOnWheel}
         />
       </div>
 

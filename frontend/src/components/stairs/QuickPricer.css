@@ -109,6 +109,17 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+/* Remove spinner arrows from number inputs in Quick Pricer */
+.quick-stair-pricer input[type="number"]::-webkit-outer-spin-button,
+.quick-stair-pricer input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.quick-stair-pricer input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {

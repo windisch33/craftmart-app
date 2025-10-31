@@ -161,7 +161,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       const newCustomer = await onCustomerCreate(customerData);
 
       if (newCustomer?.id) {
+        // Autofill newly created customer into the customer text box
         setFormData(prev => ({ ...prev, customer_id: newCustomer.id.toString() }));
+        setCustomerQuery(formatCustomerLabel(newCustomer));
+        setErrors(prev => ({ ...prev, customer_id: '' }));
+        setShowSuggestions(false);
+        setHighlightIndex(-1);
+        // Ensure the local list includes the new customer immediately
+        setLocalCustomers(prev => {
+          const exists = prev.some(c => c.id === newCustomer.id);
+          return exists ? prev : [...prev, newCustomer];
+        });
       }
 
       setShowCustomerForm(false);

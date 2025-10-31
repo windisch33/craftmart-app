@@ -493,13 +493,6 @@ const JobFormInner: React.FC<JobFormProps> = ({
                       + New
                     </button>
                   </div>
-                  {selectedSalesman && (
-                    <div className="selected-info">
-                      <small>
-                        👤 {salesmanService.formatSalesmanName(selectedSalesman)}
-                      </small>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
