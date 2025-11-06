@@ -53,6 +53,14 @@ export interface QuoteItem {
   job_id: number;
   section_id: number;
   part_number?: string;
+  product_id?: number;
+  product_type?: string;
+  product_name?: string;
+  material_id?: number;
+  material_name?: string;
+  material_multiplier?: number;
+  length_inches?: number | null;
+  include_labor?: boolean;
   description: string;
   quantity: number;
   unit_price: number;
@@ -97,6 +105,9 @@ export interface CreateQuoteItemData {
   unit_price: number;
   is_taxable?: boolean;
   stair_configuration?: any;
+  product_id?: number;
+  material_id?: number;
+  length_inches?: number;
 }
 
 export interface UpdateQuoteItemData extends Partial<CreateQuoteItemData> {

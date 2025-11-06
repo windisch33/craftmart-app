@@ -7,6 +7,10 @@ interface ProductItemListProps {
   isLoading?: boolean;
   onEditItem: (item: QuoteItem) => void;
   onDeleteItem: (item: QuoteItem) => void;
+  formatPartNumber?: (item: QuoteItem) => string | null;
+  editingItemId?: number | null;
+  renderInlineForm?: (() => React.ReactNode) | null;
+  inlineFormRef?: React.Ref<HTMLDivElement>;
 }
 
 const ProductItemList: React.FC<ProductItemListProps> = ({
@@ -14,7 +18,11 @@ const ProductItemList: React.FC<ProductItemListProps> = ({
   isReadOnly = false,
   isLoading = false,
   onEditItem,
-  onDeleteItem
+  onDeleteItem,
+  formatPartNumber,
+  editingItemId,
+  renderInlineForm,
+  inlineFormRef
 }) => {
   if (items.length === 0) {
     return (
@@ -40,40 +48,48 @@ const ProductItemList: React.FC<ProductItemListProps> = ({
         </div>
         
         {items.map((item) => (
-          <div key={item.id} className="table-row">
-            <div className="col-qty">{item.quantity}</div>
-            <div className="col-description">
-              {item.part_number && (
-                <div className="part-number">{item.part_number}</div>
-              )}
-              <div className="description">{item.description}</div>
-            </div>
-            <div className="col-unit-price">${Number(item.unit_price).toFixed(2)}</div>
-            <div className="col-total">${Number(item.line_total).toFixed(2)}</div>
-            <div className={`col-tax ${item.is_taxable ? 'taxable' : 'non-taxable'}`}>
-              {item.is_taxable ? '✓' : '✗'}
-            </div>
-            {!isReadOnly && (
-              <div className="col-actions">
-                <button
-                  type="button"
-                  onClick={() => onEditItem(item)}
-                  className="edit-btn"
-                  disabled={isLoading}
-                >
-                  ✏️
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteItem(item)}
-                  className="delete-btn"
-                  disabled={isLoading}
-                >
-                  🗑️
-                </button>
+          <React.Fragment key={item.id}>
+            <div className={`table-row${editingItemId === item.id ? ' editing' : ''}`}>
+              <div className="col-qty">{item.quantity}</div>
+              <div className="col-description">
+                {(() => {
+                  const displayPart = formatPartNumber ? formatPartNumber(item) : item.part_number;
+                  return displayPart ? <div className="part-number">{displayPart}</div> : null;
+                })()}
+                <div className="description">{item.description}</div>
               </div>
-            )}
-          </div>
+              <div className="col-unit-price">${Number(item.unit_price).toFixed(2)}</div>
+              <div className="col-total">${Number(item.line_total).toFixed(2)}</div>
+              <div className={`col-tax ${item.is_taxable ? 'taxable' : 'non-taxable'}`}>
+                {item.is_taxable ? '✓' : '✗'}
+              </div>
+              {!isReadOnly && (
+                <div className="col-actions">
+                  <button
+                    type="button"
+                    onClick={() => onEditItem(item)}
+                    className="edit-btn"
+                    disabled={isLoading}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteItem(item)}
+                    className="delete-btn"
+                    disabled={isLoading}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              )}
+            </div>
+            {editingItemId === item.id && renderInlineForm ? (
+              <div className="inline-edit-form" ref={inlineFormRef}>
+                {renderInlineForm()}
+              </div>
+            ) : null}
+          </React.Fragment>
         ))}
         
         <div className="table-footer">

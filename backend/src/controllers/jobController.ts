@@ -398,7 +398,16 @@ export const getJobWithDetails = async (req: Request, res: Response, next: NextF
                  'unit_price', CAST(qi.unit_price AS FLOAT),
                  'line_total', CAST(qi.line_total AS FLOAT),
                  'is_taxable', qi.is_taxable,
-                 'stair_config_id', qi.stair_config_id
+                 'stair_config_id', qi.stair_config_id,
+                 'product_id', qi.product_id,
+                 'product_type', qi.product_type,
+                 'product_name', qi.product_name,
+                 'length_inches', qi.length_inches,
+                 'material_id', qi.material_id,
+                 'material_name', qi.material_name,
+                 'material_multiplier', CAST(qi.material_multiplier AS FLOAT),
+                 'include_labor', qi.include_labor,
+                 'created_at', qi.created_at
                ) ORDER BY qi.created_at
              ) FILTER (WHERE qi.id IS NOT NULL), '[]') as items
       FROM job_sections js
@@ -641,7 +650,7 @@ export const deleteJobSection = async (req: Request, res: Response, next: NextFu
 export const addQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { jobId, sectionId } = req.params;
-    const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true, stair_configuration, product_id, length_inches } = req.body;
+    const { part_number, description, quantity = 1, unit_price = 0, is_taxable = true, stair_configuration, product_id, length_inches, material_id } = req.body;
 
     if (!description) {
       return res.status(400).json({ error: 'Description is required' });
@@ -775,12 +784,70 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
       }
     }
     
+    let productIdValue: number | null = product_id ?? null;
+    let productType = 'custom';
+    let productName = description;
+    let lengthInchesValue: number | null = length_inches ?? null;
+    let materialIdValue: number | null = material_id ?? null;
+    let materialName: string | null = null;
+    let materialMultiplier: number | null = null;
+    
+    if (productIdValue !== null) {
+      const productResult = await pool.query(
+        'SELECT id, name, product_type FROM products WHERE id = $1',
+        [productIdValue]
+      );
+      if (productResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid product_id specified' });
+      }
+      productType = productResult.rows[0].product_type;
+      productName = productResult.rows[0].name;
+    }
+    
+    if (materialIdValue !== null) {
+      const materialResult = await pool.query(
+        'SELECT id, name, multiplier FROM materials WHERE id = $1',
+        [materialIdValue]
+      );
+      if (materialResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid material_id specified' });
+      }
+      materialName = materialResult.rows[0].name;
+      materialMultiplier = Number(materialResult.rows[0].multiplier);
+    }
+
+    if (!finalPartNumber && productIdValue !== null) {
+      finalPartNumber = `${productIdValue}-${materialIdValue ?? 0}`;
+    }
+
+    if (lengthInchesValue !== null) {
+      lengthInchesValue = Math.trunc(lengthInchesValue);
+    }
+
     const result = await pool.query(
       `INSERT INTO quote_items (
         job_item_id, section_id, part_number, description, quantity, unit_price, line_total, is_taxable,
-        product_type, product_name, stair_config_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [jobId, sectionId, finalPartNumber, description, quantity, unit_price, lineTotal, is_taxable, 'custom', description, stairConfigId]
+        product_id, product_type, product_name, length_inches, material_id, material_name, material_multiplier,
+        stair_config_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING *`,
+      [
+        jobId,
+        sectionId,
+        finalPartNumber,
+        description,
+        quantity,
+        unit_price,
+        lineTotal,
+        is_taxable,
+        productIdValue,
+        productType,
+        productName,
+        lengthInchesValue,
+        materialIdValue,
+        materialName,
+        materialMultiplier,
+        stairConfigId
+      ]
     );
     
     // Recalculate job totals
@@ -802,7 +869,7 @@ export const addQuoteItem = async (req: Request, res: Response, next: NextFuncti
 export const updateQuoteItem = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { itemId } = req.params;
-    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration, stair_config_id, product_id, length_inches } = req.body;
+    const { part_number, description, quantity, unit_price, is_taxable, stair_configuration, stair_config_id, product_id, length_inches, material_id } = req.body;
     
     // Validate handrail length if this is a handrail product
     if (product_id && length_inches !== undefined) {
@@ -817,12 +884,6 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
           });
         }
       }
-    }
-    
-    // Calculate new line total if quantity or unit_price changed
-    let lineTotal: number | undefined;
-    if (quantity !== undefined && unit_price !== undefined) {
-      lineTotal = quantity * unit_price;
     }
     
     let stairConfigId = null;
@@ -1004,17 +1065,107 @@ export const updateQuoteItem = async (req: Request, res: Response, next: NextFun
       }
     }
     
+    const existingItemResult = await pool.query('SELECT * FROM quote_items WHERE id = $1', [itemId]);
+    if (existingItemResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Quote item not found' });
+    }
+    const existingItem = existingItemResult.rows[0];
+
+    const resolvedDescription = description ?? existingItem.description;
+    const resolvedQuantity = quantity !== undefined ? quantity : Number(existingItem.quantity);
+    const resolvedUnitPrice = unit_price !== undefined ? unit_price : Number(existingItem.unit_price);
+    const resolvedLineTotal =
+      quantity !== undefined || unit_price !== undefined
+        ? resolvedQuantity * resolvedUnitPrice
+        : Number(existingItem.line_total);
+    const resolvedIsTaxable = is_taxable !== undefined ? is_taxable : existingItem.is_taxable;
+    const resolvedStairConfigId = stairConfigId !== null ? stairConfigId : existingItem.stair_config_id;
+
+    let productIdValue = existingItem.product_id as number | null;
+    let productTypeValue = existingItem.product_type || 'custom';
+    let productNameValue = existingItem.product_name || existingItem.description;
+    if (product_id !== undefined) {
+      const productResult = await pool.query(
+        'SELECT id, name, product_type FROM products WHERE id = $1',
+        [product_id]
+      );
+      if (productResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid product_id specified' });
+      }
+      productIdValue = productResult.rows[0].id;
+      productTypeValue = productResult.rows[0].product_type;
+      productNameValue = productResult.rows[0].name;
+    } else if (!productIdValue) {
+      productIdValue = null;
+      productTypeValue = 'custom';
+      productNameValue = resolvedDescription;
+    }
+
+    let materialIdValue = existingItem.material_id as number | null;
+    let materialNameValue = existingItem.material_name || null;
+    let materialMultiplierValue =
+      existingItem.material_multiplier !== null && existingItem.material_multiplier !== undefined
+        ? Number(existingItem.material_multiplier)
+        : null;
+    if (material_id !== undefined) {
+      const materialResult = await pool.query(
+        'SELECT id, name, multiplier FROM materials WHERE id = $1',
+        [material_id]
+      );
+      if (materialResult.rows.length === 0) {
+        return res.status(400).json({ error: 'Invalid material_id specified' });
+      }
+      materialIdValue = materialResult.rows[0].id;
+      materialNameValue = materialResult.rows[0].name;
+      materialMultiplierValue = Number(materialResult.rows[0].multiplier);
+    }
+
+    let lengthInchesValue =
+      length_inches !== undefined
+        ? Math.trunc(length_inches)
+        : existingItem.length_inches !== null && existingItem.length_inches !== undefined
+          ? Number(existingItem.length_inches)
+          : null;
+
+    let partNumberValue = finalPartNumber ?? (part_number !== undefined ? part_number : existingItem.part_number);
+    if (!partNumberValue && productIdValue) {
+      partNumberValue = `${productIdValue}-${materialIdValue ?? 0}`;
+    }
+
     const result = await pool.query(
       `UPDATE quote_items SET 
-        part_number = COALESCE($1, part_number),
-        description = COALESCE($2, description),
-        quantity = COALESCE($3, quantity),
-        unit_price = COALESCE($4, unit_price),
-        line_total = COALESCE($5, line_total),
-        is_taxable = COALESCE($6, is_taxable),
-        stair_config_id = COALESCE($7, stair_config_id)
-       WHERE id = $8 RETURNING *`,
-      [finalPartNumber, description, quantity, unit_price, lineTotal, is_taxable, stairConfigId, itemId]
+        part_number = $1,
+        description = $2,
+        quantity = $3,
+        unit_price = $4,
+        line_total = $5,
+        is_taxable = $6,
+        stair_config_id = $7,
+        product_id = $8,
+        product_type = $9,
+        product_name = $10,
+        length_inches = $11,
+        material_id = $12,
+        material_name = $13,
+        material_multiplier = $14
+       WHERE id = $15 RETURNING *`,
+      [
+        partNumberValue,
+        resolvedDescription,
+        resolvedQuantity,
+        resolvedUnitPrice,
+        resolvedLineTotal,
+        resolvedIsTaxable,
+        resolvedStairConfigId,
+        productIdValue,
+        productTypeValue,
+        productNameValue,
+        lengthInchesValue,
+        materialIdValue,
+        materialNameValue,
+        materialMultiplierValue,
+        itemId
+      ]
     );
     
     if (result.rows.length === 0) {

@@ -359,7 +359,8 @@ export const getProjectsQuerySchema = Joi.object({
   address: Joi.string().trim().max(500).optional(),
   city: Joi.string().trim().max(100).optional(),
   state: Joi.string().trim().length(2).uppercase().optional(),
-  zip: Joi.string().trim().max(20).optional()
+  zip: Joi.string().trim().max(20).optional(),
+  customer_id: Joi.number().integer().positive().optional()
 }).unknown(false);
 
 // ============================================
@@ -542,6 +543,7 @@ export const addQuoteItemApiSchema = Joi.object({
   is_taxable: Joi.boolean().optional(),
   product_id: Joi.number().integer().positive().optional(),
   length_inches: Joi.number().integer().min(6).max(240).optional(),
+  material_id: Joi.number().integer().positive().optional(),
   stair_configuration: createStairConfigurationApiSchema.optional()
 }).unknown(false);
 
@@ -553,6 +555,7 @@ export const updateQuoteItemApiSchema = Joi.object({
   is_taxable: Joi.boolean(),
   product_id: Joi.number().integer().positive(),
   length_inches: Joi.number().integer().min(6).max(240),
+  material_id: Joi.number().integer().positive(),
   stair_configuration: createStairConfigurationApiSchema,
   stair_config_id: Joi.number().integer().positive()
 }).min(1).unknown(false);

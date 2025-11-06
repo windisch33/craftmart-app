@@ -106,6 +106,21 @@ const Customers: React.FC = () => {
   };
   // Removed legacy CustomerJobs modal handler
 
+  const findDuplicateCustomerByName = async (name: string): Promise<Customer | null> => {
+    const normalized = name.trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+
+    try {
+      const matches = await customerService.searchCustomers(name);
+      return matches.find(match => match.name.trim().toLowerCase() === normalized) ?? null;
+    } catch (err) {
+      console.warn('Customer duplicate lookup failed', err);
+      return null;
+    }
+  };
+
   const handleSaveCustomer = async (customerData: CreateCustomerRequest) => {
     try {
       if (editingCustomer) {
@@ -113,6 +128,15 @@ const Customers: React.FC = () => {
         setCustomers(customers.map(c => c.id === editingCustomer.id ? updatedCustomer : c));
         showToast('Customer updated', { type: 'success' });
       } else {
+        const duplicate = await findDuplicateCustomerByName(customerData.name);
+        if (duplicate) {
+          const proceed = window.confirm(`A customer named "${duplicate.name}" already exists. Do you still want to create a new record?`);
+          if (!proceed) {
+            showToast('Customer creation cancelled', { type: 'info' });
+            return;
+          }
+          showToast('Creating customer with a duplicate name', { type: 'info' });
+        }
         const newCustomer = await customerService.createCustomer(customerData);
         setCustomers([newCustomer, ...customers]);
         showToast('Customer created successfully', { type: 'success' });
@@ -133,7 +157,7 @@ const Customers: React.FC = () => {
     customerService.getCustomerById(customer.id).catch(err => {
       console.warn('visit tracking failed for customer', customer.id, err);
     }).finally(() => {
-      navigate(`/jobs?q=${q}`);
+      navigate(`/jobs?customerId=${customer.id}&q=${q}`);
     });
   };
 

@@ -2,7 +2,6 @@ import React from 'react';
 import { TreeIcon } from '../../common/icons';
 import type { FormData, FormErrors } from './types';
 import FractionalInput from './FractionalInput';
-import { parseNumberLike } from '../../../utils/numberParsing';
 import type { StairMaterial } from '../../../services/stairService';
 
 interface MaterialsAndStringersProps {

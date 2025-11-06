@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import stairService from '../../services/stairService';
 import productService from '../../services/productService';
 import materialService from '../../services/materialService';
@@ -53,8 +52,12 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     customUnitPrice: 0,
     useCustomPrice: false,
     isTaxable: true, // Default to taxable (materials)
-    includeLabor: false
+    includeLabor: false,
+    isWallRail: false
   });
+  const [descriptionDirty, setDescriptionDirty] = useState(false);
+  const lastAutoDescription = useRef('');
+  const inlineFormRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     loadProductsAndMaterials();
@@ -63,6 +66,12 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   useEffect(() => {
     setItems(section.items || []);
   }, [section.items]);
+
+  useEffect(() => {
+    if (editingItem && inlineFormRef.current) {
+      inlineFormRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [editingItem]);
 
   const loadProductsAndMaterials = async () => {
     try {
@@ -90,8 +99,11 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
       customUnitPrice: 0,
       useCustomPrice: false,
       isTaxable: true,
-      includeLabor: false
+      includeLabor: false,
+      isWallRail: false
     });
+    setDescriptionDirty(false);
+    lastAutoDescription.current = '';
   };
 
 
@@ -120,7 +132,15 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
                 quantity: formData.quantity,
                 unit_price: unitPrice,
                 line_total: formData.quantity * unitPrice,
-                is_taxable: formData.isTaxable
+                is_taxable: formData.isTaxable,
+                product_id: selectedProduct ? selectedProduct.id : item.product_id,
+                product_type: selectedProduct ? selectedProduct.product_type : item.product_type,
+                product_name: selectedProduct ? selectedProduct.name : item.product_name,
+                length_inches: selectedProduct?.product_type === 'handrail' ? formData.lengthInches : item.length_inches,
+                material_id: selectedMaterial ? selectedMaterial.id : item.material_id,
+                material_name: selectedMaterial ? selectedMaterial.name : item.material_name,
+                material_multiplier: selectedMaterial ? Number(selectedMaterial.multiplier) : item.material_multiplier,
+                include_labor: formData.includeLabor
               }
             : item
         );
@@ -133,7 +153,10 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           description,
           quantity: formData.quantity,
           unit_price: unitPrice,
-          is_taxable: formData.isTaxable
+          is_taxable: formData.isTaxable,
+          product_id: selectedProduct ? selectedProduct.id : undefined,
+          material_id: requiresMaterial && selectedMaterial ? selectedMaterial.id : undefined,
+          length_inches: selectedProduct?.product_type === 'handrail' ? formData.lengthInches : undefined
         };
 
         if (!isDraftMode && jobId && section.id > 0) {
@@ -153,7 +176,15 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
             quantity: itemData.quantity,
             unit_price: itemData.unit_price,
             line_total: itemData.quantity * itemData.unit_price,
-            is_taxable: itemData.is_taxable || true,
+            is_taxable: itemData.is_taxable ?? true,
+            product_id: itemData.product_id,
+            product_type: selectedProduct?.product_type,
+            product_name: selectedProduct?.name,
+            length_inches: itemData.length_inches,
+            material_id: itemData.material_id,
+            material_name: selectedMaterial?.name,
+            material_multiplier: selectedMaterial ? Number(selectedMaterial.multiplier) : undefined,
+            include_labor: formData.includeLabor,
             created_at: new Date().toISOString()
           };
           const updatedItems = [...items, tempItem];
@@ -169,6 +200,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           materialId: formData.materialId,
           includeLabor: formData.includeLabor,
           isTaxable: formData.isTaxable,
+          isWallRail: formData.isWallRail,
         };
 
         setFormData({
@@ -179,6 +211,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           customUnitPrice: 0,
           useCustomPrice: false,
         });
+        setDescriptionDirty(false);
+        lastAutoDescription.current = '';
 
         // Set focus to quantity field for quick entry
         setTimeout(() => {
@@ -212,7 +246,7 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     if (item.part_number && item.part_number.startsWith('STAIR-')) {
       // Handle stair configuration editing - fetch the configuration data
       try {
-        let configId: number | null = null;
+        let configId: number | undefined;
         
         // Extract config ID from part_number (e.g., "STAIR-37" -> 37)
         const match = item.part_number.match(/STAIR-([0-9]+)/);
@@ -261,39 +295,79 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     // Handle regular item editing
     setEditingItem(item);
     
-    // Parse product and material IDs from part_number (format: "productId-materialId")
-    let productId = 0;
-    let materialId = 0;
-    let useCustomPrice = true;
-    
-    if (item.part_number && item.part_number.includes('-')) {
+    // Determine product and material from stored data (fallback to part_number parsing)
+    let productId = item.product_id != null ? Number(item.product_id) : 0;
+    let materialId = item.material_id != null ? Number(item.material_id) : 0;
+    let useCustomPrice = !productId;
+
+    if (!productId && item.part_number && item.part_number.includes('-')) {
       const parts = item.part_number.split('-');
-      if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+      if (parts.length === 2 && !Number.isNaN(Number(parts[0]))) {
         productId = Number(parts[0]);
-        materialId = Number(parts[1]);
-        useCustomPrice = false; // This is a product-based item, not custom
+        materialId = Number(parts[1]) || 0;
+        useCustomPrice = false;
       }
     }
-    
-    // Extract length from description (format: "... (XXX")")
-    let lengthInches = 0;
-    const lengthMatch = item.description.match(/\((\d+(?:\.\d+)?)"?\)/);
-    if (lengthMatch) {
-      lengthInches = Number(lengthMatch[1]);
+
+    // Extract length (prefer stored length_inches, fallback to description)
+    let lengthInches = item.length_inches !== undefined && item.length_inches !== null
+      ? Number(item.length_inches)
+      : 0;
+    if (!lengthInches || Number.isNaN(lengthInches)) {
+      const legacyMatch = item.description.match(/\((\d+(?:\.\d+)?)"?\)/);
+      if (legacyMatch) {
+        lengthInches = Number(legacyMatch[1]);
+      } else {
+        const feetInchesMatch = item.description.match(/(\d+)'(?:[-\s]?(\d{1,2})")?/);
+        if (feetInchesMatch) {
+          const feet = Number(feetInchesMatch[1]) || 0;
+          const inches = feetInchesMatch[2] ? Number(feetInchesMatch[2]) : 0;
+          lengthInches = feet * 12 + inches;
+        } else {
+          const inchesOnlyMatch = item.description.match(/(\d+)"(?=\s|$|[-])/);
+          if (inchesOnlyMatch) {
+            lengthInches = Number(inchesOnlyMatch[1]);
+          } else {
+            lengthInches = 0;
+          }
+        }
+      }
     }
-    
-    // Populate form with item data
+
+    const descriptionIsWallRail = /wall rail/i.test(item.description || '');
+    const productForItem = productId ? products.find(p => p.id === productId) || null : null;
+    const materialForItem = materialId ? materials.find(m => m.id === materialId) || null : null;
+
     setFormData({
       productId,
       materialId,
       customDescription: item.description,
-      quantity: item.quantity,
+      quantity: Number(item.quantity),
       lengthInches,
-      customUnitPrice: item.unit_price,
-      useCustomPrice, // Only use custom price if it's actually a custom item
+      customUnitPrice: Number(item.unit_price),
+      useCustomPrice,
       isTaxable: item.is_taxable,
-      includeLabor: false // Would need to derive from stored data
+      includeLabor: false,
+      isWallRail: descriptionIsWallRail
     });
+
+    const autoDescription =
+      productForItem?.product_type === 'handrail' && materialForItem
+        ? generateHandrailDescription(
+            materialForItem.name,
+            descriptionIsWallRail,
+            lengthInches,
+            productForItem.name
+          )
+        : '';
+
+    if (autoDescription && autoDescription === item.description) {
+      setDescriptionDirty(false);
+      lastAutoDescription.current = autoDescription;
+    } else {
+      setDescriptionDirty(true);
+      lastAutoDescription.current = item.description || '';
+    }
     setShowAddForm(true);
   };
 
@@ -381,6 +455,29 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
     return true;
   };
 
+  const generateHandrailDescription = (
+    materialName: string,
+    wallRail: boolean,
+    lengthInches: number,
+    profileName?: string | null
+  ): string => {
+    const parts: string[] = [];
+    const trimmedProfile = profileName?.trim();
+    if (trimmedProfile) {
+      parts.push(trimmedProfile);
+    }
+
+    if (lengthInches > 0) {
+      parts.push(`${lengthInches}"`);
+    }
+
+    const materialLabel = materialName?.trim() || '';
+    const baseLabel = wallRail ? 'Wall Rail' : 'Handrail';
+    parts.push(materialLabel ? `${materialLabel} ${baseLabel}` : baseLabel);
+
+    return parts.join(' - ');
+  };
+
   const handleFormChange = (field: keyof ProductFormData, value: any) => {
     console.log('ProductSelector: Form change -', field, ':', value);
     if (field === 'productId') {
@@ -390,11 +487,103 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         setShowAddForm(false);
         return;
       }
-      
-      const product = products.find(p => p.id === value);
-      console.log('ProductSelector: Selected product:', product);
     }
-    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    let nextFormData: ProductFormData = { ...formData };
+    let nextDescriptionDirty = descriptionDirty;
+
+    if (field === 'productId') {
+      nextFormData = {
+        ...nextFormData,
+        productId: value,
+      };
+    } else if (field === 'materialId') {
+      nextFormData = {
+        ...nextFormData,
+        materialId: value,
+      };
+    } else if (field === 'lengthInches') {
+      nextFormData = {
+        ...nextFormData,
+        lengthInches: value,
+      };
+    } else if (field === 'isWallRail') {
+      nextFormData = {
+        ...nextFormData,
+        isWallRail: Boolean(value),
+      };
+    } else {
+      nextFormData = {
+        ...nextFormData,
+        [field]: value,
+      };
+    }
+
+    const productIdValue = typeof nextFormData.productId === 'number' ? nextFormData.productId : 0;
+    const product = products.find(p => p.id === productIdValue) || null;
+
+    if (field === 'customDescription') {
+      nextDescriptionDirty = true;
+      lastAutoDescription.current = typeof value === 'string' ? value : '';
+    }
+
+    if (field === 'productId' && (!product || product.product_type !== 'handrail')) {
+      nextFormData.isWallRail = false;
+    }
+
+    const shouldAutoGenerate =
+      product?.product_type === 'handrail' &&
+      field !== 'customDescription';
+
+    if (field === 'productId' && product?.product_type === 'handrail') {
+      // Reset description state when switching to handrail
+      nextFormData.customDescription = '';
+      nextDescriptionDirty = false;
+      lastAutoDescription.current = '';
+    }
+
+    if (shouldAutoGenerate) {
+      const material = materials.find(m => m.id === nextFormData.materialId) || null;
+      const autoDescription =
+        material && material.name
+          ? generateHandrailDescription(
+              material.name,
+              nextFormData.isWallRail,
+              nextFormData.lengthInches,
+              product?.name
+            )
+          : '';
+
+      const currentDescription = formData.customDescription.trim();
+      const usingAutoDescription =
+        !descriptionDirty ||
+        currentDescription === '' ||
+        currentDescription === lastAutoDescription.current;
+
+      if (usingAutoDescription) {
+        nextFormData.customDescription = autoDescription;
+        lastAutoDescription.current = autoDescription;
+        nextDescriptionDirty = false;
+      }
+
+      if (!material && usingAutoDescription) {
+        nextFormData.customDescription = '';
+        lastAutoDescription.current = '';
+      }
+    } else if (field === 'productId' && (!product || product.product_type !== 'handrail')) {
+      const currentDescription = formData.customDescription.trim();
+      if (!descriptionDirty || currentDescription === lastAutoDescription.current) {
+        nextFormData.customDescription = '';
+        lastAutoDescription.current = '';
+        nextDescriptionDirty = false;
+      }
+    }
+
+    setFormData(nextFormData);
+
+    if (nextDescriptionDirty !== descriptionDirty) {
+      setDescriptionDirty(nextDescriptionDirty);
+    }
   };
 
 
@@ -562,6 +751,42 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
   const isHandrailProduct = selectedProduct?.product_type === 'handrail' || selectedProduct?.product_type === 'landing_tread';
   const isRailPartsProduct = selectedProduct?.product_type === 'rail_parts';
   const requiresMaterial = isHandrailProduct || isRailPartsProduct;
+
+  const formatPartNumber = useCallback((item: QuoteItem): string | null => {
+    const partNumber = item.part_number;
+    if (item.product_type === 'handrail' && item.product_name) {
+      return item.product_name;
+    }
+
+    if (!partNumber) {
+      return null;
+    }
+
+    if (partNumber.startsWith('STAIR-')) {
+      return partNumber;
+    }
+
+    const match = partNumber.match(/^(\d+)-(\d+)$/);
+    if (!match) {
+      return partNumber;
+    }
+
+    const productId = Number(match[1]);
+    if (Number.isNaN(productId)) {
+      return partNumber;
+    }
+
+    const product = products.find(p => p.id === productId);
+    if (product?.product_type === 'handrail') {
+      return product.name || partNumber;
+    }
+
+    if ((!product || !product.name) && item.product_type === 'handrail' && item.product_name) {
+      return item.product_name;
+    }
+
+    return partNumber;
+  }, [products]);
   
   // Memoize calculations to prevent unnecessary recalculations and improve stability
   const { materialPrice, laborPrice, totalPrice } = useMemo(() => {
@@ -640,8 +865,8 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
           )}
         </div>
 
-      {/* Add/Edit Item Form */}
-      {!isReadOnly && (
+      {/* Add Item Form (top-level) */}
+      {!isReadOnly && showAddForm && !editingItem && (
         <ProductSelectorForm
           formData={formData}
           products={products}
@@ -673,6 +898,37 @@ const ProductSelector: React.FC<ProductSelectorProps> = ({
         isLoading={isLoading}
         onEditItem={handleEditItem}
         onDeleteItem={handleDeleteItem}
+        formatPartNumber={formatPartNumber}
+        editingItemId={editingItem?.id ?? null}
+        renderInlineForm={
+          !isReadOnly && showAddForm && editingItem
+            ? () => (
+                <ProductSelectorForm
+                  formData={formData}
+                  products={products}
+                  materials={materials}
+                  showAddForm={showAddForm}
+                  editingItem={editingItem}
+                  addingItem={addingItem}
+                  selectedProduct={selectedProduct}
+                  selectedMaterial={selectedMaterial}
+                  isHandrailProduct={isHandrailProduct}
+                  requiresMaterial={requiresMaterial}
+                  materialPrice={materialPrice}
+                  laborPrice={laborPrice}
+                  totalPrice={totalPrice}
+                  isFormValid={isFormValid}
+                  onFormChange={handleFormChange}
+                  onShowAddFormChange={setShowAddForm}
+                  onEditingItemChange={setEditingItem}
+                  onAddItem={handleAddItem}
+                  onAddAndContinue={handleAddAndContinue}
+                  onResetForm={resetForm}
+                />
+              )
+            : null
+        }
+        inlineFormRef={editingItem ? inlineFormRef : undefined}
       />
 
       {/* Stair Configurator Modal */}

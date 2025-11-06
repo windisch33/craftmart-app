@@ -42,9 +42,11 @@ export interface UpdateCustomerRequest extends CreateCustomerRequest {
 
 class CustomerService {
   private stripEmpty<T extends Record<string, any>>(obj: T): Partial<T> {
-    const out: Record<string, any> = {};
+    const out: Partial<T> = {};
     Object.entries(obj || {}).forEach(([k, v]) => {
-      if (v !== '' && v !== null && v !== undefined) out[k] = v;
+      if (v !== '' && v !== null && v !== undefined) {
+        (out as Record<string, any>)[k] = v;
+      }
     });
     return out;
   }

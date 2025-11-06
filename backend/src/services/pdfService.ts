@@ -1,8 +1,10 @@
+import fs from 'fs/promises';
 import puppeteer from 'puppeteer';
 import { browserPool } from './browserPool';
 import { pdfCache } from './pdfCache';
 import pool from '../config/database';
 import path from 'path';
+import { config } from '../config/env';
 
 interface JobData {
   id: number;
@@ -118,6 +120,49 @@ interface StairConfigurationData {
     material_name: string;
   }>;
 }
+
+const getMimeTypeFromExtension = (extension: string): string => {
+  switch (extension) {
+    case '.svg':
+      return 'image/svg+xml';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.webp':
+      return 'image/webp';
+    case '.gif':
+      return 'image/gif';
+    default:
+      return 'image/png';
+  }
+};
+
+let cachedCompanyLogoDataUri: string | null | undefined;
+
+const getCompanyLogoDataUri = async (): Promise<string | null> => {
+  if (cachedCompanyLogoDataUri !== undefined) {
+    return cachedCompanyLogoDataUri;
+  }
+
+  const logoPath = config.COMPANY_LOGO_PATH.trim();
+
+  if (!logoPath) {
+    cachedCompanyLogoDataUri = null;
+    return cachedCompanyLogoDataUri;
+  }
+
+  try {
+    const logoBuffer = await fs.readFile(logoPath);
+    const extension = path.extname(logoPath).toLowerCase();
+    const mimeType = getMimeTypeFromExtension(extension);
+    cachedCompanyLogoDataUri = `data:${mimeType};base64,${logoBuffer.toString('base64')}`;
+  } catch (error) {
+    console.warn(`Failed to load company logo at ${logoPath}:`, error);
+    cachedCompanyLogoDataUri = null;
+  }
+
+  return cachedCompanyLogoDataUri;
+};
 
 // Function to get detailed stair configuration data
 const getStairConfigurationDetails = async (configId: number): Promise<StairConfigurationData | null> => {
@@ -394,6 +439,24 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
   const totalAmountNumeric = Number(jobData.total_amount ?? 0);
   const depositApplied = Number(jobData.deposit_total ?? 0);
   const balanceDue = Number(jobData.balance_due ?? (totalAmountNumeric - depositApplied));
+  const logoDataUri = await getCompanyLogoDataUri();
+  const companyName = escapeHtml(config.COMPANY_NAME);
+  const companyAddressLines = config.COMPANY_ADDRESS
+    ? config.COMPANY_ADDRESS.split(/\n+/).map(line => line.trim()).filter(Boolean)
+    : [];
+  const companyDetailsParts: string[] = [];
+  if (companyAddressLines.length > 0) {
+    companyDetailsParts.push(companyAddressLines.map(line => escapeHtml(line)).join('<br>'));
+  }
+  const phoneValue = config.COMPANY_PHONE.trim();
+  if (phoneValue) {
+    companyDetailsParts.push(`Phone ${escapeHtml(phoneValue)}`);
+  }
+  const websiteValue = config.COMPANY_WEBSITE.trim();
+  if (websiteValue) {
+    companyDetailsParts.push(escapeHtml(websiteValue));
+  }
+  const companyDetailsHtml = companyDetailsParts.join('<br>');
   
   // Process sections to handle stair configurations
   const processedSections = [];
@@ -508,6 +571,24 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
             margin-bottom: 20px;
             border-bottom: 2px solid #3b82f6;
             padding-bottom: 15px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .company-logo {
+            max-height: 60px;
+            max-width: 160px;
+            object-fit: contain;
         }
         
         .company-info {
@@ -744,13 +825,11 @@ const generateJobPDFHTML = async (jobData: JobData, showLinePricing: boolean = t
 <body>
     <!-- Header -->
     <div class="header">
-        <div class="company-info">
-            <div class="company-name">Craft-Mart Inc.</div>
-            <div class="company-details">
-                5035 Allendale Lane<br>
-                Taneytown &nbsp;&nbsp;&nbsp;&nbsp; MD &nbsp;&nbsp;&nbsp;&nbsp; 21787-2100<br>
-                Phone (410) 751-9467 &nbsp;&nbsp;&nbsp;&nbsp; FAX # (410) 751-9469<br>
-                www.craftmartstairs.com
+        <div class="header-left">
+            ${logoDataUri ? `<div class="logo-container"><img src="${logoDataUri}" alt="${companyName} Logo" class="company-logo" /></div>` : ''}
+            <div class="company-info">
+                <div class="company-name">${companyName}</div>
+                ${companyDetailsHtml ? `<div class="company-details">${companyDetailsHtml}</div>` : ''}
             </div>
         </div>
         <div class="status-box">

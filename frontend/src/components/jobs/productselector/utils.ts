@@ -94,12 +94,16 @@ export const buildItemDescription = (
   selectedProduct: Product | null,
   selectedMaterial: Material | null
 ): string => {
+  const trimmedCustomDescription = formData.customDescription.trim();
   const isHandrailProduct = selectedProduct?.product_type === 'handrail' || selectedProduct?.product_type === 'landing_tread';
   const isRailPartsProduct = selectedProduct?.product_type === 'rail_parts';
   const requiresMaterial = isHandrailProduct || isRailPartsProduct;
 
   let description;
   if (selectedProduct) {
+    if (selectedProduct.product_type === 'handrail' && trimmedCustomDescription) {
+      return trimmedCustomDescription;
+    }
     // Product-based item: build description from product and material
     description = selectedProduct.name;
     if (selectedMaterial && requiresMaterial) {

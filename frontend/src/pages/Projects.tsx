@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { jobsService } from '../services/jobsService';
 import type { Project as Job } from '../services/projectService';
 import type { Customer } from '../services/customerService';
@@ -22,9 +22,14 @@ const Projects: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialQuery = (searchParams.get('q') ?? '');
+  const initialCustomerParam = searchParams.get('customerId');
+  const parsedInitialCustomerId = initialCustomerParam ? Number.parseInt(initialCustomerParam, 10) : NaN;
+  const initialCustomerId = Number.isFinite(parsedInitialCustomerId) && parsedInitialCustomerId > 0 ? parsedInitialCustomerId : null;
+  const [searchTerm, setSearchTerm] = useState(initialQuery);
+  const [customerFilterId, setCustomerFilterId] = useState<number | null>(initialCustomerId);
+  const [isSearching, setIsSearching] = useState(Boolean(initialQuery.trim()) || initialCustomerId !== null);
   
   // Modal states
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -34,14 +39,14 @@ const Projects: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q') || '';
-    if (q) {
-      setSearchTerm(q);
-      setIsSearching(!!q.trim());
-    }
-    loadProjects();
-    loadCustomers();
-  }, []);
+    const qParam = searchParams.get('q') ?? '';
+    const customerIdParam = searchParams.get('customerId');
+    const parsedCustomerId = customerIdParam ? Number.parseInt(customerIdParam, 10) : NaN;
+    const normalizedCustomerId = Number.isFinite(parsedCustomerId) && parsedCustomerId > 0 ? parsedCustomerId : null;
+    setSearchTerm(qParam);
+    setCustomerFilterId(normalizedCustomerId);
+    setIsSearching(Boolean(qParam.trim()) || normalizedCustomerId !== null);
+  }, [searchParams]);
   
   // Open Job Detail if navigated with a selected job in location state
   useEffect(() => {
@@ -53,13 +58,14 @@ const Projects: React.FC = () => {
     }
   }, []);
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const params: any = {};
       const q = searchTerm.trim();
       if (q) params.q = q;
+      if (customerFilterId !== null) params.customerId = customerFilterId;
       const projectsData = await jobsService.getAllProjects(params);
       setProjects(projectsData);
     } catch (err: any) {
@@ -68,7 +74,11 @@ const Projects: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, customerFilterId]);
+
+  useEffect(() => {
+    void loadProjects();
+  }, [loadProjects]);
 
   const loadCustomers = async () => {
     try {
@@ -79,12 +89,42 @@ const Projects: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    void loadCustomers();
+  }, []);
+
   const handleSearch = (query: string) => {
     setSearchTerm(query);
-    setIsSearching(!!query.trim());
+    const trimmed = query.trim();
+    setIsSearching(Boolean(trimmed) || customerFilterId !== null);
     setSearchParams(prev => {
       const p = new URLSearchParams(prev);
-      if (query.trim()) p.set('q', query); else p.delete('q');
+      if (trimmed) {
+        p.set('q', query);
+      } else {
+        p.delete('q');
+      }
+      if (customerFilterId !== null) {
+        p.set('customerId', String(customerFilterId));
+      } else {
+        p.delete('customerId');
+      }
+      return p;
+    });
+  };
+
+  const handleClearCustomerFilter = () => {
+    setCustomerFilterId(null);
+    const trimmed = searchTerm.trim();
+    setIsSearching(Boolean(trimmed));
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      p.delete('customerId');
+      if (trimmed) {
+        p.set('q', searchTerm);
+      } else {
+        p.delete('q');
+      }
       return p;
     });
   };
@@ -183,6 +223,23 @@ const Projects: React.FC = () => {
     }
   };
 
+  const trimmedSearchTerm = searchTerm.trim();
+  const hasSearchTerm = trimmedSearchTerm.length > 0;
+  const isCustomerFilterActive = customerFilterId !== null;
+  const customerFilterName = useMemo(() => {
+    if (!isCustomerFilterActive || customerFilterId === null) {
+      return '';
+    }
+    const match = customers.find(c => c.id === customerFilterId);
+    if (match?.name) {
+      return match.name;
+    }
+    if (hasSearchTerm) {
+      return trimmedSearchTerm;
+    }
+    return `Customer #${customerFilterId}`;
+  }, [customers, customerFilterId, hasSearchTerm, isCustomerFilterActive, trimmedSearchTerm]);
+
   if (loading && projects.length === 0) {
     return (
       <div className="container">
@@ -197,7 +254,7 @@ const Projects: React.FC = () => {
   // Filter projects based on search
   const filteredProjects = projects.filter(project => {
     if (!isSearching) return true;
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = trimmedSearchTerm.toLowerCase();
     return (
       project.name.toLowerCase().includes(searchLower) ||
       project.customer_name?.toLowerCase().includes(searchLower) ||
@@ -251,10 +308,32 @@ const Projects: React.FC = () => {
             autoFocus
           />
         </div>
-        {isSearching && (
+        {isCustomerFilterActive && (
+          <div 
+            className="search-status" 
+            style={{display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap'}}
+          >
+            <span>Viewing jobs for "{customerFilterName}"</span>
+            <button
+              type="button"
+              onClick={handleClearCustomerFilter}
+              style={{
+                border: 'none',
+                background: 'none',
+                color: '#2563eb',
+                cursor: 'pointer',
+                padding: 0,
+                fontWeight: 500
+              }}
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
+        {hasSearchTerm && (
           <p className="search-status">Showing search results for "{searchTerm}"</p>
         )}
-        {!isSearching && filteredProjects.length > 0 && (
+        {!hasSearchTerm && !isCustomerFilterActive && filteredProjects.length > 0 && (
           <p className="search-status">All jobs</p>
         )}
       </div>

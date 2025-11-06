@@ -4,7 +4,7 @@ import jobService from '../../services/jobService';
 import salesmanService from '../../services/salesmanService';
 import projectService from '../../services/projectService';
 import { useToast } from '../common/ToastProvider';
-import type { JobWithDetails, QuoteItem, CreateQuoteItemData } from '../../services/jobService';
+import type { JobWithDetails, QuoteItem, CreateQuoteItemData, CreateJobData } from '../../services/jobService';
 import type { Salesman } from '../../services/salesmanService';
 import type { Project } from '../../services/projectService';
 import stairConfigService from '../../services/stairConfigService';
@@ -136,6 +136,14 @@ interface EditableItem {
   unit_price: number;
   line_total: number;
   is_taxable: boolean;
+  product_id?: number;
+  product_type?: string;
+  product_name?: string;
+  length_inches?: number | null;
+  material_id?: number;
+  material_name?: string;
+  material_multiplier?: number;
+  include_labor?: boolean;
   isNew?: boolean;
   stair_configuration?: any;
   stair_config_id?: number;
@@ -161,10 +169,18 @@ export const mapQuoteItemsToEditableItems = (items: QuoteItem[]): EditableItem[]
     id: item.id,
     part_number: item.part_number || '',
     description: item.description,
-    quantity: item.quantity,
-    unit_price: item.unit_price,
-    line_total: item.line_total,
+    quantity: Number(item.quantity),
+    unit_price: Number(item.unit_price),
+    line_total: Number(item.line_total),
     is_taxable: item.is_taxable,
+    product_id: item.product_id != null ? Number(item.product_id) : undefined,
+    product_type: item.product_type,
+    product_name: item.product_name,
+    length_inches: item.length_inches != null ? Number(item.length_inches) : undefined,
+    material_id: item.material_id != null ? Number(item.material_id) : undefined,
+    material_name: item.material_name,
+    material_multiplier: item.material_multiplier != null ? Number(item.material_multiplier) : undefined,
+    include_labor: Boolean(item.include_labor),
     isNew: item.id <= 0,
     stair_configuration: (item as any).stair_configuration,
     stair_config_id: item.stair_config_id
@@ -395,7 +411,10 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              is_taxable: item.is_taxable
+              is_taxable: item.is_taxable,
+              product_id: item.product_id,
+              material_id: item.material_id,
+              length_inches: item.length_inches != null ? item.length_inches : undefined
             };
             
             // If this is a stair configuration item, pass the configuration data
@@ -411,7 +430,10 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              is_taxable: item.is_taxable
+              is_taxable: item.is_taxable,
+              product_id: item.product_id,
+              material_id: item.material_id,
+              length_inches: item.length_inches != null ? item.length_inches : undefined
             };
             
             // If this is a stair configuration item, pass the configuration data
@@ -481,11 +503,7 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
       const targetProjectInfo = targetProjectId ? availableProjects.find(p => p.id === targetProjectId) : currentProject;
       const effectiveCustomerId = targetProjectInfo?.customer_id ?? job.customer_id;
 
-      // API requires exactly one of customer_id or project_id (XOR)
-      const copyData = {
-        ...(finalProjectId
-          ? { project_id: Number(finalProjectId) }
-          : { customer_id: Number(effectiveCustomerId) }),
+      const baseCopyData = {
         salesman_id: (job.salesman_id ?? undefined) as number | undefined,
         title: newTitle,
         description: job.description || undefined,
@@ -498,6 +516,21 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
         terms: job.terms || undefined,
         po_number: job.po_number || undefined
       };
+
+      // Provide customer for tax lookups and include project when targeting a specific job container
+      let copyData: CreateJobData;
+      if (finalProjectId) {
+        copyData = {
+          ...baseCopyData,
+          customer_id: Number(effectiveCustomerId),
+          project_id: Number(finalProjectId)
+        };
+      } else {
+        copyData = {
+          ...baseCopyData,
+          customer_id: Number(effectiveCustomerId)
+        };
+      }
 
       // Create the new job
       const newJob = await jobService.createJob(copyData);
@@ -556,7 +589,10 @@ const JobDetail: React.FC<JobDetailProps> = ({ jobId, isOpen, onClose, projectNa
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
-              is_taxable: item.is_taxable
+              is_taxable: item.is_taxable,
+              product_id: item.product_id,
+              material_id: item.material_id,
+              length_inches: item.length_inches != null ? item.length_inches : undefined
             };
 
             // Determine stair configuration source: explicit ID, part_number ref, or embedded payload

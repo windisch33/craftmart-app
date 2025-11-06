@@ -4,7 +4,21 @@ import pool from '../config/database';
 // Get all projects (stored in table "jobs") with customer info and job item count
 export const getAllProjects = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { q, address, city, state, zip } = (req.query || {}) as Record<string, string | undefined>;
+    const {
+      q,
+      address,
+      city,
+      state,
+      zip,
+      customer_id
+    } = (req.query || {}) as {
+      q?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+      customer_id?: number;
+    };
 
     let query = `
       SELECT 
@@ -64,6 +78,11 @@ export const getAllProjects = async (req: Request, res: Response, next: NextFunc
     if (zip && zip.trim()) {
       params.push(`%${zip.trim()}%`);
       where.push(`p.zip_code ILIKE $${params.length}`);
+    }
+
+    if (typeof customer_id === 'number' && Number.isFinite(customer_id)) {
+      params.push(customer_id);
+      where.push(`p.customer_id = $${params.length}`);
     }
 
     if (where.length > 0) {

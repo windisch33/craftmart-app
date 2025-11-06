@@ -20,6 +20,7 @@ export interface ProductFormData {
   useCustomPrice: boolean;
   isTaxable: boolean;
   includeLabor: boolean;
+  isWallRail: boolean;
 }
 
 export interface ErrorBoundaryState {

@@ -16,6 +16,7 @@ interface EnvConfig {
   JWT_SECRET: string;
   UPLOAD_PATH: string;
   PDF_CACHE_DIR: string;
+  COMPANY_LOGO_PATH: string;
   CORS_ORIGIN: string;
   RATE_LIMIT_MAX: number;
   RATE_LIMIT_WINDOW_MS: number;
@@ -45,6 +46,7 @@ export const config: EnvConfig = {
   JWT_SECRET: process.env.JWT_SECRET ?? 'your-secret-key',
   UPLOAD_PATH: process.env.UPLOAD_PATH ?? './uploads',
   PDF_CACHE_DIR: process.env.PDF_CACHE_DIR ?? path.join(os.tmpdir(), 'craftmart-pdf-cache'),
+  COMPANY_LOGO_PATH: process.env.COMPANY_LOGO_PATH ?? path.resolve(__dirname, '../../assets/company-logo.png'),
   CORS_ORIGIN: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
   RATE_LIMIT_MAX: parseNumber(process.env.RATE_LIMIT_MAX, 5),
   RATE_LIMIT_WINDOW_MS: parseNumber(process.env.RATE_LIMIT_WINDOW_MS, 900000),

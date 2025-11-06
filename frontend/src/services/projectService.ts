@@ -44,20 +44,23 @@ class ProjectService {
   }
 
   private stripEmpty<T extends Record<string, any>>(obj: T): Partial<T> {
-    const out: Record<string, any> = {};
+    const out: Partial<T> = {};
     Object.entries(obj || {}).forEach(([k, v]) => {
-      if (v !== '' && v !== null && v !== undefined) out[k] = v;
+      if (v !== '' && v !== null && v !== undefined) {
+        (out as Record<string, any>)[k] = v;
+      }
     });
     return out;
   }
 
-  async getAllProjects(params?: { q?: string; address?: string; city?: string; state?: string; zip?: string }): Promise<Project[]> {
+  async getAllProjects(params?: { q?: string; address?: string; city?: string; state?: string; zip?: string; customerId?: number }): Promise<Project[]> {
     const qs = new URLSearchParams();
     if (params?.q) qs.append('q', params.q);
     if (params?.address) qs.append('address', params.address);
     if (params?.city) qs.append('city', params.city);
     if (params?.state) qs.append('state', params.state);
     if (params?.zip) qs.append('zip', params.zip);
+    if (typeof params?.customerId === 'number') qs.append('customer_id', String(params.customerId));
 
     const query = qs.toString();
     const url = query ? `${API_BASE_URL}/api/jobs?${query}` : `${API_BASE_URL}/api/jobs`;

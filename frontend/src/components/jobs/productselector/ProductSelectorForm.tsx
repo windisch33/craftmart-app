@@ -35,7 +35,7 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
   editingItem,
   addingItem,
   selectedProduct,
-  selectedMaterial: _selectedMaterial,
+  selectedMaterial,
   isHandrailProduct,
   requiresMaterial,
   materialPrice,
@@ -52,6 +52,22 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
   const getProductsByType = (type: string) => {
     return products.filter(p => p.product_type === type && p.is_active);
   };
+
+  const showWallRailOption = selectedProduct?.product_type === 'handrail';
+  const wallRailLabel = formData.isWallRail ? 'Wall Rail' : 'Handrail';
+  const handrailPlaceholder = showWallRailOption ? (() => {
+    const parts: string[] = [];
+    const profile = selectedProduct?.name?.trim();
+    if (profile) {
+      parts.push(profile);
+    }
+    if (formData.lengthInches > 0) {
+      parts.push(`${formData.lengthInches}"`);
+    }
+    const materialLabel = selectedMaterial?.name?.trim() || '';
+    parts.push(materialLabel ? `${materialLabel} ${wallRailLabel}` : wallRailLabel);
+    return parts.join(' - ');
+  })() : null;
 
   const handleCloseForm = () => {
     onShowAddFormChange(false);
@@ -165,13 +181,28 @@ const ProductSelectorForm: React.FC<ProductSelectorFormProps> = ({
 
         {/* Custom Description */}
         <div className="form-field">
+          {showWallRailOption && (
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={formData.isWallRail}
+                onChange={(e) => onFormChange('isWallRail', e.target.checked)}
+                disabled={addingItem}
+              />
+              <span>Wall Rail</span>
+            </label>
+          )}
           <label htmlFor="custom-description">Description</label>
           <input
             type="text"
             id="custom-description"
             value={formData.customDescription}
             onChange={(e) => onFormChange('customDescription', e.target.value)}
-            placeholder={selectedProduct ? "Override product name..." : "Enter custom item description..."}
+            placeholder={selectedProduct
+              ? showWallRailOption
+                ? (handrailPlaceholder || "Override product name...")
+                : "Override product name..."
+              : "Enter custom item description..."}
             disabled={addingItem}
           />
         </div>
